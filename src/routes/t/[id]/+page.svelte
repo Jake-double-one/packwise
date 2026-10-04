@@ -17,6 +17,7 @@
 	import WarningList from '$lib/components/WarningList.svelte';
 	import WeatherCard from '$lib/components/WeatherCard.svelte';
 	import ShareDialog from '$lib/components/ShareDialog.svelte';
+	import TripInfo from '$lib/components/TripInfo.svelte';
 
 	let { data } = $props();
 	const i18n = useI18n();
@@ -46,6 +47,8 @@
 	let showActivity = $state(false);
 	let showWarnings = $state(true);
 	let showTodos = $state(true);
+	/** "info" is a per-device view; packing / return phase is shared with everybody */
+	let tab = $state<'list' | 'info'>('list');
 	let errorMsg = $state('');
 	const drafts = $state<Record<string, string>>({});
 	let quickAdd = $state('');
@@ -431,8 +434,9 @@
 		</div>
 
 		<div class="seg phase no-print" role="tablist">
-			<button role="tab" aria-selected={!returning} class:on={!returning} onclick={() => setPhase('pack')}>🧳 {t('trip.phase_pack')}</button>
-			<button role="tab" aria-selected={returning} class:on={returning} onclick={() => setPhase('return')}>🏠 {t('trip.phase_return')}</button>
+			<button role="tab" aria-selected={tab === 'list' && !returning} class:on={tab === 'list' && !returning} onclick={() => { tab = 'list'; setPhase('pack'); }}>🧳 {t('trip.phase_pack')}</button>
+			<button role="tab" aria-selected={tab === 'list' && returning} class:on={tab === 'list' && returning} onclick={() => { tab = 'list'; setPhase('return'); }}>🏠 {t('trip.phase_return')}</button>
+			<button role="tab" aria-selected={tab === 'info'} class:on={tab === 'info'} class="info" onclick={() => (tab = 'info')}>ℹ️ {t('trip.tab_info')}</button>
 		</div>
 
 		<div class="rings row wrap">
@@ -458,6 +462,9 @@
 		</div>
 	</header>
 
+	{#if tab === 'info'}
+		<TripInfo trip={data.trip} homeCountry={data.homeCountry} />
+	{:else}
 	{#if data.trip.weather || data.trip.warnings.length}
 		<div class="info-grid no-print">
 			{#if data.trip.weather}<WeatherCard weather={data.trip.weather} compact />{/if}
@@ -659,6 +666,7 @@
 		<input class="grow" placeholder={t('trip.quick_add')} bind:value={quickAdd} />
 		<button class="btn primary">+</button>
 	</form>
+	{/if}
 
 	{#if data.canDelete}
 		<div class="danger-zone no-print">
@@ -742,6 +750,10 @@
 	.phase button.on {
 		background: var(--accent);
 		color: #fff;
+	}
+	.phase button.info.on {
+		background: var(--text-2);
+		color: var(--bg);
 	}
 	.pending {
 		background: var(--warning-soft);

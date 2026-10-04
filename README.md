@@ -31,6 +31,7 @@ Packwise replaces the packing list in your notes app. You maintain **one templat
 - **Live collaboration** via Server-Sent Events: see who is online, with an activity log of who packed what.
 - **To-dos before departure** (optional per trip): water the plants, online check-in, empty the fridge. Each to-do has a due date relative to departure and uses the same chips as items, so "Online check-in" only appears for flights. Kept in its own to-do template.
 - **Return-trip mode**: a second checkmark for "packed again", so nothing is left in the holiday home. Consumables like sunscreen are left out. The trip suggests it on the last day.
+- **Trip info tab**: an OpenStreetMap map centred on the destination, day-by-day weather (real forecast where available, otherwise the 10-year average for each calendar day) and country facts (sockets, voltage, currency, driving side).
 - **Offline mode**: installable PWA. Open lists keep working without a connection. Checks, new items and to-dos are queued and synced automatically once you're back online.
 - **Template sync**: *↑ Template* on new items. On delete, Packwise asks *only this trip* or *also from the template*. Changed items can update the template.
 - **Import with review step**: plain text, Markdown, `.txt` files, OneNote / Word pastes (nested lists are kept) and Packwise JSON. You check every line, fix levels and untick duplicates before anything is saved.

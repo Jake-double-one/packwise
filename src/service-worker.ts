@@ -43,7 +43,7 @@ sw.addEventListener('message', (event) => {
 
 /** Responses worth keeping for offline use. */
 function cacheable(url: URL, request: Request): boolean {
-	if (url.pathname.startsWith('/api/')) return /^\/api\/trips\/[^/]+$/.test(url.pathname);
+	if (url.pathname.startsWith('/api/')) return /^\/api\/trips\/[^/]+(\/info)?$/.test(url.pathname);
 	return request.mode === 'navigate' || url.pathname.endsWith('/__data.json');
 }
 

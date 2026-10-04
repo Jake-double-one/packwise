@@ -16,11 +16,14 @@ What's done and what's planned for Packwise. Ideas and feedback are welcome as G
 - To-dos before departure (optional per trip, due dates, chips, own template)
 - Return-trip mode (second checkmark "packed again", consumables excluded)
 - Offline mode (PWA cache plus a sync queue for changes made offline)
+- Personal bags per person (colour, own suitcase/carry-on), sortable people and bags
+- Two-column trip view with drag & drop between categories, bags and travellers
+- Trip info tab: OpenStreetMap map, day-by-day weather (forecast or 10-year average), country facts
 
 ## 🔜 Next
 
 - **"Not needed" after the trip**: mark items you didn't use. Repeated marks suggest removing the item from the template or adding a rule.
-- **Trip notes**: free fields for address, booking number, phone and links. Secret fields (Wi-Fi password, key-box code) are hidden until tapped and work offline.
+- **Trip notes** in the trip info tab: free fields for address, booking number, phone and links. Secret fields (Wi-Fi password, key-box code) are hidden until tapped and work offline.
 - **Guest links**: share a trip without a login. Choose check-only or edit, set an expiry, revoke at any time.
 
 ## 💡 Later

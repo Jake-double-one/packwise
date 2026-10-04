@@ -42,3 +42,24 @@ export function weatherIcon(w: WeatherSummary | null): string {
 	if (w.avgMax >= 16) return '🌤️';
 	return '☁️';
 }
+
+/** Icon for one day: WMO weather code (forecast) or derived from the averages (climate). */
+export function dayIcon(d: { code: number | null; tmax: number | null; rain: number | null; snow: number | null }): string {
+	const c = d.code;
+	if (c != null) {
+		if (c === 0) return '☀️';
+		if (c <= 2) return '🌤️';
+		if (c === 3) return '☁️';
+		if (c === 45 || c === 48) return '🌫️';
+		if (c >= 51 && c <= 57) return '🌦️';
+		if ((c >= 61 && c <= 67) || (c >= 80 && c <= 82)) return '🌧️';
+		if ((c >= 71 && c <= 77) || c === 85 || c === 86) return '🌨️';
+		if (c >= 95) return '⛈️';
+	}
+	if ((d.snow ?? 0) >= 0.5) return '🌨️';
+	if ((d.rain ?? 0) >= 60) return '🌧️';
+	if ((d.rain ?? 0) >= 35) return '🌦️';
+	if ((d.tmax ?? 0) >= 26) return '☀️';
+	if ((d.tmax ?? 0) >= 16) return '🌤️';
+	return '☁️';
+}

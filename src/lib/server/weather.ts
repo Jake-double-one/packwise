@@ -138,3 +138,110 @@ export async function weatherFor(lat: number, lon: number, start: string, end: s
 	const wanted = monthDays(start, end);
 	return summarise(data.daily, (d) => wanted.has(d.slice(5)), 'climate', days);
 }
+
+// ── Day by day (trip info tab) ───────────────────────────────────────────────
+
+export interface DayWeather {
+	date: string;
+	source: 'forecast' | 'climate';
+	tmax: number | null;
+	tmin: number | null;
+	/** forecast: precipitation probability in % · climate: share of rainy years in % */
+	rain: number | null;
+	/** precipitation in mm (climate: average) */
+	precip: number | null;
+	/** snowfall in cm (climate: average) */
+	snow: number | null;
+	/** WMO weather code (forecast only) */
+	code: number | null;
+}
+
+interface DailyWithCode extends Daily {
+	weather_code?: (number | null)[];
+}
+
+const num = (v: number | null | undefined) => (typeof v === 'number' ? v : null);
+
+export function forecastDays(daily: DailyWithCode, wanted: Set<string>): DayWeather[] {
+	return daily.time
+		.map((date, i) => ({
+			date,
+			source: 'forecast' as const,
+			tmax: num(daily.temperature_2m_max[i]),
+			tmin: num(daily.temperature_2m_min[i]),
+			rain: num(daily.precipitation_probability_max?.[i]),
+			precip: num(daily.precipitation_sum[i]),
+			snow: num(daily.snowfall_sum[i]),
+			code: num(daily.weather_code?.[i])
+		}))
+		.filter((d) => wanted.has(d.date));
+}
+
+/** Average of the same calendar day over all years in the archive response. */
+export function climateDays(daily: Daily, dates: string[]): DayWeather[] {
+	const byDay = new Map<string, number[]>();
+	daily.time.forEach((t, i) => {
+		const k = t.slice(5);
+		const list = byDay.get(k) ?? [];
+		list.push(i);
+		byDay.set(k, list);
+	});
+	return dates.map((date) => {
+		const idx = byDay.get(date.slice(5)) ?? byDay.get('02-28') ?? [];
+		const vals = (arr: (number | null)[]) => idx.map((i) => arr[i]).filter((v): v is number => typeof v === 'number');
+		const avg = (arr: (number | null)[]) => {
+			const v = vals(arr);
+			return v.length ? round1(mean(v)) : null;
+		};
+		const precip = vals(daily.precipitation_sum);
+		return {
+			date,
+			source: 'climate' as const,
+			tmax: avg(daily.temperature_2m_max),
+			tmin: avg(daily.temperature_2m_min),
+			rain: precip.length ? Math.round((precip.filter((p) => p >= 1).length / precip.length) * 100) : null,
+			precip: avg(daily.precipitation_sum),
+			snow: avg(daily.snowfall_sum),
+			code: null
+		};
+	});
+}
+
+/** Every trip day: forecast where available, otherwise the 10-year average. */
+export async function dailyWeather(lat: number, lon: number, start: string, end: string, today = new Date()): Promise<DayWeather[]> {
+	if (!config.weatherEnabled) return [];
+	const s = new Date(`${start}T00:00:00Z`);
+	const e = new Date(`${end}T00:00:00Z`);
+	if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) return [];
+	const dates: string[] = [];
+	for (let d = s; d <= e && dates.length < 62; d = addDays(d, 1)) dates.push(iso(d));
+	const t0 = new Date(`${iso(today)}T00:00:00Z`);
+	const horizon = addDays(t0, FORECAST_DAYS - 1);
+	const vars = 'temperature_2m_max,temperature_2m_min,precipitation_sum,snowfall_sum';
+	const la = lat.toFixed(2);
+	const lo = lon.toFixed(2);
+
+	const result = new Map<string, DayWeather>();
+	if (s <= horizon && e >= t0) {
+		const from = iso(s < t0 ? t0 : s);
+		const to = iso(e > horizon ? horizon : e);
+		const url = `${FORECAST}?latitude=${la}&longitude=${lo}&daily=${vars},precipitation_probability_max,weather_code&timezone=auto&start_date=${from}&end_date=${to}`;
+		const data = await getJson<{ daily?: DailyWithCode }>(url, 3 * 3_600_000);
+		if (data?.daily) for (const d of forecastDays(data.daily, new Set(dates))) result.set(d.date, d);
+	}
+	const missing = dates.filter((d) => !result.has(d));
+	if (missing.length) {
+		const y1 = t0.getUTCFullYear() - 1;
+		const y0 = y1 - CLIMATE_YEARS + 1;
+		const url = `${ARCHIVE}?latitude=${(+la).toFixed(1)}&longitude=${(+lo).toFixed(1)}&daily=${vars}&timezone=auto&start_date=${y0}-01-01&end_date=${y1}-12-31`;
+		const data = await getJson<{ daily?: Daily }>(url, 30 * 86_400_000);
+		if (data?.daily) for (const d of climateDays(data.daily, missing)) result.set(d.date, d);
+	}
+	return dates.map((d) => result.get(d)).filter((d): d is DayWeather => !!d);
+}
+
+/** Rough position of a country (for trips where only the country was chosen). */
+export async function locateCountry(code: string, name: string): Promise<{ lat: number; lon: number } | null> {
+	const hit = (await geocode(name, 'en')).find((p) => p.country_code === code);
+	return hit ? { lat: hit.lat, lon: hit.lon } : null;
+}
