@@ -465,5 +465,9 @@
 	"bag.carryon_of": "Handgepäck {name}",
 	"household.create_bags": "Koffer anlegen",
 	"household.create_bags_hint": "Legt einen Koffer (und für Erwachsene und Kinder ein Handgepäck) in der Farbe der Person an",
-	"household.bag_owner": "Gehört {name} – übernimmt Name und Farbe, wird mit der Person gelöscht"
+	"household.bag_owner": "Gehört {name} – übernimmt Name und Farbe, wird mit der Person gelöscht",
+	"error.save_failed": "Speichern fehlgeschlagen: {reason} (HTTP {status})",
+	"error.network": "Keine Verbindung zum Server ({reason}). Mit Brave: Shields für diese Seite ausschalten.",
+	"activity.moved": "hat verschoben:",
+	"trip.drag_hint": "Artikel auf eine andere Karte ziehen, um sie zu verschieben – in eine andere Kategorie, einen anderen Koffer oder zu einer anderen Person."
 }

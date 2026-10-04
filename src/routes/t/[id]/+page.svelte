@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api, ApiError, clientId, live } from '$lib/api';
+	import { api, ApiError, clientId, describeError, live } from '$lib/api';
+	import { toast } from '$lib/toast.svelte';
 	import { countryFlag } from '$lib/data/countries';
 	import { todoDue } from '$lib/generate';
 	import { formatDate, formatRange, timeAgo, useI18n } from '$lib/i18n';
@@ -51,6 +52,38 @@
 	let newTodo = $state('');
 	let newTodoDays = $state(1);
 
+	// drag & drop (mouse / trackpad only – on touch screens dragging fights with scrolling)
+	let canDrag = $state(false);
+	let dragId = $state<string | null>(null);
+	let dropKey = $state<string | null>(null);
+
+	function dragStart(e: DragEvent, it: TripItem) {
+		dragId = it.id;
+		e.dataTransfer?.setData('text/plain', it.id);
+		if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+	}
+	function dragEnd() {
+		dragId = null;
+		dropKey = null;
+	}
+	function dragOver(e: DragEvent, key: string) {
+		if (!dragId) return;
+		e.preventDefault();
+		e.stopPropagation();
+		dropKey = key;
+	}
+	/** Dropping onto a card: category → move, bag → change bag, person → change person. */
+	function drop(e: DragEvent, target: { kind: 'group' | 'bag' | 'person'; id: string | null }) {
+		e.preventDefault();
+		e.stopPropagation();
+		const it = items.find((i) => i.id === dragId);
+		dragEnd();
+		if (!it) return;
+		if (target.kind === 'group' && it.parent_id !== target.id && it.id !== target.id) send({ op: 'move', id: it.id, parent_id: target.id });
+		if (target.kind === 'bag' && (it.bag_id ?? null) !== target.id) send({ op: 'update', id: it.id, patch: { bag_id: target.id } });
+		if (target.kind === 'person' && (it.person_id ?? null) !== target.id) send({ op: 'update', id: it.id, patch: { person_id: target.id } });
+	}
+
 	const returning = $derived(phase === 'return');
 	const tree = $derived(childrenMap(items));
 	const bagById = $derived(new Map(data.bags.map((b) => [b.id, b])));
@@ -79,6 +112,7 @@
 	}
 
 	onMount(() => {
+		canDrag = window.matchMedia('(pointer: fine)').matches;
 		try {
 			view = (localStorage.getItem('pw_view') as View) || 'category';
 			hideChecked = localStorage.getItem('pw_hide_checked') === '1';
@@ -219,13 +253,13 @@
 			return res;
 		} catch (err) {
 			if (err instanceof ApiError) {
-				errorMsg = t(err.message);
+				toast(describeError(err, t));
 				await resync();
 			} else if (offlineable) {
 				online = false;
 				enqueue(op);
 			} else {
-				errorMsg = t('offline.needs_connection');
+				toast(t('offline.needs_connection'));
 			}
 			return null;
 		}
@@ -244,7 +278,10 @@
 		if (it.origin === 'auto') return 'auto';
 		const tpl = it.template_id ? template[it.template_id] : undefined;
 		if (!tpl) return 'new';
-		if (tpl.name !== it.name || (tpl.bag_id ?? null) !== (it.bag_id ?? null) || tpl.note !== it.note) return 'differs';
+		// personal items are moved into each traveller's own bag on purpose – that is no deviation
+		const tplBag = tpl.bag_id ? bagById.get(tpl.bag_id) : undefined;
+		const bagDiffers = (tpl.bag_id ?? null) !== (it.bag_id ?? null) && !(tplBag?.person_id && it.person_id);
+		if (tpl.name !== it.name || bagDiffers || tpl.note !== it.note) return 'differs';
 		return 'linked';
 	}
 
@@ -368,7 +405,7 @@
 
 <svelte:head><title>{tripName} · Packwise</title></svelte:head>
 
-<div class="container" class:return-mode={returning}>
+<div class="container trip-page" class:return-mode={returning}>
 	<header class="trip-head">
 		<div class="row between top">
 			<div class="grow">
@@ -517,7 +554,18 @@
 		{@const person = it.person_id ? personById.get(it.person_id) : null}
 		{@const state = templateState(it)}
 		{@const used = returning && it.consumable}
-		<div class="item" class:checked={isDone(it) && !used} class:used class:has-bag={!!bag} style={bag ? `--bag:${bag.color}` : ''}>
+		<div
+			class="item"
+			class:checked={isDone(it) && !used}
+			class:used
+			class:has-bag={!!bag}
+			class:dragging={dragId === it.id}
+			style={bag ? `--bag:${bag.color}` : ''}
+			draggable={canDrag}
+			ondragstart={(e) => dragStart(e, it)}
+			ondragend={dragEnd}
+			role="listitem"
+		>
 			<button class="box" onclick={() => toggle(it)} aria-pressed={isDone(it)} aria-label={it.name} disabled={used}>
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
 			</button>
@@ -543,7 +591,14 @@
 	{#snippet groupBlock(g: TripItem, depth: number)}
 		{#if hasVisible(g.id) || (!hideChecked && personFilter === null)}
 			{@const c = countIn(g.id)}
-			<section class="group depth-{depth}">
+			<section
+				class="group depth-{depth}"
+				class:drop={dropKey === g.id}
+				ondragover={(e) => dragOver(e, g.id)}
+				ondragleave={() => dropKey === g.id && (dropKey = null)}
+				ondrop={(e) => drop(e, { kind: 'group', id: g.id })}
+				aria-label={g.name}
+			>
 				<div class="ghead row">
 					<h2 class="grow">{g.name}</h2>
 					{#if data.canEditTemplate && templateState(g) === 'new' && g.origin !== 'auto'}
@@ -566,7 +621,8 @@
 		{/if}
 	{/snippet}
 
-	<div class="list">
+	{#if canDrag}<p class="tiny muted no-print drag-hint">↕ {t('trip.drag_hint')}</p>{/if}
+	<div class="list" role="list">
 		{#if view === 'category'}
 			{#each tree.get(null) ?? [] as top (top.id)}
 				{#if top.kind === 'group'}
@@ -577,7 +633,16 @@
 			{/each}
 		{:else}
 			{#each flatGroups as g (g.id)}
-				<section class="group depth-1" style={g.color ? `--bag:${g.color}` : ''} class:tinted={view === 'bag' && g.color}>
+				<section
+					class="group depth-1"
+					style={g.color ? `--bag:${g.color}` : ''}
+					class:tinted={!!g.color}
+					class:drop={dropKey === `flat:${g.id}`}
+					ondragover={(e) => dragOver(e, `flat:${g.id}`)}
+					ondragleave={() => dropKey === `flat:${g.id}` && (dropKey = null)}
+					ondrop={(e) => drop(e, { kind: view === 'bag' ? 'bag' : 'person', id: g.id || null })}
+					aria-label={g.name}
+				>
 					<div class="ghead row">
 						<h2 class="grow">{g.name}</h2>
 						<span class="gcount tiny">{g.items.filter((i) => relevant(i) && isDone(i)).length}/{g.items.filter(relevant).length}</span>
@@ -854,36 +919,81 @@
 		padding: 0.35rem 0.6rem;
 		font-size: 0.85rem;
 	}
+	.trip-page {
+		max-width: 1320px;
+	}
 	.list {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 0.9rem;
+	}
+	/* two columns from laptop width – cards flow like a masonry */
+	@media (min-width: 1000px) {
+		.list {
+			display: block;
+			columns: 2;
+			column-gap: 1rem;
+		}
+		.list > .group {
+			break-inside: avoid;
+			margin-bottom: 1rem;
+		}
 	}
 	.group.depth-1 {
+		display: block;
 		background: var(--surface);
-		border: 1px solid var(--border);
+		border: 1px solid color-mix(in srgb, var(--text-3) 30%, var(--border));
 		border-radius: var(--radius);
 		box-shadow: var(--shadow);
-		padding: 0.5rem 0.6rem 0.4rem;
+		padding: 0 0.6rem 0.4rem;
+		overflow: hidden;
+	}
+	.group.depth-1 > .ghead {
+		margin: 0 -0.6rem 0.35rem;
+		padding: 0.55rem 0.8rem;
+		background: var(--surface-2);
+		border-bottom: 1px solid var(--border);
 	}
 	.group.tinted {
 		border-top: 4px solid var(--bag);
 	}
+	.group.tinted > .ghead {
+		background: color-mix(in srgb, var(--bag) var(--tint), var(--surface-2));
+	}
 	.group.depth-2,
 	.group.depth-3,
 	.group.depth-4 {
-		margin-top: 0.4rem;
+		margin-top: 0.6rem;
 		padding-left: 0.6rem;
-		border-left: 2px solid var(--border);
+		border-left: 3px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+	}
+	.group.drop {
+		outline: 2px dashed var(--accent);
+		outline-offset: 2px;
+		background: color-mix(in srgb, var(--accent) 6%, var(--surface));
 	}
 	.ghead h2 {
-		font-size: 1rem;
-		margin: 0.2rem 0;
+		font-size: 1.05rem;
+		font-weight: 800;
+		margin: 0;
 	}
 	.depth-2 > .ghead h2,
-	.depth-3 > .ghead h2 {
-		font-size: 0.9rem;
+	.depth-3 > .ghead h2,
+	.depth-4 > .ghead h2 {
+		font-size: 0.78rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 		color: var(--text-2);
+	}
+	.item[draggable='true'] {
+		cursor: grab;
+	}
+	.item.dragging {
+		opacity: 0.4;
+	}
+	.drag-hint {
+		margin: 0 0 0.5rem;
 	}
 	.gcount {
 		color: var(--text-3);

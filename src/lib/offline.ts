@@ -16,6 +16,7 @@ export const OFFLINE_OPS = new Set([
 	'add',
 	'delete',
 	'rename',
+	'move',
 	'phase',
 	'resetReturn',
 	'todoCheck',
@@ -125,6 +126,12 @@ export function applyLocal(state: TripState, op: Op, userId: string | null): Tri
 				for (const i of s.items) if (i.parent_id && gone.has(i.parent_id) && !gone.has(i.id)) (gone.add(i.id), (grew = true));
 			}
 			s.items = s.items.filter((i) => !gone.has(i.id));
+			break;
+		}
+		case 'move': {
+			const parent = (op.parent_id as string | null) ?? null;
+			const sort = Math.max(0, ...s.items.filter((i) => i.parent_id === parent).map((i) => i.sort)) + 1;
+			s.items = s.items.map((i) => (i.id === op.id ? { ...i, parent_id: parent, sort } : i));
 			break;
 		}
 		case 'rename':

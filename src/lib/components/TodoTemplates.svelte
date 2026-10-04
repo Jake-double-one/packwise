@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, clientId, live } from '$lib/api';
+	import { api, clientId, describeError, live } from '$lib/api';
+	import { toast } from '$lib/toast.svelte';
 	import { useI18n } from '$lib/i18n';
 	import { mergeNodes } from '$lib/tree';
 	import type { Person, Rules, TodoTemplate } from '$lib/types';
@@ -33,7 +34,7 @@
 			const res = await api<{ upsert: TodoTemplate[]; removed: string[] }>('/api/todos', { ...body, client: clientId });
 			todos = mergeNodes(todos, res.upsert, res.removed);
 		} catch (err) {
-			errorMsg = t((err as Error).message);
+			toast(describeError(err, t));
 		}
 	}
 

@@ -465,5 +465,9 @@
 	"bag.carryon_of": "{name}'s carry-on",
 	"household.create_bags": "Create bags",
 	"household.create_bags_hint": "Creates a suitcase (and a carry-on for adults and kids) in this person's colour",
-	"household.bag_owner": "Belongs to {name} – follows their name and colour, deleted together with them"
+	"household.bag_owner": "Belongs to {name} – follows their name and colour, deleted together with them",
+	"error.save_failed": "Couldn't save: {reason} (HTTP {status})",
+	"error.network": "No connection to the server ({reason}). If you use Brave, turn off Shields for this site.",
+	"activity.moved": "moved",
+	"trip.drag_hint": "Drag items onto another card to move them – into another category, bag or person."
 }

@@ -197,6 +197,7 @@ export type TripOp =
 	| { op: 'promote'; id: string }
 	| { op: 'syncTemplate'; id: string }
 	| { op: 'rename'; name: string }
+	| { op: 'move'; id: string; parent_id: string | null }
 	| { op: 'return'; id: string; returned: boolean }
 	| { op: 'phase'; phase: TripPhase }
 	| { op: 'resetReturn' }
@@ -345,6 +346,19 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 				if (!name) error(400, 'template.err.name');
 				run('UPDATE trips SET name = ? WHERE id = ?', name, tripId);
 				return { upsert: [], removed: [], trip: { name }, activity: logActivity(tripId, uid, actor, 'renamed', name) };
+			}
+			case 'move': {
+				const it = item(op.id);
+				const parent = op.parent_id ? item(op.parent_id) : null;
+				if (parent && parent.kind !== 'group') error(400, 'template.err.parent');
+				// a group can't be moved into itself or its children
+				for (let cur = parent; cur; cur = cur.parent_id ? getTripItem(tripId, cur.parent_id) : null) {
+					if (cur.id === it.id) error(400, 'template.err.cycle');
+				}
+				const siblings = listTripItems(tripId).filter((x) => x.parent_id === (parent?.id ?? null));
+				const sort = Math.max(0, ...siblings.map((x) => x.sort)) + 1;
+				const updated = updateTripItem(tripId, it.id, { parent_id: parent?.id ?? null, sort })!;
+				return { upsert: [updated], removed: [], activity: logActivity(tripId, uid, actor, 'moved', it.name) };
 			}
 			case 'return': {
 				const it = item(op.id);

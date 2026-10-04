@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { provideI18n } from '$lib/i18n';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import Toasts from '$lib/components/Toasts.svelte';
 
 	let { data, children } = $props();
 	const { t } = provideI18n(() => ({ locale: data.locale, messages: data.messages }));
@@ -45,6 +46,8 @@
 <main>
 	{@render children()}
 </main>
+
+<Toasts />
 
 <style>
 	.topbar {

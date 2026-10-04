@@ -7,6 +7,15 @@ export class ApiError extends Error {
 	}
 }
 
+/** Human-readable text for a failed request (shown in a toast). */
+export function describeError(err: unknown, t: (key: string, params?: Record<string, string | number>) => string): string {
+	if (err instanceof ApiError) {
+		const reason = t(err.message);
+		return err.status === 400 || err.status === 404 ? reason : t('error.save_failed', { reason, status: err.status });
+	}
+	return t('error.network', { reason: (err as Error)?.message ?? '' });
+}
+
 /** JSON POST helper; throws ApiError with the server's message key. */
 export async function api<T = unknown>(url: string, body: unknown, method = 'POST'): Promise<T> {
 	const res = await fetch(url, {

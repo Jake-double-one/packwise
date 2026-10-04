@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { api, clientId, live } from '$lib/api';
+	import { api, clientId, describeError, live } from '$lib/api';
+	import { toast } from '$lib/toast.svelte';
 	import { useI18n } from '$lib/i18n';
 	import { childrenMap, depthOf, mergeNodes, MAX_GROUP_DEPTH, ancestors } from '$lib/tree';
 	import type { TemplateNode } from '$lib/types';
@@ -55,12 +56,16 @@
 
 	async function send(op: Record<string, unknown>) {
 		errorMsg = '';
+		// optimistic: edits show immediately, and are rolled back if saving fails
+		const before = nodes;
+		if (op.op === 'update') nodes = nodes.map((n) => (n.id === op.id ? { ...n, ...(op.patch as Partial<TemplateNode>) } : n));
 		try {
 			const res = await api<{ upsert: TemplateNode[]; removed: string[] }>('/api/template', { ...op, client: clientId });
 			nodes = mergeNodes(nodes, res.upsert, res.removed);
 			return res;
 		} catch (err) {
-			errorMsg = t((err as Error).message);
+			if (op.op === 'update') nodes = before;
+			toast(describeError(err, t));
 			return null;
 		}
 	}

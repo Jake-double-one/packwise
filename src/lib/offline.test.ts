@@ -59,6 +59,12 @@ describe('applyLocal', () => {
 		expect(s.todos).toHaveLength(0);
 	});
 
+	it('moves items into another group', () => {
+		const st = { ...base, items: [...base.items, item('h', null, 'group')] };
+		const s = applyLocal(st, { op: 'move', id: 'a', parent_id: 'h' }, null);
+		expect(s.items.find((i) => i.id === 'a')?.parent_id).toBe('h');
+	});
+
 	it('only patches known item fields', () => {
 		const s = applyLocal(base, { op: 'update', id: 'a', patch: { name: 'New', checked: true, qty: 3 } }, null);
 		expect(s.items.find((i) => i.id === 'a')).toMatchObject({ name: 'New', qty: 3, checked: false });
