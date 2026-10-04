@@ -120,6 +120,7 @@ export function createTrip(hh: AppHousehold, user: SessionUser | null, input: Cr
 	const genInput: GenerateInput = {
 		nodes: listTemplate(hh.id),
 		persons: listPersons(hh.id),
+		bags: listBags(hh.id),
 		settings: input.settings,
 		startDate: input.start,
 		endDate: input.end,

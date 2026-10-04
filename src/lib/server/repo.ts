@@ -1,5 +1,5 @@
 import { all, get, newId, now, run, tx } from './db';
-import type { Bag, Person, PersonKind, Role, Rules, TemplateNode, TodoTemplate, Trip, TripItem, TripPhase, TripTodo } from '$lib/types';
+import type { Bag, BagKind, Person, PersonKind, Role, Rules, TemplateNode, TodoTemplate, Trip, TripItem, TripPhase, TripTodo } from '$lib/types';
 
 // ── Households ───────────────────────────────────────────────────────────────
 
@@ -42,13 +42,23 @@ export function createPerson(householdId: string, name: string, kind: PersonKind
 }
 
 export function listBags(householdId: string): Bag[] {
-	return all<Bag>('SELECT id, name, color, icon, sort FROM bags WHERE household_id = ? ORDER BY sort, name', householdId);
+	return all<Bag>('SELECT id, name, color, icon, sort, person_id, kind FROM bags WHERE household_id = ? ORDER BY sort, name', householdId);
 }
 
-export function createBag(householdId: string, name: string, color: string, icon = '🧳') {
+export function createBag(householdId: string, name: string, color: string, icon = '🧳', personId: string | null = null, kind: BagKind = 'other') {
 	const id = newId();
 	const sort = (get<{ s: number | null }>('SELECT MAX(sort) AS s FROM bags WHERE household_id = ?', householdId)?.s ?? 0) + 1;
-	run('INSERT INTO bags (id, household_id, name, color, icon, sort) VALUES (?, ?, ?, ?, ?, ?)', id, householdId, name.trim(), color, icon, sort);
+	run(
+		'INSERT INTO bags (id, household_id, name, color, icon, sort, person_id, kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+		id,
+		householdId,
+		name.trim(),
+		color,
+		icon,
+		sort,
+		personId,
+		kind
+	);
 	return id;
 }
 

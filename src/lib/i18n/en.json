@@ -115,9 +115,9 @@
 	"household.persons_hint": "Everyone you pack for – including kids and pets. People don't need an account.",
 	"household.new_person": "Name of the person",
 	"household.kind": "Type",
-	"household.confirm_delete_person": "Remove {name}?",
+	"household.confirm_delete_person": "Remove {name} together with their bags?",
 	"household.bags": "Bags",
-	"household.bags_hint": "Suitcases and bags get their own colour, so you can see at a glance what goes where.",
+	"household.bags_hint": "Every bag gets its own colour, so you can see at a glance what goes where. New people automatically get a suitcase and a carry-on in their colour (babies only a suitcase) – personal items are put into each traveller's own bag.",
 	"household.new_bag": "e.g. Suitcase 3",
 	"household.confirm_delete_bag": "Remove {name}?",
 	"household.members": "Members",
@@ -460,5 +460,10 @@
 	"activity.todo_done": "did",
 	"activity.todo_undone": "reopened",
 	"activity.todo_added": "added the to-do",
-	"activity.todo_removed": "removed the to-do"
+	"activity.todo_removed": "removed the to-do",
+	"bag.suitcase_of": "{name}'s suitcase",
+	"bag.carryon_of": "{name}'s carry-on",
+	"household.create_bags": "Create bags",
+	"household.create_bags_hint": "Creates a suitcase (and a carry-on for adults and kids) in this person's colour",
+	"household.bag_owner": "Belongs to {name} – follows their name and colour, deleted together with them"
 }

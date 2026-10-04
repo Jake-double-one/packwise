@@ -5,11 +5,12 @@ import { get, run, tx } from '$lib/server/db';
 import { sendMail } from '$lib/server/mail';
 import { messagesFor } from '$lib/server/i18n';
 import { translate } from '$lib/i18n';
-import { addMember, createBag, createHousehold, createPerson, listBags, listMembers, listPersons } from '$lib/server/repo';
+import { addMember, createBag, createHousehold, listBags, listMembers, listPersons } from '$lib/server/repo';
+import { addPersonWithBags, createPersonBags, syncPersonBags } from '$lib/server/persons';
 import { createToken } from '$lib/server/tokens';
 import { str } from '$lib/server/util';
 import { COUNTRIES } from '$lib/data/countries';
-import { starterBags } from '$lib/data/starter';
+import { starterSharedBag } from '$lib/data/starter';
 import type { Actions, PageServerLoad } from './$types';
 import type { PersonKind, Role } from '$lib/types';
 
@@ -52,22 +53,30 @@ export const actions: Actions = {
 		const kind = str(form, 'kind') as PersonKind;
 		if (!name) return fail(400, { error: 'setup.err.name' });
 		const n = listPersons(hh.id).length;
-		createPerson(hh.id, name, KINDS.includes(kind) ? kind : 'adult', color(str(form, 'color'), PALETTE[n % PALETTE.length]));
+		addPersonWithBags(hh.id, name, KINDS.includes(kind) ? kind : 'adult', color(str(form, 'color'), PALETTE[n % PALETTE.length]), null, locals.locale);
 		return { saved: 'person' };
 	},
 	updatePerson: async ({ request, locals }) => {
 		const hh = requireRole(locals, ['owner', 'member']);
 		const form = await request.formData();
 		const kind = str(form, 'kind') as PersonKind;
+		const id = str(form, 'id');
+		const oldName = get<{ name: string }>('SELECT name FROM persons WHERE id = ? AND household_id = ?', id, hh.id)?.name ?? '';
 		run(
 			'UPDATE persons SET name = ?, kind = ?, color = ? WHERE id = ? AND household_id = ?',
 			str(form, 'name') || '?',
 			KINDS.includes(kind) ? kind : 'adult',
 			color(str(form, 'color'), '#6366f1'),
-			str(form, 'id'),
+			id,
 			hh.id
 		);
+		syncPersonBags(hh.id, id, oldName, locals.locale);
 		return { saved: 'person' };
+	},
+	createBags: async ({ request, locals }) => {
+		const hh = requireRole(locals, ['owner', 'member']);
+		createPersonBags(hh.id, str(await request.formData(), 'id'), locals.locale);
+		return { saved: 'bag' };
 	},
 	deletePerson: async ({ request, locals }) => {
 		const hh = requireRole(locals, ['owner', 'member']);
@@ -113,8 +122,9 @@ export const actions: Actions = {
 		const user = event.locals.user;
 		const id = tx(() => {
 			const hh = createHousehold(name, event.locals.household?.home_country ?? null, config.authMode === 'accounts' ? user!.id : null);
-			if (user) createPerson(hh, user.name, 'adult', user.color, user.id);
-			starterBags(event.locals.locale).forEach((b) => createBag(hh, b.name, b.color, b.icon));
+			if (user) addPersonWithBags(hh, user.name, 'adult', user.color, user.id, event.locals.locale);
+			const shared = starterSharedBag(event.locals.locale);
+			createBag(hh, shared.name, shared.color, shared.icon);
 			return hh;
 		});
 		event.cookies.set(HOUSEHOLD_COOKIE, id, cookieOptions(event, 3650));

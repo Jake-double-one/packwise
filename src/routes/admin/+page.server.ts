@@ -2,9 +2,10 @@ import { error, fail } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { createUser, hashPassword, listUsers, publicOrigin } from '$lib/server/auth';
 import { get, run, tx } from '$lib/server/db';
-import { createBag, createHousehold, createPerson, seedTemplate, seedTodos } from '$lib/server/repo';
+import { createBag, createHousehold, seedTemplate, seedTodos } from '$lib/server/repo';
+import { addPersonWithBags } from '$lib/server/persons';
 import { createToken } from '$lib/server/tokens';
-import { starterBags, starterTemplate, starterTodos } from '$lib/data/starter';
+import { starterSharedBag, starterTemplate, starterTodos } from '$lib/data/starter';
 import { str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -35,8 +36,9 @@ export const actions: Actions = {
 		tx(() => {
 			const uid = createUser({ name, email, passwordHash: hash, locale: locals.locale });
 			const hh = createHousehold(name, null, uid);
-			createPerson(hh, name, 'adult', '#6366f1', uid);
-			const bags = starterBags(locals.locale).map((b) => createBag(hh, b.name, b.color, b.icon));
+			const own = addPersonWithBags(hh, name, 'adult', '#6366f1', uid, locals.locale).bags;
+			const shared = starterSharedBag(locals.locale);
+			const bags = [own.suitcase!, createBag(hh, shared.name, shared.color, shared.icon), own.carryon!];
 			seedTemplate(hh, starterTemplate(locals.locale), bags);
 			seedTodos(hh, starterTodos(locals.locale));
 		});

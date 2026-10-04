@@ -3,7 +3,8 @@ import type { StarterItem, StarterNode } from '$lib/server/repo';
 /**
  * Starter templates offered in the setup wizard. Items demonstrate the
  * optional features (chips, quantity rules, power flag) without being noisy.
- * Bag index: 0 = suitcase 1, 1 = suitcase 2, 2 = carry-on.
+ * Bag index: 0 = own suitcase, 1 = shared suitcase, 2 = own carry-on
+ * (personal bags are swapped to each traveller's own bag when generating).
  */
 type Lang = 'en' | 'de';
 
@@ -156,18 +157,11 @@ export function starterTemplate(lang: string): StarterNode[] {
 	return build(DEFS, lang === 'de' ? 'de' : 'en');
 }
 
-export function starterBags(lang: string) {
+/** One shared bag for things that belong to everybody; personal bags come with each person. */
+export function starterSharedBag(lang: string) {
 	return lang === 'de'
-		? [
-				{ name: 'Koffer 1', color: '#3b82f6', icon: '🧳' },
-				{ name: 'Koffer 2', color: '#10b981', icon: '🧳' },
-				{ name: 'Handgepäck', color: '#f59e0b', icon: '🎒' }
-			]
-		: [
-				{ name: 'Suitcase 1', color: '#3b82f6', icon: '🧳' },
-				{ name: 'Suitcase 2', color: '#10b981', icon: '🧳' },
-				{ name: 'Carry-on', color: '#f59e0b', icon: '🎒' }
-			];
+		? { name: 'Gemeinsamer Koffer', color: '#10b981', icon: '🧳' }
+		: { name: 'Shared suitcase', color: '#10b981', icon: '🧳' };
 }
 
 /** Starter to-dos before departure (days_before = due x days before the start date). */

@@ -185,6 +185,10 @@ const MIGRATIONS: string[] = [
 		updated_at INTEGER NOT NULL
 	);
 	CREATE INDEX idx_trip_todos_trip ON trip_todos(trip_id);
+	`,
+	/* 3 – personal bags: a bag can belong to a person (deleted with them) */ `
+	ALTER TABLE bags ADD COLUMN person_id TEXT REFERENCES persons(id) ON DELETE CASCADE;
+	ALTER TABLE bags ADD COLUMN kind TEXT NOT NULL DEFAULT 'other'; -- suitcase | carryon | other
 	`
 ];
 

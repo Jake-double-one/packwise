@@ -151,6 +151,7 @@
 		generate({
 			nodes: data.nodes,
 			persons: data.persons,
+			bags: data.bags,
 			settings,
 			startDate: start,
 			endDate: end,

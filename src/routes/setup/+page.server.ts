@@ -10,8 +10,9 @@ import {
 	userCount
 } from '$lib/server/auth';
 import { tx } from '$lib/server/db';
-import { createBag, createHousehold, createPerson, seedTemplate, seedTodos } from '$lib/server/repo';
-import { starterBags, starterTemplate, starterTodos } from '$lib/data/starter';
+import { createBag, createHousehold, seedTemplate, seedTodos } from '$lib/server/repo';
+import { addPersonWithBags } from '$lib/server/persons';
+import { starterSharedBag, starterTemplate, starterTodos } from '$lib/data/starter';
 import { COUNTRIES } from '$lib/data/countries';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -64,8 +65,9 @@ export const actions: Actions = {
 				locale: values.lang
 			});
 			const hh = createHousehold(values.household, values.country || null, uid);
-			createPerson(hh, values.name, 'adult', '#6366f1', uid);
-			const bagIds = starterBags(values.lang).map((b) => createBag(hh, b.name, b.color, b.icon));
+			const { bags } = addPersonWithBags(hh, values.name, 'adult', '#6366f1', uid, values.lang);
+			const shared = starterSharedBag(values.lang);
+			const bagIds = [bags.suitcase!, createBag(hh, shared.name, shared.color, shared.icon), bags.carryon!];
 			if (values.starter) {
 				seedTemplate(hh, starterTemplate(values.lang), bagIds);
 				seedTodos(hh, starterTodos(values.lang));

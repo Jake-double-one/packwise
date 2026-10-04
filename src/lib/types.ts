@@ -16,12 +16,17 @@ export interface Person {
 	sort: number;
 }
 
+export type BagKind = 'suitcase' | 'carryon' | 'other';
+
 export interface Bag {
 	id: string;
 	name: string;
 	color: string;
 	icon: string;
 	sort: number;
+	/** owner – personal bags are created with a person and deleted with them */
+	person_id: string | null;
+	kind: BagKind;
 }
 
 export interface TemplateNode {

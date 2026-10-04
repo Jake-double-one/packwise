@@ -1,7 +1,8 @@
 import { error, redirect } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { get } from '$lib/server/db';
-import { addMember, createPerson } from '$lib/server/repo';
+import { addMember } from '$lib/server/repo';
+import { addPersonWithBags } from '$lib/server/persons';
 import { consumeToken, readToken } from '$lib/server/tokens';
 import { PALETTE } from '$lib/server/auth';
 import type { Actions, PageServerLoad } from './$types';
@@ -21,7 +22,7 @@ export const actions: Actions = {
 		const already = get('SELECT 1 FROM memberships WHERE household_id = ? AND user_id = ?', token.household_id, locals.user.id);
 		if (!already) {
 			addMember(token.household_id, locals.user.id, token.role ?? 'member');
-			createPerson(token.household_id, locals.user.name, 'adult', PALETTE[Math.floor(Math.random() * PALETTE.length)], locals.user.id);
+			addPersonWithBags(token.household_id, locals.user.name, 'adult', PALETTE[Math.floor(Math.random() * PALETTE.length)], locals.user.id, locals.locale);
 		}
 		consumeToken(params.token);
 		redirect(303, '/');

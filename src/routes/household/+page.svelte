@@ -68,6 +68,9 @@
 							<input type="color" name="color" value={p.color} aria-label={t('settings.color')} disabled={!canEdit} />
 							{#if canEdit}
 								<button class="btn small">{t('common.save')}</button>
+								{#if p.kind !== 'pet' && !data.bags.some((b) => b.person_id === p.id)}
+									<button class="btn small" formaction="?/createBags" title={t('household.create_bags_hint')}>🧳 {t('household.create_bags')}</button>
+								{/if}
 								<button class="btn small danger" formaction="?/deletePerson" onclick={(e) => { if (!confirm(t('household.confirm_delete_person', { name: p.name }))) e.preventDefault(); }}>✕</button>
 							{/if}
 						</form>
@@ -97,6 +100,10 @@
 								{#each bagIcons as i}<option value={i}>{i}</option>{/each}
 							</select>
 							<input class="grow name" name="name" value={b.name} aria-label={t('settings.name')} disabled={!canEdit} />
+							{#if b.person_id}
+								{@const owner = data.persons.find((p) => p.id === b.person_id)}
+								{#if owner}<span title={t('household.bag_owner', { name: owner.name })}><Avatar name={owner.name} color={owner.color} size={26} /></span>{/if}
+							{/if}
 							<input type="color" name="color" value={b.color} aria-label={t('settings.color')} disabled={!canEdit} />
 							{#if canEdit}
 								<button class="btn small">{t('common.save')}</button>

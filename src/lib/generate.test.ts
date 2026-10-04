@@ -114,6 +114,25 @@ describe('generate', () => {
 		expect(res.excluded.find((e) => e.name === 'Glasses')?.reason).toContain('Kid');
 	});
 
+	it("puts personal items into each traveller's own bag", () => {
+		const bags = [
+			{ id: 'b1', name: 'Suitcase Dennis', color: '', icon: '', sort: 1, person_id: 'p1', kind: 'suitcase' as const },
+			{ id: 'b2', name: 'Suitcase Melissa', color: '', icon: '', sort: 2, person_id: 'p2', kind: 'suitcase' as const },
+			{ id: 'b3', name: 'Carry-on Dennis', color: '', icon: '', sort: 3, person_id: 'p1', kind: 'carryon' as const },
+			{ id: 'b4', name: 'Shared', color: '', icon: '', sort: 4, person_id: null, kind: 'other' as const }
+		];
+		const socks = node({ name: 'Socks', per_person: true, bag_id: 'b1' });
+		const passport = node({ name: 'Passport', per_person: true, bag_id: 'b3' });
+		const shampoo = node({ name: 'Shampoo', bag_id: 'b4' });
+		const res = generate(input([socks, passport, shampoo], { bags }));
+		const bagOf = (name: string, person: string | null) => res.items.find((i) => i.name === name && i.person_id === person)?.bag_id;
+		expect(bagOf('Socks', 'p1')).toBe('b1');
+		expect(bagOf('Socks', 'p2')).toBe('b2');
+		// Melissa has no carry-on → falls back to her suitcase
+		expect(bagOf('Passport', 'p2')).toBe('b2');
+		expect(bagOf('Shampoo', null)).toBe('b4');
+	});
+
 	it('respects forced includes and excludes', () => {
 		const a = node({ name: 'A', rules: { activity: { ski: 1 } } });
 		const b = node({ name: 'B' });

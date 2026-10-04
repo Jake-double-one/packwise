@@ -2,9 +2,10 @@ import { fail, redirect } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { clientIp, createSession, createUser, hashPassword, PALETTE, rateLimit } from '$lib/server/auth';
 import { get, tx } from '$lib/server/db';
-import { addMember, createBag, createHousehold, createPerson, seedTemplate, seedTodos } from '$lib/server/repo';
+import { addMember, createBag, createHousehold, seedTemplate, seedTodos } from '$lib/server/repo';
+import { addPersonWithBags } from '$lib/server/persons';
 import { consumeToken, readToken } from '$lib/server/tokens';
-import { starterBags, starterTemplate, starterTodos } from '$lib/data/starter';
+import { starterSharedBag, starterTemplate, starterTodos } from '$lib/data/starter';
 import { str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -48,11 +49,12 @@ export const actions: Actions = {
 			const uid = createUser({ name, email, passwordHash: hash, locale: lang });
 			if (res.token?.household_id) {
 				addMember(res.token.household_id, uid, res.token.role ?? 'member');
-				createPerson(res.token.household_id, name, 'adult', PALETTE[Math.floor(Math.random() * PALETTE.length)], uid);
+				addPersonWithBags(res.token.household_id, name, 'adult', PALETTE[Math.floor(Math.random() * PALETTE.length)], uid, lang);
 			} else {
 				const hh = createHousehold(name, null, uid);
-				createPerson(hh, name, 'adult', '#6366f1', uid);
-				const bags = starterBags(lang).map((b) => createBag(hh, b.name, b.color, b.icon));
+				const own = addPersonWithBags(hh, name, 'adult', '#6366f1', uid, lang).bags;
+				const shared = starterSharedBag(lang);
+				const bags = [own.suitcase!, createBag(hh, shared.name, shared.color, shared.icon), own.carryon!];
 				seedTemplate(hh, starterTemplate(lang), bags);
 				seedTodos(hh, starterTodos(lang));
 			}

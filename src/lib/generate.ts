@@ -1,7 +1,7 @@
 import { DIMENSION_MAP, ROAD_TRANSPORT } from './context';
 import { analysePlugs, COUNTRIES, countryName, currencyName } from './data/countries';
 import { ROAD_RULES } from './data/road-rules';
-import type { Person, Rules, TemplateNode, TodoTemplate, TripContext, TripSettings, Warning, WeatherSummary } from './types';
+import type { Bag, Person, Rules, TemplateNode, TodoTemplate, TripContext, TripSettings, Warning, WeatherSummary } from './types';
 import { tripLength } from './weather';
 
 export type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -55,6 +55,8 @@ export function describeCheck(t: Translate, check: RuleCheck): string {
 export interface GenerateInput {
 	nodes: TemplateNode[];
 	persons: Person[];
+	/** used to move personal items into each traveller's own bag */
+	bags?: Bag[];
 	settings: TripSettings;
 	startDate: string;
 	endDate: string;
@@ -118,6 +120,15 @@ export function generate(input: GenerateInput): GenerateResult {
 	const travelling = input.persons.filter((p) => settings.persons.includes(p.id));
 	const personName = new Map(input.persons.map((p) => [p.id, p.name]));
 	const forceIn = new Set(input.forceInclude ?? []);
+	const bags = input.bags ?? [];
+	const bagById = new Map(bags.map((b) => [b.id, b]));
+	/** A personal bag of someone else → the owner's own bag of the same kind (or any own bag). */
+	const ownBag = (bagId: string | null, personId: string | null): string | null => {
+		const bag = bagId ? bagById.get(bagId) : undefined;
+		if (!bag?.person_id || !personId || bag.person_id === personId) return bagId;
+		const own = bags.filter((b) => b.person_id === personId);
+		return (own.find((b) => b.kind === bag.kind) ?? own.find((b) => b.kind === 'suitcase') ?? own[0])?.id ?? bagId;
+	};
 	const forceOut = new Set(input.forceExclude ?? []);
 
 	const children = new Map<string | null, TemplateNode[]>();
@@ -200,10 +211,10 @@ export function generate(input: GenerateInput): GenerateResult {
 			const owners = node.per_person && !node.person_id ? travelling.filter((p) => p.kind !== 'pet') : [];
 			if (owners.length) {
 				owners.forEach((p, i) =>
-					items.push({ ...base, key: `i${seq++}`, name: node.name, person_id: p.id, sort: node.sort + i / 1000 })
+					items.push({ ...base, key: `i${seq++}`, name: node.name, person_id: p.id, bag_id: ownBag(node.bag_id, p.id), sort: node.sort + i / 1000 })
 				);
 			} else {
-				items.push({ ...base, key: `i${seq++}`, name: node.name, person_id: node.person_id });
+				items.push({ ...base, key: `i${seq++}`, name: node.name, person_id: node.person_id, bag_id: ownBag(node.bag_id, node.person_id) });
 			}
 			any = true;
 		}

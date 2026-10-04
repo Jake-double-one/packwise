@@ -115,9 +115,9 @@
 	"household.persons_hint": "Alle, für die gepackt wird – auch Kinder und Haustiere. Personen brauchen kein Konto.",
 	"household.new_person": "Name der Person",
 	"household.kind": "Art",
-	"household.confirm_delete_person": "{name} entfernen?",
+	"household.confirm_delete_person": "{name} samt eigenen Koffern entfernen?",
 	"household.bags": "Koffer & Taschen",
-	"household.bags_hint": "Jeder Koffer bekommt eine eigene Farbe – so siehst du auf einen Blick, was wohin gehört.",
+	"household.bags_hint": "Jeder Koffer bekommt eine eigene Farbe – so siehst du auf einen Blick, was wohin gehört. Neue Personen bekommen automatisch Koffer und Handgepäck in ihrer Farbe (Babys nur einen Koffer) – persönliche Artikel landen beim Generieren im eigenen Koffer.",
 	"household.new_bag": "z. B. Koffer 3",
 	"household.confirm_delete_bag": "{name} entfernen?",
 	"household.members": "Mitglieder",
@@ -460,5 +460,10 @@
 	"activity.todo_done": "hat erledigt:",
 	"activity.todo_undone": "hat wieder geöffnet:",
 	"activity.todo_added": "hat das To-do hinzugefügt:",
-	"activity.todo_removed": "hat das To-do entfernt:"
+	"activity.todo_removed": "hat das To-do entfernt:",
+	"bag.suitcase_of": "Koffer {name}",
+	"bag.carryon_of": "Handgepäck {name}",
+	"household.create_bags": "Koffer anlegen",
+	"household.create_bags_hint": "Legt einen Koffer (und für Erwachsene und Kinder ein Handgepäck) in der Farbe der Person an",
+	"household.bag_owner": "Gehört {name} – übernimmt Name und Farbe, wird mit der Person gelöscht"
 }

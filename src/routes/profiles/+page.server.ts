@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { cookieOptions, createUser, getUser, listUsers, PROFILE_COOKIE } from '$lib/server/auth';
-import { createPerson } from '$lib/server/repo';
+import { addPersonWithBags } from '$lib/server/persons';
 import { safeNext, str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -26,7 +26,7 @@ export const actions: Actions = {
 		const id = createUser({ name, locale: event.locals.locale });
 		// a new profile also packs: add it as a person to the current household
 		const user = getUser(id)!;
-		if (event.locals.household) createPerson(event.locals.household.id, name, 'adult', user.color, id);
+		if (event.locals.household) addPersonWithBags(event.locals.household.id, name, 'adult', user.color, id, event.locals.locale);
 		event.cookies.set(PROFILE_COOKIE, id, cookieOptions(event, 3650));
 		redirect(303, safeNext(event.url.searchParams.get('next')));
 	}
