@@ -135,7 +135,7 @@ Stack: SvelteKit 2 / Svelte 5, Node's built-in `node:sqlite` (no native dependen
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for what's done and what's planned next.
+See [ROADMAP.md](ROADMAP.md) for what's done and what's planned next. Release notes: [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
