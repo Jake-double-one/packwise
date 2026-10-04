@@ -66,6 +66,8 @@ Open `http://<host>:8080`. The setup wizard asks for your name, household, home 
 
 Without Portainer: `docker compose up -d` with the [`docker-compose.yml`](docker-compose.yml) from this repo.
 
+**Versions:** `latest` follows `main`. Every release is also published under its version (e.g. `ghcr.io/jake-double-one/packwise:0.1`), so you can pin a version and update deliberately. Back up `./data` before switching to a new version – database migrations run automatically on start.
+
 ## Login modes (`AUTH_MODE`)
 
 | Mode | Behaviour | Good for |
