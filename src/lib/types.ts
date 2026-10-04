@@ -130,8 +130,28 @@ export interface TripTodo {
 
 export type TripPhase = 'pack' | 'return';
 
-export type NoteKind = 'address' | 'phone' | 'link' | 'code' | 'text' | 'secret';
-export const NOTE_KINDS: NoteKind[] = ['address', 'phone', 'link', 'code', 'text', 'secret'];
+export type NoteKind = 'address' | 'phone' | 'link' | 'code' | 'text' | 'secret' | 'car';
+export const NOTE_KINDS: NoteKind[] = ['address', 'phone', 'link', 'code', 'text', 'secret', 'car'];
+
+/** Structured value of a 'car' (rental car) note, stored as JSON in TripNote.value. */
+export interface CarRental {
+	company: string;
+	booking: string;
+	pickup_at: string;
+	return_at: string;
+	pickup_address: string;
+	return_address: string;
+}
+
+export function parseCar(value: string): CarRental {
+	const empty: CarRental = { company: '', booking: '', pickup_at: '', return_at: '', pickup_address: '', return_address: '' };
+	try {
+		const v = JSON.parse(value || '{}');
+		return Object.fromEntries(Object.keys(empty).map((k) => [k, typeof v[k] === 'string' ? v[k] : ''])) as unknown as CarRental;
+	} catch {
+		return empty;
+	}
+}
 
 /** Free information about a trip: accommodation address, booking number, Wi-Fi password … */
 export interface TripNote {

@@ -533,5 +533,18 @@
 	"activity.note_added": "hat die Notiz hinzugefügt:",
 	"activity.note_edited": "hat die Notiz bearbeitet:",
 	"activity.note_removed": "hat die Notiz entfernt:",
-	"activity.edited_trip": "hat die Reise bearbeitet:"
+	"activity.edited_trip": "hat die Reise bearbeitet:",
+	"notes.kind.car": "Mietwagen",
+	"notes.preset.car": "Mietwagen",
+	"notes.car.company": "Anbieter",
+	"notes.car.booking": "Buchungsnummer",
+	"notes.car.pickup_at": "Abholung",
+	"notes.car.return_at": "Abgabe",
+	"notes.car.pickup_address": "Adresse Abholung",
+	"notes.car.return_address": "Adresse Abgabe",
+	"notes.car.other_return": "Abgabe an anderer Adresse",
+	"notes.car.pickup": "Abholung",
+	"notes.car.return": "Abgabe",
+	"notes.car.same_place": "Wie Abholung",
+	"notes.placeholder.car": ""
 }

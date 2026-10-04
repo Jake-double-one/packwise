@@ -19,7 +19,7 @@ What's done and what's planned for Packwise. Ideas and feedback are welcome as G
 - Personal bags per person (colour, own suitcase/carry-on), sortable people and bags
 - Two-column trip view with drag & drop between categories, bags and travellers
 - Trip info tab: OpenStreetMap map, day-by-day weather (forecast or 10-year average), country facts
-- Trip notes (address, phone, link, code, text, secret fields) shared live and offline; editing destination and dates
+- Trip notes (address, rental car, phone, link, code, text, secret fields) shared live and offline; editing destination and dates
 
 ## 🔜 Next
 

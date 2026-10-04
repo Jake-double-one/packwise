@@ -533,5 +533,18 @@
 	"activity.note_added": "added the note",
 	"activity.note_edited": "edited the note",
 	"activity.note_removed": "removed the note",
-	"activity.edited_trip": "edited the trip:"
+	"activity.edited_trip": "edited the trip:",
+	"notes.kind.car": "Rental car",
+	"notes.preset.car": "Rental car",
+	"notes.car.company": "Company",
+	"notes.car.booking": "Booking number",
+	"notes.car.pickup_at": "Pick-up",
+	"notes.car.return_at": "Drop-off",
+	"notes.car.pickup_address": "Pick-up address",
+	"notes.car.return_address": "Drop-off address",
+	"notes.car.other_return": "Drop-off at a different address",
+	"notes.car.pickup": "Pick-up",
+	"notes.car.return": "Drop-off",
+	"notes.car.same_place": "Same place as pick-up",
+	"notes.placeholder.car": ""
 }

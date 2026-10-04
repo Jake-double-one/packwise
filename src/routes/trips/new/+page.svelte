@@ -3,13 +3,13 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api';
 	import { DIMENSIONS } from '$lib/context';
-	import { countryFlag, countryName, regionOf } from '$lib/data/countries';
+	import { countryName, regionOf } from '$lib/data/countries';
 	import { generate, generateTodos, todoDue } from '$lib/generate';
 	import { formatDate, useI18n } from '$lib/i18n';
 	import { classifyClimate, seasonOf, tripLength, weatherIcon } from '$lib/weather';
 	import type { TripContext, WeatherSummary } from '$lib/types';
 	import Avatar from '$lib/components/Avatar.svelte';
-	import CountrySelect from '$lib/components/CountrySelect.svelte';
+	import PlaceSearch, { type Place } from '$lib/components/PlaceSearch.svelte';
 	import WeatherCard from '$lib/components/WeatherCard.svelte';
 	import WarningList from '$lib/components/WarningList.svelte';
 
@@ -17,24 +17,13 @@
 	const i18n = useI18n();
 	const { t } = i18n;
 
-	interface Place {
-		name: string;
-		admin1: string | null;
-		country: string | null;
-		country_code: string | null;
-		lat: number;
-		lon: number;
-	}
-
 	const iso = (d: Date) => d.toISOString().slice(0, 10);
 	const addDays = (s: string, n: number) => iso(new Date(Date.parse(s) + n * 86_400_000));
 
 	// ── form state ──────────────────────────────────────────────────────────
 	let query = $state('');
-	let places = $state<Place[]>([]);
 	let place = $state<Place | null>(null);
 	let manualCountry = $state('');
-	let showSuggestions = $state(false);
 	let name = $state('');
 	let nameTouched = $state(false);
 	let start = $state(addDays(iso(new Date()), 14));
@@ -81,31 +70,6 @@
 		const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
 		if (isAuto) overrides = { ...overrides, [dim]: dim === 'season' ? next.slice(-1) : next };
 		else manual = { ...manual, [dim]: next };
-	}
-
-	// ── destination search ──────────────────────────────────────────────────
-	let searchTimer: ReturnType<typeof setTimeout>;
-	function onQuery() {
-		clearTimeout(searchTimer);
-		place = null;
-		if (query.trim().length < 2) {
-			places = [];
-			return;
-		}
-		searchTimer = setTimeout(async () => {
-			try {
-				const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
-				places = (await res.json()).places ?? [];
-				showSuggestions = true;
-			} catch {
-				places = [];
-			}
-		}, 300);
-	}
-	function choose(p: Place) {
-		place = p;
-		query = [p.name, p.admin1, p.country].filter(Boolean).join(', ');
-		showSuggestions = false;
 	}
 
 	// ── weather ─────────────────────────────────────────────────────────────
@@ -221,37 +185,7 @@
 		<div class="form">
 			<section class="card">
 				<h2>📍 {t('wizard.where')}</h2>
-				<div class="field search">
-					<label for="dest">{t('wizard.destination')}</label>
-					<input
-						id="dest"
-						type="search"
-						autocomplete="off"
-						placeholder={t('wizard.destination_placeholder')}
-						bind:value={query}
-						oninput={onQuery}
-						onfocus={() => (showSuggestions = places.length > 0)}
-						onblur={() => setTimeout(() => (showSuggestions = false), 150)}
-					/>
-					{#if showSuggestions && places.length}
-						<ul class="suggestions">
-							{#each places as p}
-								<li>
-									<button type="button" onclick={() => choose(p)}>
-										{countryFlag(p.country_code)} <strong>{p.name}</strong>
-										<span class="muted small">{[p.admin1, p.country].filter(Boolean).join(', ')}</span>
-									</button>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-				</div>
-				{#if !place}
-					<div class="field">
-						<label for="country">{t('wizard.country_manual')}</label>
-						<CountrySelect bind:value={manualCountry} />
-					</div>
-				{/if}
+				<PlaceSearch bind:place bind:country={manualCountry} bind:query />
 				<div class="grid-2">
 					<div class="field">
 						<label for="start">{t('wizard.start')}</label>
@@ -428,40 +362,6 @@
 			position: static;
 			max-height: none;
 		}
-	}
-	.search {
-		position: relative;
-	}
-	.suggestions {
-		position: absolute;
-		z-index: 10;
-		left: 0;
-		right: 0;
-		list-style: none;
-		margin: 0.25rem 0 0;
-		padding: 0.25rem;
-		background: var(--surface);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		box-shadow: var(--shadow-lg);
-	}
-	.suggestions button {
-		width: 100%;
-		text-align: left;
-		background: none;
-		border: none;
-		color: var(--text);
-		font: inherit;
-		padding: 0.5rem 0.6rem;
-		border-radius: 6px;
-		cursor: pointer;
-		display: flex;
-		gap: 0.4rem;
-		align-items: baseline;
-		flex-wrap: wrap;
-	}
-	.suggestions button:hover {
-		background: var(--surface-2);
 	}
 	.dim {
 		margin-bottom: 0.8rem;

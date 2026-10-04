@@ -24,6 +24,17 @@
 
 	let places = $state<Place[]>([]);
 	let open = $state(false);
+	let active = $state(-1);
+
+	function onKey(e: KeyboardEvent) {
+		if (!open || !places.length) return;
+		if (e.key === 'ArrowDown') active = (active + 1) % places.length;
+		else if (e.key === 'ArrowUp') active = (active - 1 + places.length) % places.length;
+		else if (e.key === 'Enter' && active >= 0) choose(places[active]);
+		else if (e.key === 'Escape') open = false;
+		else return;
+		e.preventDefault();
+	}
 	let timer: ReturnType<typeof setTimeout>;
 
 	function onInput() {
@@ -38,6 +49,7 @@
 			try {
 				const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
 				places = (await res.json()).places ?? [];
+				active = -1;
 				open = true;
 			} catch {
 				places = [];
@@ -63,14 +75,20 @@
 		placeholder={t('wizard.destination_placeholder')}
 		bind:value={query}
 		oninput={onInput}
+		onkeydown={onKey}
 		onfocus={() => (open = places.length > 0)}
-		onblur={() => setTimeout(() => (open = false), 150)}
+		onblur={() => (open = false)}
+		role="combobox"
+		aria-expanded={open}
+		aria-controls="place-list"
+		aria-autocomplete="list"
 	/>
 	{#if open && places.length}
-		<ul class="suggestions">
-			{#each places as p}
-				<li>
-					<button type="button" onclick={() => choose(p)}>
+		<ul class="suggestions" id="place-list" role="listbox">
+			{#each places as p, i}
+				<li role="option" aria-selected={i === active}>
+					<!-- mousedown would blur the input and close the list before the click arrives -->
+					<button type="button" class:active={i === active} onmousedown={(e) => e.preventDefault()} onclick={() => choose(p)}>
 						{countryFlag(p.country_code)} <strong>{p.name}</strong>
 						<span class="muted small">{[p.admin1, p.country].filter(Boolean).join(', ')}</span>
 					</button>
@@ -118,7 +136,8 @@
 		align-items: baseline;
 		flex-wrap: wrap;
 	}
-	.suggestions button:hover {
+	.suggestions button:hover,
+	.suggestions button.active {
 		background: var(--surface-2);
 	}
 </style>
