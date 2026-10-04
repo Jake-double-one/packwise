@@ -95,6 +95,12 @@ In every mode, **profiles / users ≠ people**. People are who you pack for; pro
 
 Packwise works behind Traefik, Nginx Proxy Manager, Caddy and Authentik without extra settings. Live updates use Server-Sent Events. If your proxy buffers responses, disable buffering for `/api/*/live` (Packwise already sends `X-Accel-Buffering: no` for Nginx).
 
+## Troubleshooting
+
+**Brave browser: some functions don't work.** With Brave Shields active, some requests can be blocked (Brave's filter lists also apply to self-hosted apps). Open Packwise, tap the Brave lion icon in the address bar and turn **Shields off for this site**. The setting is remembered per domain. Packwise loads no ads, trackers or third-party scripts, so nothing is lost.
+
+**Live updates don't arrive behind a reverse proxy.** Disable response buffering for `/api/*/live` (Server-Sent Events).
+
 ## Adding a language
 
 Copy [`src/lib/i18n/en.json`](src/lib/i18n/en.json) to `data/locales/<code>.json` (e.g. `fr.json`), translate the values, set `"_name": "Français"` and restart the container. The language then appears in the settings. You can also override single keys of English or German this way.
@@ -129,5 +135,7 @@ See [ROADMAP.md](ROADMAP.md) for what's done and what's planned next.
 4. **Neue Reise**: Ziel, Datum, Mitreisende, Anreise und Unterkunft wählen. Die Vorschau zeigt, was warum eingepackt wird, und bezieht Wetter, Adapter und Vignetten mit ein.
 5. Den Link oder QR-Code teilen und gemeinsam abhaken. Mit **↑ Template** landen neue Artikel fürs nächste Mal im Template.
 6. Optional die **To-dos vor der Abfahrt** einschalten. Für die Heimreise auf **🏠 Rückreise** umschalten. Abhaken funktioniert auch **offline**.
+
+**Brave-Browser:** Falls Funktionen nicht gehen, für die Packwise-Adresse die Shields deaktivieren (Löwen-Symbol in der Adressleiste).
 
 Login-Modi: `AUTH_MODE=none` (ohne Login), `local` (ein gemeinsames Passwort, Standard) oder `accounts` (Konten mit E-Mail und Passwort, Einladungen, SMTP).

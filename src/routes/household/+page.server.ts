@@ -125,7 +125,7 @@ export const actions: Actions = {
 		const id = str(await event.request.formData(), 'id');
 		if (!householdsFor(event.locals.user).some((h) => h.id === id)) error(403, 'error.forbidden');
 		event.cookies.set(HOUSEHOLD_COOKIE, id, cookieOptions(event, 3650));
-		redirect(303, '/');
+		redirect(303, '/household');
 	},
 	create: async (event) => {
 		const form = await event.request.formData();
