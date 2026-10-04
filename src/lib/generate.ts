@@ -145,7 +145,10 @@ export function generate(input: GenerateInput): GenerateResult {
 	let seq = 0;
 
 	/** Returns true if anything below was included. */
-	const walk = (parentId: string | null, parentKey: string | null, path: string[], blocked: string | null): boolean => {
+	const pets = travelling.filter((p) => p.kind === 'pet');
+	/** Items that are only packed because a pet travels (directly or via their group) belong to that pet. */
+	const forPets = (rules: Rules | undefined) => rules?.travelers?.pet === 1;
+	const walk = (parentId: string | null, parentKey: string | null, path: string[], blocked: string | null, petOnly = false): boolean => {
 		let any = false;
 		for (const node of children.get(parentId) ?? []) {
 			const check = checkRules(node.rules, ctx);
@@ -173,7 +176,7 @@ export function generate(input: GenerateInput): GenerateResult {
 				};
 				const index = items.length;
 				items.push(groupItem);
-				const has = walk(node.id, key, [...path, node.name], blockedHere);
+				const has = walk(node.id, key, [...path, node.name], blockedHere, petOnly || forPets(node.rules));
 				if (has) any = true;
 				else items.splice(index, 1);
 				continue;
@@ -208,7 +211,8 @@ export function generate(input: GenerateInput): GenerateResult {
 				consumable: node.consumable,
 				note: node.note
 			};
-			const owners = node.per_person && !node.person_id ? travelling.filter((p) => p.kind !== 'pet') : [];
+			const isPetItem = !node.person_id && !node.per_person && (petOnly || forPets(node.rules));
+			const owners = isPetItem ? pets : node.per_person && !node.person_id ? travelling.filter((p) => p.kind !== 'pet') : [];
 			if (owners.length) {
 				owners.forEach((p, i) =>
 					items.push({ ...base, key: `i${seq++}`, name: node.name, person_id: p.id, bag_id: ownBag(node.bag_id, p.id), sort: node.sort + i / 1000 })

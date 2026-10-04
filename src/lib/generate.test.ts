@@ -133,6 +133,21 @@ describe('generate', () => {
 		expect(bagOf('Shampoo', null)).toBe('b4');
 	});
 
+	it('gives pet-only items to the travelling pets', () => {
+		const pets: Person[] = [
+			...persons,
+			{ id: 'd1', name: 'Amy', kind: 'pet', color: '#333', user_id: null, sort: 4 },
+			{ id: 'd2', name: 'Bello', kind: 'pet', color: '#444', user_id: null, sort: 5 }
+		];
+		const group = node({ name: 'Pet', kind: 'group', rules: { travelers: { pet: 1 } } });
+		const lead = node({ name: 'Lead', parent_id: group.id });
+		const towel = node({ name: 'Towel' });
+		const settings = { persons: ['p1', 'd1', 'd2'], context: { travelers: ['pet'] }, laundryDays: 0 };
+		const res = generate(input([group, lead, towel], { persons: pets, settings }));
+		expect(res.items.filter((i) => i.name === 'Lead').map((i) => i.person_id)).toEqual(['d1', 'd2']);
+		expect(res.items.find((i) => i.name === 'Towel')?.person_id).toBeNull();
+	});
+
 	it('respects forced includes and excludes', () => {
 		const a = node({ name: 'A', rules: { activity: { ski: 1 } } });
 		const b = node({ name: 'B' });

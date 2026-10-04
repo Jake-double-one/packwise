@@ -353,7 +353,7 @@
 	"trip.pending_template_other": "{count} items differ from the template – use “↑ Template” to keep them for next time.",
 	"trip.view_category": "Categories",
 	"trip.view_bag": "Bags",
-	"trip.view_person": "People",
+	"trip.view_person": "Travellers",
 	"trip.everyone": "Everyone",
 	"trip.shared": "Shared",
 	"trip.filter_person": "Filter by person",

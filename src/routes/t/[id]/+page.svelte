@@ -374,14 +374,16 @@
 		if (view === 'category') return [];
 		const key = view === 'bag' ? 'bag_id' : 'person_id';
 		const source = view === 'bag' ? data.bags : travellers.length ? travellers : data.persons;
+		const kindIcon: Record<string, string> = { pet: '🐾 ', baby: '👶 ', child: '🧒 ' };
 		const groups = source.map((s) => ({
 			id: s.id,
-			name: 'icon' in s ? `${s.icon} ${s.name}` : s.name,
+			name: 'icon' in s ? `${s.icon} ${s.name}` : `${kindIcon[(s as { kind?: string }).kind ?? ''] ?? ''}${s.name}`,
 			color: s.color,
 			items: allItems.filter((i) => i[key] === s.id)
 		}));
 		groups.push({ id: '', name: view === 'bag' ? t('trip.no_bag') : t('trip.shared'), color: '', items: allItems.filter((i) => !i[key] || !source.some((s) => s.id === i[key])) });
-		return groups.filter((g) => g.items.length);
+		// every traveller (pets too) gets a card – also as a drop target when still empty
+		return groups.filter((g) => g.items.length || (view === 'person' && g.id !== ''));
 	});
 
 	const ringsPerson = $derived(
