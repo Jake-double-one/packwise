@@ -56,10 +56,18 @@
 			<h2>{t('household.persons')}</h2>
 			<p class="small muted">{t('household.persons_hint')}</p>
 			<ul class="list">
-				{#each data.persons as p (p.id)}
+				{#each data.persons as p, i (p.id)}
 					<li>
 						<form method="POST" action="?/updatePerson" class="row wrap" use:enhance={keep}>
 							<input type="hidden" name="id" value={p.id} />
+							<!-- Enter in a field must save, not move: the first submit button is the default -->
+							<button class="sr-only" tabindex="-1" aria-hidden="true">{t('common.save')}</button>
+							{#if canEdit}
+								<div class="order">
+									<button class="btn ghost icon" formaction="?/movePerson" name="dir" value="up" disabled={i === 0} title={t('common.move_up')}>↑</button>
+									<button class="btn ghost icon" formaction="?/movePerson" name="dir" value="down" disabled={i === data.persons.length - 1} title={t('common.move_down')}>↓</button>
+								</div>
+							{/if}
 							<Avatar name={p.name} color={p.color} size={32} />
 							<input class="grow name" name="name" value={p.name} aria-label={t('settings.name')} disabled={!canEdit} />
 							<select name="kind" value={p.kind} aria-label={t('household.kind')} disabled={!canEdit}>
@@ -92,10 +100,18 @@
 			<h2>{t('household.bags')}</h2>
 			<p class="small muted">{t('household.bags_hint')}</p>
 			<ul class="list">
-				{#each data.bags as b (b.id)}
+				{#each data.bags as b, i (b.id)}
 					<li class="bag" style="--bag:{b.color}">
 						<form method="POST" action="?/updateBag" class="row wrap" use:enhance={keep}>
 							<input type="hidden" name="id" value={b.id} />
+							<!-- Enter in a field must save, not move: the first submit button is the default -->
+							<button class="sr-only" tabindex="-1" aria-hidden="true">{t('common.save')}</button>
+							{#if canEdit}
+								<div class="order">
+									<button class="btn ghost icon" formaction="?/moveBag" name="dir" value="up" disabled={i === 0} title={t('common.move_up')}>↑</button>
+									<button class="btn ghost icon" formaction="?/moveBag" name="dir" value="down" disabled={i === data.bags.length - 1} title={t('common.move_down')}>↓</button>
+								</div>
+							{/if}
 							<select name="icon" value={b.icon} class="icon" aria-label="Icon" disabled={!canEdit}>
 								{#each bagIcons as i}<option value={i}>{i}</option>{/each}
 							</select>
@@ -224,5 +240,19 @@
 	}
 	.invite {
 		margin-top: 0.75rem;
+	}
+	.order {
+		display: flex;
+		flex-direction: column;
+	}
+	.order .btn {
+		min-width: 1.8rem;
+		min-height: 1.3rem;
+		padding: 0 0.2rem;
+		font-size: 0.8rem;
+		line-height: 1;
+	}
+	.order .btn:disabled {
+		opacity: 0.2;
 	}
 </style>

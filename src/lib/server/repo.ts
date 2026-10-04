@@ -30,6 +30,18 @@ export function listMembers(householdId: string) {
 
 // ── Persons & bags ───────────────────────────────────────────────────────────
 
+/** Moves a person or bag one step up (-1) or down (+1) and renumbers the list. */
+export function moveInList(table: 'persons' | 'bags', householdId: string, id: string, delta: -1 | 1) {
+	tx(() => {
+		const ids = all<{ id: string }>(`SELECT id FROM ${table} WHERE household_id = ? ORDER BY sort, name`, householdId).map((r) => r.id);
+		const from = ids.indexOf(id);
+		const to = from + delta;
+		if (from < 0 || to < 0 || to >= ids.length) return;
+		[ids[from], ids[to]] = [ids[to], ids[from]];
+		ids.forEach((rowId, i) => run(`UPDATE ${table} SET sort = ? WHERE id = ?`, i + 1, rowId));
+	});
+}
+
 export function listPersons(householdId: string): Person[] {
 	return all<Person>('SELECT id, name, kind, color, user_id, sort FROM persons WHERE household_id = ? ORDER BY sort, name', householdId);
 }

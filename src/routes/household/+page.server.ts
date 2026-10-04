@@ -5,7 +5,7 @@ import { get, run, tx } from '$lib/server/db';
 import { sendMail } from '$lib/server/mail';
 import { messagesFor } from '$lib/server/i18n';
 import { translate } from '$lib/i18n';
-import { addMember, createBag, createHousehold, listBags, listMembers, listPersons } from '$lib/server/repo';
+import { addMember, createBag, createHousehold, listBags, listMembers, listPersons, moveInList } from '$lib/server/repo';
 import { addPersonWithBags, createPersonBags, syncPersonBags } from '$lib/server/persons';
 import { createToken } from '$lib/server/tokens';
 import { str } from '$lib/server/util';
@@ -76,6 +76,18 @@ export const actions: Actions = {
 	createBags: async ({ request, locals }) => {
 		const hh = requireRole(locals, ['owner', 'member']);
 		createPersonBags(hh.id, str(await request.formData(), 'id'), locals.locale);
+		return { saved: 'bag' };
+	},
+	movePerson: async ({ request, locals }) => {
+		const hh = requireRole(locals, ['owner', 'member']);
+		const form = await request.formData();
+		moveInList('persons', hh.id, str(form, 'id'), str(form, 'dir') === 'up' ? -1 : 1);
+		return { saved: 'person' };
+	},
+	moveBag: async ({ request, locals }) => {
+		const hh = requireRole(locals, ['owner', 'member']);
+		const form = await request.formData();
+		moveInList('bags', hh.id, str(form, 'id'), str(form, 'dir') === 'up' ? -1 : 1);
 		return { saved: 'bag' };
 	},
 	deletePerson: async ({ request, locals }) => {
