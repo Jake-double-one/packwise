@@ -2,9 +2,9 @@ import { error, fail } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { createUser, hashPassword, listUsers, publicOrigin } from '$lib/server/auth';
 import { get, run, tx } from '$lib/server/db';
-import { createBag, createHousehold, createPerson, seedTemplate } from '$lib/server/repo';
+import { createBag, createHousehold, createPerson, seedTemplate, seedTodos } from '$lib/server/repo';
 import { createToken } from '$lib/server/tokens';
-import { starterBags, starterTemplate } from '$lib/data/starter';
+import { starterBags, starterTemplate, starterTodos } from '$lib/data/starter';
 import { str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -38,6 +38,7 @@ export const actions: Actions = {
 			createPerson(hh, name, 'adult', '#6366f1', uid);
 			const bags = starterBags(locals.locale).map((b) => createBag(hh, b.name, b.color, b.icon));
 			seedTemplate(hh, starterTemplate(locals.locale), bags);
+			seedTodos(hh, starterTodos(locals.locale));
 		});
 		return { done: 'created' };
 	},

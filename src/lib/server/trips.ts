@@ -3,6 +3,16 @@ import { canEditTemplate, householdsFor, type AppHousehold, type SessionUser } f
 import { newId, now, run, tx } from './db';
 import { publish } from './realtime';
 import {
+	deleteTodoTemplate,
+	deleteTripTodo,
+	getTodoTemplate,
+	getTripTodo,
+	insertTodoTemplate,
+	insertTripTodo,
+	listTodoTemplates,
+	listTripTodos,
+	updateTodoTemplate,
+	updateTripTodo,
 	deleteTemplateNode,
 	deleteTripItem,
 	getTemplateNode,
@@ -21,11 +31,11 @@ import {
 	updateTripItem
 } from './repo';
 import { sanitizeItemPatch } from './sanitize';
-import { generate, type GenerateInput } from '$lib/generate';
+import { generate, generateTodos, type GenerateInput } from '$lib/generate';
 import { translate } from '$lib/i18n';
 import { messagesFor } from './i18n';
 import { MAX_GROUP_DEPTH, ancestors } from '$lib/tree';
-import type { TemplateNode, TripItem, TripSettings, WeatherSummary } from '$lib/types';
+import type { TemplateNode, TodoTemplate, TripItem, TripPhase, TripSettings, TripTodo, WeatherSummary } from '$lib/types';
 import { DIMENSION_MAP } from '$lib/context';
 import { COUNTRIES } from '$lib/data/countries';
 
@@ -96,7 +106,8 @@ export function sanitizeCreate(body: Record<string, any>, hh: AppHousehold): Cre
 		settings: {
 			persons: ids(body.settings?.persons).filter((p) => persons.has(p)),
 			context: ctx,
-			laundryDays: Math.max(0, Math.min(60, Math.round(Number(body.settings?.laundryDays) || 0)))
+			laundryDays: Math.max(0, Math.min(60, Math.round(Number(body.settings?.laundryDays) || 0))),
+			todos: !!body.settings?.todos
 		},
 		weather,
 		forceInclude: ids(body.forceInclude),
@@ -124,8 +135,8 @@ export function createTrip(hh: AppHousehold, user: SessionUser | null, input: Cr
 	const id = newId(12);
 	tx(() => {
 		run(
-			`INSERT INTO trips (id, household_id, name, destination, country, lat, lon, start_date, end_date, settings, weather, warnings, created_by, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO trips (id, household_id, name, destination, country, lat, lon, start_date, end_date, settings, weather, warnings, todos_enabled, created_by, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			id,
 			hh.id,
 			input.name,
@@ -138,6 +149,7 @@ export function createTrip(hh: AppHousehold, user: SessionUser | null, input: Cr
 			JSON.stringify(input.settings),
 			input.weather ? JSON.stringify(input.weather) : null,
 			JSON.stringify(result.warnings),
+			input.settings.todos ? 1 : 0,
 			user?.id ?? null,
 			now(),
 			now()
@@ -166,6 +178,9 @@ export function createTrip(hh: AppHousehold, user: SessionUser | null, input: Cr
 				itemId
 			);
 		}
+		if (input.settings.todos) {
+			for (const td of generateTodos(listTodoTemplates(hh.id), input.settings)) insertTripTodo(id, { ...td, origin: 'template' });
+		}
 		logActivity(id, user?.id ?? null, user?.name ?? '?', 'created', input.name);
 	});
 	return id;
@@ -176,19 +191,33 @@ export function createTrip(hh: AppHousehold, user: SessionUser | null, input: Cr
 export type TripOp =
 	| { op: 'check'; id: string; checked: boolean }
 	| { op: 'update'; id: string; patch: Record<string, unknown> }
-	| { op: 'add'; parent_id: string | null; kind?: 'group' | 'item'; name: string; patch?: Record<string, unknown> }
+	| { op: 'add'; id?: string; parent_id: string | null; kind?: 'group' | 'item'; name: string; patch?: Record<string, unknown> }
 	| { op: 'delete'; id: string; alsoTemplate?: boolean }
 	| { op: 'promote'; id: string }
 	| { op: 'syncTemplate'; id: string }
-	| { op: 'rename'; name: string };
+	| { op: 'rename'; name: string }
+	| { op: 'return'; id: string; returned: boolean }
+	| { op: 'phase'; phase: TripPhase }
+	| { op: 'resetReturn' }
+	| { op: 'todos'; enabled: boolean }
+	| { op: 'todoCheck'; id: string; done: boolean }
+	| { op: 'todoAdd'; id?: string; name: string; days_before?: number; person_id?: string | null }
+	| { op: 'todoUpdate'; id: string; patch: Record<string, unknown> }
+	| { op: 'todoDelete'; id: string; alsoTemplate?: boolean }
+	| { op: 'todoPromote'; id: string };
 
 export interface OpResult {
 	upsert: TripItem[];
 	removed: string[];
 	activity?: ReturnType<typeof logActivity>;
 	template?: { upsert: TemplateNode[]; removed: string[] };
-	trip?: { name: string };
+	trip?: { name?: string; phase?: TripPhase; todos_enabled?: boolean };
+	todos?: { upsert: TripTodo[]; removed: string[] };
+	todoTemplate?: { upsert: TodoTemplate[]; removed: string[] };
 }
+
+/** Client-generated ids (offline mode) must look like ours. */
+const CLIENT_ID = /^[0-9A-Za-z]{16}$/;
 
 export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser | null, op: TripOp): OpResult {
 	const actor = user?.name ?? '?';
@@ -222,6 +251,10 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 			case 'add': {
 				const name = String(op.name ?? '').trim();
 				if (!name) error(400, 'template.err.name');
+				const wantedId = op.id && CLIENT_ID.test(op.id) ? op.id : undefined;
+				// replayed offline op: already applied
+				const existing = wantedId ? getTripItem(tripId, wantedId) : null;
+				if (existing) return { upsert: [existing], removed: [] };
 				const parent = op.parent_id ? item(op.parent_id) : null;
 				if (parent && parent.kind !== 'group') error(400, 'template.err.parent');
 				const created = insertTripItem(tripId, {
@@ -230,11 +263,13 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 					name,
 					parent_id: parent?.id ?? null,
 					origin: 'manual'
-				});
+				}, wantedId);
 				return { upsert: [created], removed: [], activity: logActivity(tripId, uid, actor, 'added', name) };
 			}
 			case 'delete': {
-				const it = item(op.id);
+				const maybe = getTripItem(tripId, op.id);
+				if (!maybe) return { upsert: [], removed: [op.id] };
+				const it = maybe;
 				let template: OpResult['template'];
 				if (op.alsoTemplate && it.template_id && getTemplateNode(hh.id, it.template_id)) {
 					needTemplateRights();
@@ -310,12 +345,109 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 				run('UPDATE trips SET name = ? WHERE id = ?', name, tripId);
 				return { upsert: [], removed: [], trip: { name }, activity: logActivity(tripId, uid, actor, 'renamed', name) };
 			}
+			case 'return': {
+				const it = item(op.id);
+				const updated = updateTripItem(tripId, it.id, { returned: !!op.returned })!;
+				return { upsert: [updated], removed: [], activity: logActivity(tripId, uid, actor, op.returned ? 'returned' : 'unreturned', it.name) };
+			}
+			case 'phase': {
+				const phase: TripPhase = op.phase === 'return' ? 'return' : 'pack';
+				run('UPDATE trips SET phase = ? WHERE id = ?', phase, tripId);
+				return { upsert: [], removed: [], trip: { phase }, activity: logActivity(tripId, uid, actor, `phase_${phase}`, '') };
+			}
+			case 'resetReturn': {
+				run('UPDATE trip_items SET returned = 0, updated_at = ? WHERE trip_id = ?', now(), tripId);
+				return { upsert: listTripItems(tripId), removed: [], activity: logActivity(tripId, uid, actor, 'reset_return', '') };
+			}
+			case 'todos': {
+				const enabled = !!op.enabled;
+				run('UPDATE trips SET todos_enabled = ? WHERE id = ?', enabled ? 1 : 0, tripId);
+				const upsert: TripTodo[] = [];
+				if (enabled && listTripTodos(tripId).length === 0) {
+					const trip = getTrip(tripId)!;
+					for (const td of generateTodos(listTodoTemplates(hh.id), trip.settings)) upsert.push(insertTripTodo(tripId, { ...td, origin: 'template' }));
+				}
+				return { upsert: [], removed: [], trip: { todos_enabled: enabled }, todos: { upsert, removed: [] } };
+			}
+			case 'todoCheck': {
+				const td = getTripTodo(tripId, op.id);
+				if (!td) error(404, 'trip.err.item');
+				const updated = updateTripTodo(tripId, td.id, { done: !!op.done, done_by: op.done ? uid : null, done_at: op.done ? now() : null })!;
+				return { upsert: [], removed: [], todos: { upsert: [updated], removed: [] }, activity: logActivity(tripId, uid, actor, op.done ? 'todo_done' : 'todo_undone', td.name) };
+			}
+			case 'todoAdd': {
+				const name = String(op.name ?? '').trim().slice(0, 200);
+				if (!name) error(400, 'template.err.name');
+				const wantedId = op.id && CLIENT_ID.test(op.id) ? op.id : undefined;
+				const existing = wantedId ? getTripTodo(tripId, wantedId) : null;
+				if (existing) return { upsert: [], removed: [], todos: { upsert: [existing], removed: [] } };
+				const created = insertTripTodo(
+					tripId,
+					{
+						name,
+						days_before: clampDays(op.days_before),
+						person_id: op.person_id && ids.persons.has(op.person_id) ? op.person_id : null,
+						origin: 'manual'
+					},
+					wantedId
+				);
+				return { upsert: [], removed: [], todos: { upsert: [created], removed: [] }, activity: logActivity(tripId, uid, actor, 'todo_added', name) };
+			}
+			case 'todoUpdate': {
+				const td = getTripTodo(tripId, op.id);
+				if (!td) error(404, 'trip.err.item');
+				const p = op.patch ?? {};
+				const patch: Partial<TripTodo> = {};
+				if (typeof p.name === 'string' && p.name.trim()) patch.name = p.name.trim().slice(0, 200);
+				if ('days_before' in p) patch.days_before = clampDays(p.days_before);
+				if ('person_id' in p) patch.person_id = typeof p.person_id === 'string' && ids.persons.has(p.person_id) ? p.person_id : null;
+				if ('note' in p) patch.note = String(p.note ?? '').slice(0, 1000);
+				const updated = updateTripTodo(tripId, td.id, patch)!;
+				return { upsert: [], removed: [], todos: { upsert: [updated], removed: [] } };
+			}
+			case 'todoDelete': {
+				const td = getTripTodo(tripId, op.id);
+				if (!td) return { upsert: [], removed: [], todos: { upsert: [], removed: [op.id] } };
+				let todoTemplate: OpResult['todoTemplate'];
+				if (op.alsoTemplate && td.template_id && getTodoTemplate(hh.id, td.template_id)) {
+					needTemplateRights();
+					deleteTodoTemplate(hh.id, td.template_id);
+					todoTemplate = { upsert: [], removed: [td.template_id] };
+				}
+				deleteTripTodo(tripId, td.id);
+				return {
+					upsert: [],
+					removed: [],
+					todos: { upsert: [], removed: [td.id] },
+					todoTemplate,
+					activity: logActivity(tripId, uid, actor, 'todo_removed', td.name)
+				};
+			}
+			case 'todoPromote': {
+				needTemplateRights();
+				const td = getTripTodo(tripId, op.id);
+				if (!td) error(404, 'trip.err.item');
+				const tpl = insertTodoTemplate(hh.id, { name: td.name, days_before: td.days_before, person_id: td.person_id, note: td.note });
+				const updated = updateTripTodo(tripId, td.id, { template_id: tpl.id, origin: 'template' })!;
+				return {
+					upsert: [],
+					removed: [],
+					todos: { upsert: [updated], removed: [] },
+					todoTemplate: { upsert: [tpl], removed: [] },
+					activity: logActivity(tripId, uid, actor, 'promoted', td.name)
+				};
+			}
 			default:
 				error(400, 'unknown op');
 		}
 	});
 	touchTrip(tripId);
 	return result;
+}
+
+function clampDays(v: unknown): number {
+	const n = Math.round(Number(v));
+	return Number.isFinite(n) ? Math.max(0, Math.min(365, n)) : 0;
 }
 
 function collectTemplateDescendants(householdId: string, id: string): string[] {
@@ -334,4 +466,5 @@ function collectTemplateDescendants(householdId: string, id: string): string[] {
 export function broadcastTripOp(tripId: string, hhId: string, result: OpResult, client: string | null) {
 	publish(`trip:${tripId}`, 'ops', { ...result, client });
 	if (result.template) publish(`tpl:${hhId}`, 'nodes', { ...result.template, client: null });
+	if (result.todoTemplate) publish(`tpl:${hhId}`, 'todos', { ...result.todoTemplate, client: null });
 }

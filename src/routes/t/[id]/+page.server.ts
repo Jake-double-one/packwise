@@ -1,5 +1,5 @@
 import { canEditTemplate } from '$lib/server/auth';
-import { listActivity, listBags, listPersons, listTemplate, listTripItems } from '$lib/server/repo';
+import { listActivity, listBags, listPersons, listTemplate, listTodoTemplates, listTripItems, listTripTodos } from '$lib/server/repo';
 import { tripAccess } from '$lib/server/trips';
 import type { PageServerLoad } from './$types';
 
@@ -11,6 +11,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	return {
 		trip,
 		items: listTripItems(trip.id),
+		todos: listTripTodos(trip.id),
+		todoTemplateIds: listTodoTemplates(hh.id).map((t) => t.id),
 		persons: listPersons(hh.id),
 		bags: listBags(hh.id),
 		template,

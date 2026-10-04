@@ -29,6 +29,9 @@ Packwise replaces the packing list in your notes app. You maintain **one templat
 - **Road-trip hints** (car / camper only): vignettes (AT, CH, SI, CZ, SK, HU, RO, BG), Crit'Air, Umweltplakette, safety kit, Green Card, beam deflectors, winter equipment. Shown as suggestions without guarantee.
 - **Currency hint**: e.g. cash in GBP when the destination uses a different currency.
 - **Live collaboration** via Server-Sent Events: see who is online, with an activity log of who packed what.
+- **To-dos before departure** (optional per trip): water the plants, online check-in, empty the fridge. Each to-do has a due date relative to departure and uses the same chips as items, so "Online check-in" only appears for flights. Kept in its own to-do template.
+- **Return-trip mode**: a second checkmark for "packed again", so nothing is left in the holiday home. Consumables like sunscreen are left out. The trip suggests it on the last day.
+- **Offline mode**: installable PWA. Open lists keep working without a connection. Checks, new items and to-dos are queued and synced automatically once you're back online.
 - **Template sync**: *↑ Template* on new items. On delete, Packwise asks *only this trip* or *also from the template*. Changed items can update the template.
 - **Import with review step**: plain text, Markdown, `.txt` files, OneNote / Word pastes (nested lists are kept) and Packwise JSON. You check every line, fix levels and untick duplicates before anything is saved.
 - **Share**: link, QR code and the native share sheet. Print view in two columns.
@@ -114,15 +117,7 @@ Stack: SvelteKit 2 / Svelte 5, Node's built-in `node:sqlite` (no native dependen
 
 ## Roadmap
 
-- [ ] To-dos before departure (optional per trip, with due dates)
-- [ ] Return-trip mode (second checkmark "packed again")
-- [ ] "Not needed" after the trip, with template clean-up suggestions
-- [ ] Trip notes with secret fields (Wi-Fi password, key-box code) available offline
-- [ ] Guest links without login (check-only or edit, expiry, revocable)
-- [ ] Reminders by e-mail, Web Push and ntfy, plus weather-change alerts
-- [ ] Offline mode (PWA with sync queue), calendar export
-- [ ] Optional 2FA (TOTP), OIDC login
-- [ ] Template gallery and community templates, REST API, webhooks
+See [ROADMAP.md](ROADMAP.md) for what's done and what's planned next.
 
 ---
 
@@ -133,5 +128,6 @@ Stack: SvelteKit 2 / Svelte 5, Node's built-in `node:sqlite` (no native dependen
 3. Unter **Template** die eigene Liste pflegen oder unter **Import** die OneNote-Liste einfügen. Vor dem Speichern wird alles geprüft.
 4. **Neue Reise**: Ziel, Datum, Mitreisende, Anreise und Unterkunft wählen. Die Vorschau zeigt, was warum eingepackt wird, und bezieht Wetter, Adapter und Vignetten mit ein.
 5. Den Link oder QR-Code teilen und gemeinsam abhaken. Mit **↑ Template** landen neue Artikel fürs nächste Mal im Template.
+6. Optional die **To-dos vor der Abfahrt** einschalten. Für die Heimreise auf **🏠 Rückreise** umschalten. Abhaken funktioniert auch **offline**.
 
 Login-Modi: `AUTH_MODE=none` (ohne Login), `local` (ein gemeinsames Passwort, Standard) oder `accounts` (Konten mit E-Mail und Passwort, Einladungen, SMTP).

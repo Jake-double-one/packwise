@@ -153,6 +153,38 @@ const MIGRATIONS: string[] = [
 		at INTEGER NOT NULL
 	);
 	CREATE INDEX idx_activity_trip ON activity(trip_id, at);
+	`,
+	/* 2 – to-dos before departure, return-trip mode */ `
+	ALTER TABLE trips ADD COLUMN phase TEXT NOT NULL DEFAULT 'pack'; -- pack | return
+	ALTER TABLE trips ADD COLUMN todos_enabled INTEGER NOT NULL DEFAULT 0;
+
+	CREATE TABLE todo_templates (
+		id TEXT PRIMARY KEY,
+		household_id TEXT NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+		name TEXT NOT NULL,
+		days_before INTEGER NOT NULL DEFAULT 0,
+		person_id TEXT REFERENCES persons(id) ON DELETE SET NULL,
+		rules TEXT NOT NULL DEFAULT '{}',
+		note TEXT NOT NULL DEFAULT '',
+		updated_at INTEGER NOT NULL
+	);
+	CREATE INDEX idx_todo_templates_household ON todo_templates(household_id);
+
+	CREATE TABLE trip_todos (
+		id TEXT PRIMARY KEY,
+		trip_id TEXT NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+		name TEXT NOT NULL,
+		days_before INTEGER NOT NULL DEFAULT 0,
+		person_id TEXT,
+		note TEXT NOT NULL DEFAULT '',
+		template_id TEXT,
+		origin TEXT NOT NULL DEFAULT 'template',
+		done INTEGER NOT NULL DEFAULT 0,
+		done_by TEXT,
+		done_at INTEGER,
+		updated_at INTEGER NOT NULL
+	);
+	CREATE INDEX idx_trip_todos_trip ON trip_todos(trip_id);
 	`
 ];
 

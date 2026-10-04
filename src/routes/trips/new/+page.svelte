@@ -4,8 +4,8 @@
 	import { api } from '$lib/api';
 	import { DIMENSIONS } from '$lib/context';
 	import { countryFlag, countryName, regionOf } from '$lib/data/countries';
-	import { generate } from '$lib/generate';
-	import { useI18n } from '$lib/i18n';
+	import { generate, generateTodos, todoDue } from '$lib/generate';
+	import { formatDate, useI18n } from '$lib/i18n';
 	import { classifyClimate, seasonOf, tripLength, weatherIcon } from '$lib/weather';
 	import type { TripContext, WeatherSummary } from '$lib/types';
 	import Avatar from '$lib/components/Avatar.svelte';
@@ -46,6 +46,7 @@
 	let overrides = $state<Record<string, string[]>>({});
 	let laundry = $state(false);
 	let laundryDays = $state(7);
+	let withTodos = $state(true);
 	let weather = $state<WeatherSummary | null>(null);
 	let weatherLoading = $state(false);
 	const forceIn = new SvelteSet<string>();
@@ -140,10 +141,12 @@
 		(prev.settings.persons ?? []).forEach((p) => persons.add(p));
 		laundry = (prev.settings.laundryDays ?? 0) > 0;
 		if (laundry) laundryDays = prev.settings.laundryDays;
+		withTodos = prev.settings.todos ?? true;
 	}
 
 	// ── preview ─────────────────────────────────────────────────────────────
-	const settings = $derived({ persons: [...persons], context, laundryDays: laundry ? laundryDays : 0 });
+	const settings = $derived({ persons: [...persons], context, laundryDays: laundry ? laundryDays : 0, todos: withTodos });
+	const todoPreview = $derived(withTodos ? generateTodos(data.todoTemplates, settings) : []);
 	const preview = $derived(
 		generate({
 			nodes: data.nodes,
@@ -314,6 +317,10 @@
 						<input type="number" min="1" max="30" bind:value={laundryDays} />
 					</div>
 				{/if}
+				<label class="check todos-check">
+					<input type="checkbox" bind:checked={withTodos} />
+					✅ {t('wizard.todos')}
+				</label>
 			</section>
 		</div>
 
@@ -354,6 +361,17 @@
 						</ul>
 					</details>
 				{/each}
+
+				{#if todoPreview.length}
+					<details class="pgroup">
+						<summary><strong>✅ {t('todo.title')}</strong> <span class="tiny muted">{todoPreview.length}</span></summary>
+						<ul>
+							{#each todoPreview as td}
+								<li class="row"><span class="grow">{td.name}</span><span class="tiny muted">{formatDate(todoDue(start, td.days_before), i18n.locale, { day: 'numeric', month: 'short' })}</span></li>
+							{/each}
+						</ul>
+					</details>
+				{/if}
 
 				{#if preview.excluded.length}
 					<button type="button" class="btn ghost small toggle-ex" onclick={() => (showExcluded = !showExcluded)}>
@@ -461,6 +479,9 @@
 	}
 	.laundry {
 		margin-top: 0.4rem;
+	}
+	.todos-check {
+		margin-top: 0.6rem;
 	}
 	.laundry input {
 		width: 5rem;

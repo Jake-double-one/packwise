@@ -1,5 +1,5 @@
 import { all, get, newId, now, run, tx } from './db';
-import type { Bag, Person, PersonKind, Role, Rules, TemplateNode, Trip, TripItem } from '$lib/types';
+import type { Bag, Person, PersonKind, Role, Rules, TemplateNode, TodoTemplate, Trip, TripItem, TripPhase, TripTodo } from '$lib/types';
 
 // ── Households ───────────────────────────────────────────────────────────────
 
@@ -218,6 +218,8 @@ interface TripRow {
 	settings: string;
 	weather: string | null;
 	warnings: string;
+	phase: string;
+	todos_enabled: number;
 	created_at: number;
 	updated_at: number;
 }
@@ -236,7 +238,9 @@ function toTrip(r: TripRow): Trip & { household_id: string } {
 		...r,
 		settings: parse(r.settings, { persons: [], context: {}, laundryDays: 0 }),
 		weather: parse(r.weather, null),
-		warnings: parse(r.warnings, [])
+		warnings: parse(r.warnings, []),
+		phase: (r.phase === 'return' ? 'return' : 'pack') as TripPhase,
+		todos_enabled: !!r.todos_enabled
 	};
 }
 
@@ -377,4 +381,111 @@ export function listActivity(tripId: string, limit = 100) {
 		tripId,
 		limit
 	);
+}
+
+// ── To-dos ───────────────────────────────────────────────────────────────────
+
+interface TodoTemplateRow extends Omit<TodoTemplate, 'rules'> {
+	rules: string;
+}
+
+const toTodoTemplate = (r: TodoTemplateRow): TodoTemplate => ({ ...r, rules: parse(r.rules, {}) });
+
+export function listTodoTemplates(householdId: string): TodoTemplate[] {
+	return all<TodoTemplateRow>(
+		'SELECT id, name, days_before, person_id, rules, note FROM todo_templates WHERE household_id = ? ORDER BY days_before DESC, name',
+		householdId
+	).map(toTodoTemplate);
+}
+
+export function getTodoTemplate(householdId: string, id: string): TodoTemplate | null {
+	const r = get<TodoTemplateRow>('SELECT id, name, days_before, person_id, rules, note FROM todo_templates WHERE household_id = ? AND id = ?', householdId, id);
+	return r ? toTodoTemplate(r) : null;
+}
+
+export function insertTodoTemplate(householdId: string, input: Partial<Omit<TodoTemplate, 'id'>> & { name: string }): TodoTemplate {
+	const id = newId();
+	run(
+		'INSERT INTO todo_templates (id, household_id, name, days_before, person_id, rules, note, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+		id,
+		householdId,
+		input.name.trim(),
+		input.days_before ?? 0,
+		input.person_id ?? null,
+		JSON.stringify(input.rules ?? {}),
+		input.note ?? '',
+		now()
+	);
+	return getTodoTemplate(householdId, id)!;
+}
+
+export function updateTodoTemplate(householdId: string, id: string, patch: Partial<TodoTemplate>): TodoTemplate | null {
+	const sets: string[] = [];
+	const values: (string | number | null)[] = [];
+	for (const key of ['name', 'days_before', 'person_id', 'rules', 'note'] as const) {
+		if (!(key in patch)) continue;
+		sets.push(`${key} = ?`);
+		const v = patch[key];
+		values.push(key === 'rules' ? JSON.stringify(v ?? {}) : ((v ?? null) as string | number | null));
+	}
+	if (sets.length) run(`UPDATE todo_templates SET ${sets.join(', ')}, updated_at = ? WHERE household_id = ? AND id = ?`, ...values, now(), householdId, id);
+	return getTodoTemplate(householdId, id);
+}
+
+export function deleteTodoTemplate(householdId: string, id: string) {
+	run('DELETE FROM todo_templates WHERE household_id = ? AND id = ?', householdId, id);
+}
+
+interface TripTodoRow extends Omit<TripTodo, 'done'> {
+	done: number;
+}
+
+const TODO_COLS = 'id, name, days_before, person_id, note, template_id, origin, done, done_by, done_at';
+const toTodo = (r: TripTodoRow): TripTodo => ({ ...r, done: !!r.done });
+
+export function listTripTodos(tripId: string): TripTodo[] {
+	return all<TripTodoRow>(`SELECT ${TODO_COLS} FROM trip_todos WHERE trip_id = ? ORDER BY days_before DESC, name`, tripId).map(toTodo);
+}
+
+export function getTripTodo(tripId: string, id: string): TripTodo | null {
+	const r = get<TripTodoRow>(`SELECT ${TODO_COLS} FROM trip_todos WHERE trip_id = ? AND id = ?`, tripId, id);
+	return r ? toTodo(r) : null;
+}
+
+export function insertTripTodo(tripId: string, input: Partial<Omit<TripTodo, 'id'>> & { name: string }, id = newId()): TripTodo {
+	run(
+		'INSERT INTO trip_todos (id, trip_id, name, days_before, person_id, note, template_id, origin, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+		id,
+		tripId,
+		input.name.trim(),
+		input.days_before ?? 0,
+		input.person_id ?? null,
+		input.note ?? '',
+		input.template_id ?? null,
+		input.origin ?? 'manual',
+		now()
+	);
+	return getTripTodo(tripId, id)!;
+}
+
+export function updateTripTodo(tripId: string, id: string, patch: Partial<TripTodo>): TripTodo | null {
+	const sets: string[] = [];
+	const values: (string | number | null)[] = [];
+	for (const key of ['name', 'days_before', 'person_id', 'note', 'template_id', 'origin', 'done', 'done_by', 'done_at'] as const) {
+		if (!(key in patch)) continue;
+		let v = patch[key] as unknown;
+		if (typeof v === 'boolean') v = v ? 1 : 0;
+		sets.push(`${key} = ?`);
+		values.push((v ?? null) as string | number | null);
+	}
+	if (sets.length) run(`UPDATE trip_todos SET ${sets.join(', ')}, updated_at = ? WHERE trip_id = ? AND id = ?`, ...values, now(), tripId, id);
+	return getTripTodo(tripId, id);
+}
+
+export function deleteTripTodo(tripId: string, id: string) {
+	run('DELETE FROM trip_todos WHERE trip_id = ? AND id = ?', tripId, id);
+}
+
+export function seedTodos(householdId: string, todos: (Partial<TodoTemplate> & { name: string })[]) {
+	tx(() => todos.forEach((t) => insertTodoTemplate(householdId, t)));
 }

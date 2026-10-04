@@ -8,12 +8,15 @@
 	import Avatar from '$lib/components/Avatar.svelte';
 	import NodeEditor from '$lib/components/NodeEditor.svelte';
 	import RuleSummary from '$lib/components/RuleSummary.svelte';
+	import TodoTemplates from '$lib/components/TodoTemplates.svelte';
+	import { page } from '$app/state';
 
 	let { data } = $props();
 	const { t } = useI18n();
 
 	let nodes = $derived<TemplateNode[]>(data.nodes);
 	let errorMsg = $state('');
+	let tab = $derived<'items' | 'todos'>(page.url.searchParams.get('tab') === 'todos' ? 'todos' : 'items');
 	let query = $state('');
 	let selectedId = $state<string | null>(null);
 	let newCategory = $state('');
@@ -152,6 +155,14 @@
 		</div>
 	</div>
 
+	<div class="seg tabs">
+		<button class:on={tab === 'items'} onclick={() => (tab = 'items')}>📋 {t('template.tab_items')}</button>
+		<button class:on={tab === 'todos'} onclick={() => (tab = 'todos')}>✅ {t('template.tab_todos')}</button>
+	</div>
+
+	{#if tab === 'todos'}
+		<TodoTemplates todos={data.todos} persons={data.persons} canEdit={data.canEdit} />
+	{:else}
 	<div class="row toolbar">
 		<input type="search" class="grow" placeholder={t('template.search')} bind:value={query} />
 		<button class="btn" onclick={toggleAll} title={t('template.toggle_all')}>{collapsed.size ? '⊞' : '⊟'}</button>
@@ -270,6 +281,7 @@
 		</form>
 	{/if}
 	<p class="tiny muted">{t('template.tip')}</p>
+	{/if}
 </div>
 
 {#if selected}
@@ -290,6 +302,29 @@
 	}
 	.toolbar {
 		margin-bottom: 0.9rem;
+	}
+	.tabs {
+		display: inline-flex;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		padding: 2px;
+		margin-bottom: 0.9rem;
+	}
+	.tabs button {
+		border: none;
+		background: none;
+		color: var(--text-2);
+		font: inherit;
+		font-weight: 600;
+		padding: 0.35rem 0.9rem;
+		border-radius: 999px;
+		cursor: pointer;
+	}
+	.tabs button.on {
+		background: var(--surface);
+		color: var(--text);
+		box-shadow: var(--shadow);
 	}
 	.tree {
 		display: flex;

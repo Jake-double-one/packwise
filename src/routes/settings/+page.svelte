@@ -9,6 +9,16 @@
 	const themes = ['system', 'light', 'dark', 'amoled'];
 	let theme = $derived(data.theme);
 
+	/** Cached lists must not survive a logout on shared devices. */
+	function clearOfflineCache() {
+		try {
+			caches?.delete('pw-pages');
+			navigator.serviceWorker?.controller?.postMessage('clear-pages');
+		} catch {
+			/* no cache support */
+		}
+	}
+
 	async function setTheme(value: string) {
 		theme = value;
 		document.documentElement.dataset.theme = value;
@@ -92,7 +102,7 @@
 				<a class="btn" href="/admin">🛡️ {t('admin.title')}</a>
 			{/if}
 			{#if data.authMode !== 'none'}
-				<form method="POST" action="/logout"><button class="btn danger">{t('auth.logout')}</button></form>
+				<form method="POST" action="/logout" onsubmit={clearOfflineCache}><button class="btn danger">{t('auth.logout')}</button></form>
 			{/if}
 		</div>
 		<p class="tiny muted">{t('settings.mode', { mode: data.authMode })}</p>

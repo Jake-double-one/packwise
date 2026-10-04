@@ -1,12 +1,10 @@
 {
 	"_name": "English",
-
 	"nav.trips": "Trips",
 	"nav.template": "Template",
 	"nav.household": "Household",
 	"nav.settings": "Settings",
 	"nav.import": "Import",
-
 	"common.add": "Add",
 	"common.back": "Back",
 	"common.choose_country": "Choose a country…",
@@ -21,12 +19,10 @@
 	"common.save": "Save",
 	"common.saved": "Saved.",
 	"common.saving": "Saving…",
-
 	"error.forbidden": "You don't have permission to do that.",
 	"error.generic": "Something went wrong.",
 	"error.home": "Back to my trips",
 	"error.not_found": "This page doesn't exist.",
-
 	"setup.title": "Setup",
 	"setup.welcome": "Welcome to Packwise",
 	"setup.intro": "Let's set up your packing lists. This takes less than a minute.",
@@ -46,7 +42,6 @@
 	"setup.err.household": "Please enter a household name.",
 	"setup.err.country": "Unknown country.",
 	"setup.err.app_password": "The password needs at least 6 characters.",
-
 	"auth.login": "Log in",
 	"auth.logout": "Log out",
 	"auth.register": "Create account",
@@ -73,25 +68,21 @@
 	"auth.err.registration_closed": "Registration is closed.",
 	"auth.err.wrong_credentials": "E-mail or password is wrong.",
 	"auth.err.wrong_password": "Wrong password.",
-
 	"profiles.title": "Profiles",
 	"profiles.who": "Who's packing?",
 	"profiles.add": "Add profile",
 	"profiles.create": "Create profile",
 	"profiles.hint": "Profiles show who checked what. They don't need a password.",
 	"profiles.err.not_found": "Profile not found.",
-
 	"invite.title": "Join “{household}”",
 	"invite.accept": "Join household",
 	"invite.need_account": "Create an account or log in to accept the invitation.",
 	"invite.invalid": "This invitation is invalid or has expired.",
 	"reset.invalid": "This reset link is invalid or has expired.",
-
 	"mail.reset.subject": "Reset your Packwise password",
 	"mail.reset.body": "Hi!\n\nSomeone (hopefully you) asked to reset your Packwise password. Open this link within one hour:\n\n{link}\n\nIf this wasn't you, just ignore this e-mail.",
 	"mail.invite.subject": "Invitation to “{household}” on Packwise",
 	"mail.invite.body": "Hi!\n\n{name} invited you to pack together in “{household}”:\n\n{link}\n\nThe link is valid for 7 days.",
-
 	"settings.appearance": "Appearance",
 	"settings.theme": "Theme",
 	"settings.theme_system": "System",
@@ -106,7 +97,6 @@
 	"settings.session": "Session",
 	"settings.switch_profile": "Switch profile",
 	"settings.mode": "Login mode: {mode}",
-
 	"admin.title": "Administration",
 	"admin.users": "Users",
 	"admin.create_user": "Create user",
@@ -117,7 +107,6 @@
 	"admin.confirm_delete": "Delete {name} and all of their data?",
 	"admin.registration": "Registration: {mode}",
 	"admin.err.self": "You can't do that to yourself.",
-
 	"household.name": "Name",
 	"household.general": "General",
 	"household.home_country": "Home country",
@@ -147,16 +136,13 @@
 	"household.err.bag_name": "Please enter a name for the bag.",
 	"household.err.last": "You can't delete your only household.",
 	"household.err.last_owner": "A household needs at least one owner.",
-
 	"kind.adult": "Adult",
 	"kind.child": "Child",
 	"kind.baby": "Baby",
 	"kind.pet": "Pet",
-
 	"role.owner": "Owner",
 	"role.member": "Member",
 	"role.packer": "Packer",
-
 	"template.title": "Template",
 	"template.subtitle_one": "{count} item – the basis for every trip",
 	"template.subtitle_other": "{count} items – the basis for every trip",
@@ -194,12 +180,10 @@
 	"template.err.parent": "Items can only be placed inside groups.",
 	"template.err.depth": "At most three levels of groups are possible.",
 	"template.err.cycle": "A group can't be moved into itself.",
-
 	"rules.hint": "Tap a chip: ✓ only pack with … · ✕ never pack with … · tap again to reset. Without chips, the item is always packed.",
 	"rules.only": "Only with",
 	"rules.never": "Never with",
 	"rules.neutral": "Doesn't matter",
-
 	"qty.fixed": "Fixed",
 	"qty.per_day": "Per day",
 	"qty.per_night": "Per night",
@@ -208,7 +192,6 @@
 	"qty.example": "Example: a 7-day trip → {qty}",
 	"qty.short_day": "{qty}/day",
 	"qty.short_night": "{qty}/night",
-
 	"dim.transport": "Getting there",
 	"dim.stay": "Accommodation",
 	"dim.activity": "Activities",
@@ -216,7 +199,6 @@
 	"dim.season": "Season",
 	"dim.region": "Destination",
 	"dim.travelers": "Travelling with",
-
 	"ctx.transport.car": "Car",
 	"ctx.transport.camper": "Camper",
 	"ctx.transport.plane": "Plane",
@@ -254,7 +236,6 @@
 	"ctx.travelers.baby": "Baby",
 	"ctx.travelers.child": "Kids",
 	"ctx.travelers.pet": "Pet",
-
 	"reason.because": "because: {values}",
 	"reason.only": "only with: {values}",
 	"reason.never": "never with: {values}",
@@ -266,14 +247,12 @@
 	"reason.currency": "Different currency in {country}",
 	"reason.road": "Driving in {country} – please check, no guarantee",
 	"reason.road_optional": "Optional for {country}",
-
 	"auto.group.essentials": "✨ Travel essentials",
 	"auto.group.road": "🚗 Driving in {country}",
 	"auto.adapter": "Travel adapter type {types}",
 	"auto.adapter_note_one": "{count} device needs power",
 	"auto.adapter_note_other": "{count} devices need power – a multi-socket strip helps",
 	"auto.cash": "Cash in {currency} / card without foreign fees",
-
 	"road.documents.name": "Driving licence & vehicle registration",
 	"road.documents.note": "Plus breakdown cover / insurance details.",
 	"road.safety_kit.name": "Hi-vis vests, warning triangle & first-aid kit",
@@ -306,7 +285,6 @@
 	"road.winter_equipment.note": "Winter equipment can be mandatory in winter conditions.",
 	"road.toll_badge.name": "Toll transponder (optional)",
 	"road.toll_badge.note": "Saves time at motorway toll booths.",
-
 	"warn.adapter": "You need a travel adapter for {country}: type {types}.",
 	"warn.adapter_partial": "In {country}, {unfit} plugs don't fit – smaller chargers usually do. Take an adapter (type {types}) for bigger devices.",
 	"warn.voltage": "{country} uses {dest} V instead of {home} V. Check that your devices support it: {devices}.",
@@ -315,14 +293,12 @@
 	"warn.no_rain_gear": "Rain is likely, but nothing in your template is tagged for rain.",
 	"warn.no_cold_gear": "It will be cold, but nothing in your template is tagged for cold weather.",
 	"warn.no_sun_gear": "It will be hot, but nothing in your template is tagged for hot weather.",
-
 	"weather.loading": "Loading weather…",
 	"weather.forecast": "Forecast",
 	"weather.climate": "Average of the last {years} years",
 	"weather.rain_days": "{pct}% rainy days",
 	"weather.day": "day",
 	"weather.unavailable": "No weather data available.",
-
 	"trips.title": "Trips",
 	"trips.new": "New trip",
 	"trips.upcoming": "Upcoming",
@@ -333,7 +309,6 @@
 	"trips.in_days_other": "in {count} days",
 	"trips.ongoing": "ongoing",
 	"trips.items_progress": "{done} of {total} packed",
-
 	"wizard.where": "Where & when",
 	"wizard.destination": "Destination",
 	"wizard.destination_placeholder": "City, region or place…",
@@ -359,7 +334,6 @@
 	"wizard.include": "Take",
 	"wizard.create": "Create packing list",
 	"wizard.no_home_country": "Set your home country to get adapter and currency hints.",
-
 	"trip.not_found": "This trip doesn't exist (anymore).",
 	"trip.err.dates": "Please check the dates.",
 	"trip.err.destination": "Please choose a destination or enter a name.",
@@ -407,7 +381,6 @@
 	"trip.promote": "Add to template",
 	"trip.sync": "Update template",
 	"trip.to_template": "Template",
-
 	"activity.created": "created the trip",
 	"activity.checked": "packed",
 	"activity.unchecked": "unpacked",
@@ -418,7 +391,6 @@
 	"activity.promoted": "added to the template:",
 	"activity.synced": "updated the template:",
 	"activity.renamed": "renamed the trip to",
-
 	"import.title": "Import",
 	"import.intro": "Paste your existing list – from OneNote, Word, a text file or Markdown. Indentation becomes categories. Nothing is saved before you've reviewed it.",
 	"import.placeholder": "Clothing\n  T-shirts\n  3x Socks\nToiletries:\n- Toothbrush\n- Sunscreen",
@@ -441,5 +413,52 @@
 	"import.again": "Import more",
 	"import.backup": "Backup",
 	"import.backup_hint": "Download everything of this household (template, people, bags, trips) as JSON. The template part can be imported again here.",
-	"import.export_json": "Export as JSON"
+	"import.export_json": "Export as JSON",
+	"template.tab_items": "Packing list",
+	"template.tab_todos": "To-dos",
+	"wizard.todos": "To-dos before departure (plants, check-in, fridge …)",
+	"todo.title": "Before departure",
+	"todo.template_hint": "To-dos are added to a trip when you switch them on. Each one is due a number of days before departure – and can use the same chips as items, e.g. “Online check-in” only for flights.",
+	"todo.empty": "No to-dos yet.",
+	"todo.new": "New to-do…",
+	"todo.edit": "Edit to-do",
+	"todo.due": "Due (days before departure)",
+	"todo.due_hint": "0 = on the day of departure",
+	"todo.days_short": "days before",
+	"todo.who": "Who does it?",
+	"todo.when": "When is it needed?",
+	"todo.departure_day": "departure day",
+	"todo.days_before_one": "{count} day before",
+	"todo.days_before_other": "{count} days before",
+	"todo.overdue": "overdue",
+	"todo.today": "today",
+	"todo.tomorrow": "tomorrow",
+	"todo.enable": "To-dos",
+	"todo.delete_question": "Should this to-do also be removed from the template for future trips?",
+	"trip.phase_pack": "Packing",
+	"trip.phase_return": "Going home",
+	"trip.return_progress": "{done} of {total} back in the bag",
+	"trip.returned": "packed for home",
+	"trip.homeward": "Time to head home? Check that everything is packed again.",
+	"trip.start_return": "Start return mode",
+	"trip.return_hint": "Return mode: a tick means “packed again”. Consumables are left out.",
+	"trip.reset_return": "Reset",
+	"trip.confirm_reset_return": "Untick everything in return mode?",
+	"trip.hide_returned": "Hide repacked",
+	"trip.used_up": "used up",
+	"trip.not_packed": "wasn't packed",
+	"offline.banner": "You're offline. You can keep packing – changes are saved and synced automatically.",
+	"offline.pending_one": "{count} change is waiting to be synced.",
+	"offline.pending_other": "{count} changes are waiting to be synced.",
+	"offline.pending_hint": "Changes made offline – they sync as soon as you're back online.",
+	"offline.needs_connection": "This needs an internet connection.",
+	"activity.returned": "packed again:",
+	"activity.unreturned": "unpacked again:",
+	"activity.phase_return": "switched to return mode",
+	"activity.phase_pack": "switched back to packing",
+	"activity.reset_return": "reset the return checklist",
+	"activity.todo_done": "did",
+	"activity.todo_undone": "reopened",
+	"activity.todo_added": "added the to-do",
+	"activity.todo_removed": "removed the to-do"
 }

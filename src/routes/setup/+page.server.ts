@@ -10,8 +10,8 @@ import {
 	userCount
 } from '$lib/server/auth';
 import { tx } from '$lib/server/db';
-import { createBag, createHousehold, createPerson, seedTemplate } from '$lib/server/repo';
-import { starterBags, starterTemplate } from '$lib/data/starter';
+import { createBag, createHousehold, createPerson, seedTemplate, seedTodos } from '$lib/server/repo';
+import { starterBags, starterTemplate, starterTodos } from '$lib/data/starter';
 import { COUNTRIES } from '$lib/data/countries';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -66,7 +66,10 @@ export const actions: Actions = {
 			const hh = createHousehold(values.household, values.country || null, uid);
 			createPerson(hh, values.name, 'adult', '#6366f1', uid);
 			const bagIds = starterBags(values.lang).map((b) => createBag(hh, b.name, b.color, b.icon));
-			if (values.starter) seedTemplate(hh, starterTemplate(values.lang), bagIds);
+			if (values.starter) {
+				seedTemplate(hh, starterTemplate(values.lang), bagIds);
+				seedTodos(hh, starterTodos(values.lang));
+			}
 			return uid;
 		});
 

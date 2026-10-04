@@ -169,3 +169,24 @@ export function starterBags(lang: string) {
 				{ name: 'Carry-on', color: '#f59e0b', icon: '🎒' }
 			];
 }
+
+/** Starter to-dos before departure (days_before = due x days before the start date). */
+const TODOS: { name: { en: string; de: string }; days_before: number; rules?: StarterNode['rules'] }[] = [
+	{ name: T('Check passports / ID cards are valid', 'Pässe / Ausweise auf Gültigkeit prüfen'), days_before: 30 },
+	{ name: T('Check travel health insurance', 'Auslandskrankenversicherung prüfen'), days_before: 21, rules: { region: { domestic: -1 } } },
+	{ name: T('Arrange plant / pet sitting', 'Pflanzen- / Haustierbetreuung organisieren'), days_before: 7 },
+	{ name: T('Do the laundry', 'Wäsche waschen'), days_before: 4 },
+	{ name: T('Tell the neighbours, arrange mail collection', 'Nachbarn Bescheid geben, Briefkasten leeren lassen'), days_before: 3 },
+	{ name: T('Check the car: tyres, oil, washer fluid', 'Auto checken: Reifendruck, Öl, Scheibenwasser'), days_before: 2, rules: { transport: { car: 1, camper: 1 } } },
+	{ name: T('Online check-in', 'Online einchecken'), days_before: 1, rules: { transport: { plane: 1 } } },
+	{ name: T('Download offline maps', 'Offline-Karten herunterladen'), days_before: 1, rules: { region: { domestic: -1 } } },
+	{ name: T('Charge all devices', 'Alle Geräte laden'), days_before: 1 },
+	{ name: T('Set out-of-office reply', 'Abwesenheitsnotiz einrichten'), days_before: 1 },
+	{ name: T('Empty the fridge, take out the bins', 'Kühlschrank leeren, Müll rausbringen'), days_before: 0 },
+	{ name: T('Heating down, windows closed, water off', 'Heizung runter, Fenster zu, Wasser abdrehen'), days_before: 0 }
+];
+
+export function starterTodos(lang: string) {
+	const l = lang === 'de' ? 'de' : 'en';
+	return TODOS.map((t) => ({ name: t.name[l], days_before: t.days_before, rules: t.rules ?? {} }));
+}

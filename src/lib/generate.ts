@@ -1,7 +1,7 @@
 import { DIMENSION_MAP, ROAD_TRANSPORT } from './context';
 import { analysePlugs, COUNTRIES, countryName, currencyName } from './data/countries';
 import { ROAD_RULES } from './data/road-rules';
-import type { Person, Rules, TemplateNode, TripContext, TripSettings, Warning, WeatherSummary } from './types';
+import type { Person, Rules, TemplateNode, TodoTemplate, TripContext, TripSettings, Warning, WeatherSummary } from './types';
 import { tripLength } from './weather';
 
 export type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -338,4 +338,26 @@ export function generate(input: GenerateInput): GenerateResult {
 	}
 
 	return { items, excluded, warnings, days, nights };
+}
+
+export interface GeneratedTodo {
+	template_id: string;
+	name: string;
+	days_before: number;
+	person_id: string | null;
+	note: string;
+}
+
+/** Picks the to-dos for a trip using the same chip rules as items. */
+export function generateTodos(templates: TodoTemplate[], settings: TripSettings): GeneratedTodo[] {
+	return templates
+		.filter((t) => checkRules(t.rules, settings.context).ok)
+		.filter((t) => !t.person_id || settings.persons.includes(t.person_id))
+		.map((t) => ({ template_id: t.id, name: t.name, days_before: t.days_before, person_id: t.person_id, note: t.note }));
+}
+
+/** Due date of a to-do as ISO date. */
+export function todoDue(startDate: string, daysBefore: number): string {
+	const d = new Date(Date.parse(`${startDate}T00:00:00Z`) - daysBefore * 86_400_000);
+	return d.toISOString().slice(0, 10);
 }

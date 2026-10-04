@@ -1,12 +1,10 @@
 {
 	"_name": "Deutsch",
-
 	"nav.trips": "Reisen",
 	"nav.template": "Template",
 	"nav.household": "Haushalt",
 	"nav.settings": "Einstellungen",
 	"nav.import": "Import",
-
 	"common.add": "Hinzufügen",
 	"common.back": "Zurück",
 	"common.choose_country": "Land auswählen…",
@@ -21,12 +19,10 @@
 	"common.save": "Speichern",
 	"common.saved": "Gespeichert.",
 	"common.saving": "Speichere…",
-
 	"error.forbidden": "Dafür fehlt dir die Berechtigung.",
 	"error.generic": "Da ist etwas schiefgelaufen.",
 	"error.home": "Zurück zu meinen Reisen",
 	"error.not_found": "Diese Seite gibt es nicht.",
-
 	"setup.title": "Einrichtung",
 	"setup.welcome": "Willkommen bei Packwise",
 	"setup.intro": "Lass uns deine Packlisten einrichten. Das dauert keine Minute.",
@@ -46,7 +42,6 @@
 	"setup.err.household": "Bitte gib einen Namen für den Haushalt ein.",
 	"setup.err.country": "Unbekanntes Land.",
 	"setup.err.app_password": "Das Passwort braucht mindestens 6 Zeichen.",
-
 	"auth.login": "Anmelden",
 	"auth.logout": "Abmelden",
 	"auth.register": "Konto erstellen",
@@ -73,25 +68,21 @@
 	"auth.err.registration_closed": "Die Registrierung ist geschlossen.",
 	"auth.err.wrong_credentials": "E-Mail oder Passwort ist falsch.",
 	"auth.err.wrong_password": "Falsches Passwort.",
-
 	"profiles.title": "Profile",
 	"profiles.who": "Wer packt?",
 	"profiles.add": "Profil hinzufügen",
 	"profiles.create": "Profil anlegen",
 	"profiles.hint": "Profile zeigen, wer was abgehakt hat. Sie brauchen kein Passwort.",
 	"profiles.err.not_found": "Profil nicht gefunden.",
-
 	"invite.title": "„{household}“ beitreten",
 	"invite.accept": "Haushalt beitreten",
 	"invite.need_account": "Erstelle ein Konto oder melde dich an, um die Einladung anzunehmen.",
 	"invite.invalid": "Diese Einladung ist ungültig oder abgelaufen.",
 	"reset.invalid": "Dieser Reset-Link ist ungültig oder abgelaufen.",
-
 	"mail.reset.subject": "Packwise-Passwort zurücksetzen",
 	"mail.reset.body": "Hallo!\n\nJemand (hoffentlich du) möchte dein Packwise-Passwort zurücksetzen. Öffne diesen Link innerhalb einer Stunde:\n\n{link}\n\nWarst du das nicht, ignoriere diese E-Mail einfach.",
 	"mail.invite.subject": "Einladung zu „{household}“ bei Packwise",
 	"mail.invite.body": "Hallo!\n\n{name} hat dich eingeladen, in „{household}“ gemeinsam zu packen:\n\n{link}\n\nDer Link ist 7 Tage gültig.",
-
 	"settings.appearance": "Darstellung",
 	"settings.theme": "Design",
 	"settings.theme_system": "System",
@@ -106,7 +97,6 @@
 	"settings.session": "Sitzung",
 	"settings.switch_profile": "Profil wechseln",
 	"settings.mode": "Login-Modus: {mode}",
-
 	"admin.title": "Verwaltung",
 	"admin.users": "Benutzer",
 	"admin.create_user": "Benutzer anlegen",
@@ -117,7 +107,6 @@
 	"admin.confirm_delete": "{name} und alle zugehörigen Daten löschen?",
 	"admin.registration": "Registrierung: {mode}",
 	"admin.err.self": "Das kannst du nicht bei dir selbst machen.",
-
 	"household.name": "Name",
 	"household.general": "Allgemein",
 	"household.home_country": "Heimatland",
@@ -147,16 +136,13 @@
 	"household.err.bag_name": "Bitte gib einen Namen für den Koffer ein.",
 	"household.err.last": "Deinen einzigen Haushalt kannst du nicht löschen.",
 	"household.err.last_owner": "Ein Haushalt braucht mindestens einen Owner.",
-
 	"kind.adult": "Erwachsen",
 	"kind.child": "Kind",
 	"kind.baby": "Baby",
 	"kind.pet": "Haustier",
-
 	"role.owner": "Owner",
 	"role.member": "Mitglied",
 	"role.packer": "Packer",
-
 	"template.title": "Template",
 	"template.subtitle_one": "{count} Artikel – die Grundlage für jede Reise",
 	"template.subtitle_other": "{count} Artikel – die Grundlage für jede Reise",
@@ -194,12 +180,10 @@
 	"template.err.parent": "Artikel können nur in Gruppen liegen.",
 	"template.err.depth": "Es sind höchstens drei Gruppenebenen möglich.",
 	"template.err.cycle": "Eine Gruppe kann nicht in sich selbst verschoben werden.",
-
 	"rules.hint": "Chip antippen: ✓ nur einpacken bei … · ✕ nie einpacken bei … · nochmal tippen zum Zurücksetzen. Ohne Chips wird der Artikel immer eingepackt.",
 	"rules.only": "Nur bei",
 	"rules.never": "Nie bei",
 	"rules.neutral": "Egal",
-
 	"qty.fixed": "Fest",
 	"qty.per_day": "Pro Tag",
 	"qty.per_night": "Pro Nacht",
@@ -208,7 +192,6 @@
 	"qty.example": "Beispiel: 7-Tage-Reise → {qty}",
 	"qty.short_day": "{qty}/Tag",
 	"qty.short_night": "{qty}/Nacht",
-
 	"dim.transport": "Anreise",
 	"dim.stay": "Unterkunft",
 	"dim.activity": "Aktivitäten",
@@ -216,7 +199,6 @@
 	"dim.season": "Jahreszeit",
 	"dim.region": "Reiseziel",
 	"dim.travelers": "Mitreisende",
-
 	"ctx.transport.car": "Auto",
 	"ctx.transport.camper": "Wohnmobil",
 	"ctx.transport.plane": "Flugzeug",
@@ -254,7 +236,6 @@
 	"ctx.travelers.baby": "Baby",
 	"ctx.travelers.child": "Kinder",
 	"ctx.travelers.pet": "Haustier",
-
 	"reason.because": "weil: {values}",
 	"reason.only": "nur bei: {values}",
 	"reason.never": "nie bei: {values}",
@@ -266,14 +247,12 @@
 	"reason.currency": "Andere Währung in {country}",
 	"reason.road": "Autofahren in {country} – bitte prüfen, ohne Gewähr",
 	"reason.road_optional": "Optional für {country}",
-
 	"auto.group.essentials": "✨ Reise-Basics",
 	"auto.group.road": "🚗 Mit dem Auto in {country}",
 	"auto.adapter": "Reiseadapter Typ {types}",
 	"auto.adapter_note_one": "{count} Gerät braucht Strom",
 	"auto.adapter_note_other": "{count} Geräte brauchen Strom – eine Mehrfachsteckdose hilft",
 	"auto.cash": "Bargeld in {currency} / Karte ohne Auslandsgebühren",
-
 	"road.documents.name": "Führerschein & Fahrzeugschein",
 	"road.documents.note": "Dazu Schutzbrief / Versicherungsunterlagen.",
 	"road.safety_kit.name": "Warnwesten, Warndreieck & Verbandskasten",
@@ -306,7 +285,6 @@
 	"road.winter_equipment.note": "Winterausrüstung kann bei winterlichen Verhältnissen Pflicht sein.",
 	"road.toll_badge.name": "Maut-Box (optional)",
 	"road.toll_badge.note": "Spart Zeit an den Mautstationen.",
-
 	"warn.adapter": "Für {country} brauchst du einen Reiseadapter: Typ {types}.",
 	"warn.adapter_partial": "In {country} passen {unfit}-Stecker nicht – kleine Ladegeräte meist schon. Für größere Geräte einen Adapter (Typ {types}) mitnehmen.",
 	"warn.voltage": "In {country} gibt es {dest} V statt {home} V. Prüfe, ob deine Geräte das können: {devices}.",
@@ -315,14 +293,12 @@
 	"warn.no_rain_gear": "Regen ist wahrscheinlich, aber in deinem Template ist nichts für Regen markiert.",
 	"warn.no_cold_gear": "Es wird kalt, aber in deinem Template ist nichts für Kälte markiert.",
 	"warn.no_sun_gear": "Es wird heiß, aber in deinem Template ist nichts für Hitze markiert.",
-
 	"weather.loading": "Wetter wird geladen…",
 	"weather.forecast": "Vorhersage",
 	"weather.climate": "Durchschnitt der letzten {years} Jahre",
 	"weather.rain_days": "{pct} % Regentage",
 	"weather.day": "Tag",
 	"weather.unavailable": "Keine Wetterdaten verfügbar.",
-
 	"trips.title": "Reisen",
 	"trips.new": "Neue Reise",
 	"trips.upcoming": "Demnächst",
@@ -333,7 +309,6 @@
 	"trips.in_days_other": "in {count} Tagen",
 	"trips.ongoing": "läuft gerade",
 	"trips.items_progress": "{done} von {total} gepackt",
-
 	"wizard.where": "Wohin & wann",
 	"wizard.destination": "Reiseziel",
 	"wizard.destination_placeholder": "Stadt, Region oder Ort…",
@@ -359,7 +334,6 @@
 	"wizard.include": "Mitnehmen",
 	"wizard.create": "Packliste erstellen",
 	"wizard.no_home_country": "Leg dein Heimatland fest, um Hinweise zu Adaptern und Währung zu bekommen.",
-
 	"trip.not_found": "Diese Reise gibt es nicht (mehr).",
 	"trip.err.dates": "Bitte prüfe die Daten.",
 	"trip.err.destination": "Bitte wähle ein Reiseziel oder gib einen Namen ein.",
@@ -407,7 +381,6 @@
 	"trip.promote": "Ins Template übernehmen",
 	"trip.sync": "Template aktualisieren",
 	"trip.to_template": "Template",
-
 	"activity.created": "hat die Reise erstellt",
 	"activity.checked": "hat eingepackt:",
 	"activity.unchecked": "hat ausgepackt:",
@@ -418,7 +391,6 @@
 	"activity.promoted": "hat ins Template übernommen:",
 	"activity.synced": "hat das Template aktualisiert:",
 	"activity.renamed": "hat die Reise umbenannt in",
-
 	"import.title": "Import",
 	"import.intro": "Füge deine bestehende Liste ein – aus OneNote, Word, einer Textdatei oder Markdown. Einrückungen werden zu Kategorien. Gespeichert wird erst, nachdem du alles geprüft hast.",
 	"import.placeholder": "Kleidung\n  T-Shirts\n  3x Socken\nKulturbeutel:\n- Zahnbürste\n- Sonnencreme",
@@ -441,5 +413,52 @@
 	"import.again": "Weitere importieren",
 	"import.backup": "Backup",
 	"import.backup_hint": "Lade alles aus diesem Haushalt (Template, Personen, Koffer, Reisen) als JSON herunter. Den Template-Teil kannst du hier wieder importieren.",
-	"import.export_json": "Als JSON exportieren"
+	"import.export_json": "Als JSON exportieren",
+	"template.tab_items": "Packliste",
+	"template.tab_todos": "To-dos",
+	"wizard.todos": "To-dos vor der Abfahrt (Pflanzen, Check-in, Kühlschrank …)",
+	"todo.title": "Vor der Abfahrt",
+	"todo.template_hint": "To-dos kommen auf eine Reise, wenn du sie einschaltest. Jedes ist eine bestimmte Anzahl Tage vor der Abfahrt fällig – und kann dieselben Chips wie Artikel nutzen, z. B. „Online einchecken“ nur bei Flugreisen.",
+	"todo.empty": "Noch keine To-dos.",
+	"todo.new": "Neues To-do…",
+	"todo.edit": "To-do bearbeiten",
+	"todo.due": "Fällig (Tage vor Abfahrt)",
+	"todo.due_hint": "0 = am Abreisetag",
+	"todo.days_short": "Tage vorher",
+	"todo.who": "Wer kümmert sich?",
+	"todo.when": "Wann wird es gebraucht?",
+	"todo.departure_day": "Abreisetag",
+	"todo.days_before_one": "{count} Tag vorher",
+	"todo.days_before_other": "{count} Tage vorher",
+	"todo.overdue": "überfällig",
+	"todo.today": "heute",
+	"todo.tomorrow": "morgen",
+	"todo.enable": "To-dos",
+	"todo.delete_question": "Soll das To-do auch aus dem Template entfernt werden – also für alle künftigen Reisen?",
+	"trip.phase_pack": "Packen",
+	"trip.phase_return": "Rückreise",
+	"trip.return_progress": "{done} von {total} wieder eingepackt",
+	"trip.returned": "für die Heimreise gepackt",
+	"trip.homeward": "Geht’s nach Hause? Prüft, ob alles wieder eingepackt ist.",
+	"trip.start_return": "Rückreise-Modus starten",
+	"trip.return_hint": "Rückreise-Modus: Haken = wieder eingepackt. Verbrauchsartikel sind ausgenommen.",
+	"trip.reset_return": "Zurücksetzen",
+	"trip.confirm_reset_return": "Alle Haken der Rückreise entfernen?",
+	"trip.hide_returned": "Wieder Eingepacktes ausblenden",
+	"trip.used_up": "verbraucht",
+	"trip.not_packed": "war nicht eingepackt",
+	"offline.banner": "Du bist offline. Du kannst weiter packen – Änderungen werden gespeichert und automatisch synchronisiert.",
+	"offline.pending_one": "{count} Änderung wartet auf die Synchronisierung.",
+	"offline.pending_other": "{count} Änderungen warten auf die Synchronisierung.",
+	"offline.pending_hint": "Offline gemachte Änderungen – sie werden synchronisiert, sobald du wieder online bist.",
+	"offline.needs_connection": "Dafür ist eine Internetverbindung nötig.",
+	"activity.returned": "hat wieder eingepackt:",
+	"activity.unreturned": "hat wieder ausgepackt:",
+	"activity.phase_return": "hat den Rückreise-Modus gestartet",
+	"activity.phase_pack": "hat zurück auf Packen gestellt",
+	"activity.reset_return": "hat die Rückreise-Liste zurückgesetzt",
+	"activity.todo_done": "hat erledigt:",
+	"activity.todo_undone": "hat wieder geöffnet:",
+	"activity.todo_added": "hat das To-do hinzugefügt:",
+	"activity.todo_removed": "hat das To-do entfernt:"
 }

@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
-import { listBags, listPersons, listTemplate, listTrips } from '$lib/server/repo';
+import { listBags, listPersons, listTemplate, listTodoTemplates, listTrips } from '$lib/server/repo';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -11,6 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.map((tr) => ({ id: tr.id, name: tr.name, settings: tr.settings }));
 	return {
 		nodes: listTemplate(hh.id),
+		todoTemplates: listTodoTemplates(hh.id),
 		persons: listPersons(hh.id),
 		bags: listBags(hh.id),
 		homeCountry: hh.home_country,
