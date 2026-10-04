@@ -1,0 +1,30 @@
+# Packwise – paste this into Portainer (Stacks → Add stack) or run `docker compose up -d`.
+services:
+  packwise:
+    image: ghcr.io/jake-double-one/packwise:latest
+    container_name: packwise
+    restart: unless-stopped
+    ports:
+      - "8080:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      TZ: Europe/Berlin
+      # Login mode:
+      #   none     – no login at all (LAN only, or behind Authentik/Authelia)
+      #   local    – one shared password (default)
+      #   accounts – users with e-mail + password, invitations, password reset
+      AUTH_MODE: local
+      APP_PASSWORD: change-me              # AUTH_MODE=local (or set it in the setup wizard)
+      # REGISTRATION: invite               # accounts: closed | invite | open
+      DEFAULT_LANG: en                     # en | de | any file in /data/locales
+      # DEFAULT_COUNTRY: DE                # pre-selected home country in the setup
+      # ORIGIN: https://packwise.example.com   # public URL (links in e-mails, secure cookies)
+      # PUID: 1000
+      # PGID: 1000
+      # WEATHER_ENABLED: "true"            # Open-Meteo forecast / climate (no API key)
+      # SMTP_HOST: smtp.example.com
+      # SMTP_PORT: 587
+      # SMTP_USER: packwise@example.com
+      # SMTP_PASS: secret
+      # SMTP_FROM: "Packwise <packwise@example.com>"

@@ -1,0 +1,337 @@
+import { error } from '@sveltejs/kit';
+import { canEditTemplate, householdsFor, type AppHousehold, type SessionUser } from './auth';
+import { newId, now, run, tx } from './db';
+import { publish } from './realtime';
+import {
+	deleteTemplateNode,
+	deleteTripItem,
+	getTemplateNode,
+	getTrip,
+	getTripItem,
+	insertTemplateNode,
+	insertTripItem,
+	listBags,
+	listPersons,
+	listTemplate,
+	listTripItems,
+	logActivity,
+	templateDepth,
+	touchTrip,
+	updateTemplateNode,
+	updateTripItem
+} from './repo';
+import { sanitizeItemPatch } from './sanitize';
+import { generate, type GenerateInput } from '$lib/generate';
+import { translate } from '$lib/i18n';
+import { messagesFor } from './i18n';
+import { MAX_GROUP_DEPTH, ancestors } from '$lib/tree';
+import type { TemplateNode, TripItem, TripSettings, WeatherSummary } from '$lib/types';
+import { DIMENSION_MAP } from '$lib/context';
+import { COUNTRIES } from '$lib/data/countries';
+
+export function tripAccess(locals: App.Locals, id: string) {
+	const trip = getTrip(id);
+	if (!trip) error(404, 'trip.not_found');
+	const hh = householdsFor(locals.user).find((h) => h.id === trip.household_id);
+	if (!hh) error(404, 'trip.not_found');
+	return { trip, hh };
+}
+
+// ── Creation ─────────────────────────────────────────────────────────────────
+
+export interface CreateTripInput {
+	name: string;
+	destination: string;
+	country: string | null;
+	lat: number | null;
+	lon: number | null;
+	start: string;
+	end: string;
+	settings: TripSettings;
+	weather: WeatherSummary | null;
+	forceInclude: string[];
+	forceExclude: string[];
+}
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function sanitizeCreate(body: Record<string, any>, hh: AppHousehold): CreateTripInput {
+	const start = String(body.start ?? '');
+	const end = String(body.end ?? '');
+	if (!DATE.test(start) || !DATE.test(end) || end < start) error(400, 'trip.err.dates');
+	const persons = new Set(listPersons(hh.id).map((p) => p.id));
+	const ctx: Record<string, string[]> = {};
+	for (const [dim, values] of Object.entries((body.settings?.context ?? {}) as Record<string, unknown>)) {
+		const def = DIMENSION_MAP[dim];
+		if (!def || !Array.isArray(values)) continue;
+		ctx[dim] = values.filter((v): v is string => typeof v === 'string' && def.values.includes(v));
+	}
+	const w = body.weather;
+	const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+	const weather: WeatherSummary | null =
+		w && typeof w === 'object'
+			? {
+					source: w.source === 'forecast' ? 'forecast' : 'climate',
+					days: num(w.days),
+					avgMax: num(w.avgMax),
+					avgMin: num(w.avgMin),
+					maxMax: num(w.maxMax),
+					minMin: num(w.minMin),
+					rainShare: num(w.rainShare),
+					precipProb: typeof w.precipProb === 'number' ? w.precipProb : null,
+					snowPerDay: num(w.snowPerDay),
+					...(w.years ? { years: num(w.years) } : {})
+				}
+			: null;
+	const country = typeof body.country === 'string' && COUNTRIES[body.country.toUpperCase()] ? body.country.toUpperCase() : null;
+	const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+	return {
+		name: String(body.name ?? '').trim().slice(0, 120) || String(body.destination ?? '').trim() || 'Trip',
+		destination: String(body.destination ?? '').trim().slice(0, 200),
+		country,
+		lat: typeof body.lat === 'number' ? body.lat : null,
+		lon: typeof body.lon === 'number' ? body.lon : null,
+		start,
+		end,
+		settings: {
+			persons: ids(body.settings?.persons).filter((p) => persons.has(p)),
+			context: ctx,
+			laundryDays: Math.max(0, Math.min(60, Math.round(Number(body.settings?.laundryDays) || 0)))
+		},
+		weather,
+		forceInclude: ids(body.forceInclude),
+		forceExclude: ids(body.forceExclude)
+	};
+}
+
+export function createTrip(hh: AppHousehold, user: SessionUser | null, input: CreateTripInput, locale: string) {
+	const messages = messagesFor(locale);
+	const genInput: GenerateInput = {
+		nodes: listTemplate(hh.id),
+		persons: listPersons(hh.id),
+		settings: input.settings,
+		startDate: input.start,
+		endDate: input.end,
+		homeCountry: hh.home_country,
+		destCountry: input.country,
+		weather: input.weather,
+		forceInclude: input.forceInclude,
+		forceExclude: input.forceExclude,
+		locale,
+		t: (k, p) => translate(messages, k, p)
+	};
+	const result = generate(genInput);
+	const id = newId(12);
+	tx(() => {
+		run(
+			`INSERT INTO trips (id, household_id, name, destination, country, lat, lon, start_date, end_date, settings, weather, warnings, created_by, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			id,
+			hh.id,
+			input.name,
+			input.destination,
+			input.country,
+			input.lat,
+			input.lon,
+			input.start,
+			input.end,
+			JSON.stringify(input.settings),
+			input.weather ? JSON.stringify(input.weather) : null,
+			JSON.stringify(result.warnings),
+			user?.id ?? null,
+			now(),
+			now()
+		);
+		const keyToId = new Map<string, string>();
+		for (const it of result.items) {
+			const itemId = newId();
+			keyToId.set(it.key, itemId);
+			insertTripItem(
+				id,
+				{
+					parent_id: it.parentKey ? (keyToId.get(it.parentKey) ?? null) : null,
+					kind: it.kind,
+					name: it.name,
+					sort: it.sort,
+					template_id: it.template_id,
+					origin: it.origin,
+					reason: it.reason,
+					bag_id: it.bag_id,
+					person_id: it.person_id,
+					qty: it.qty,
+					needs_power: it.needs_power,
+					consumable: it.consumable,
+					note: it.note
+				},
+				itemId
+			);
+		}
+		logActivity(id, user?.id ?? null, user?.name ?? '?', 'created', input.name);
+	});
+	return id;
+}
+
+// ── Live operations ─────────────────────────────────────────────────────────
+
+export type TripOp =
+	| { op: 'check'; id: string; checked: boolean }
+	| { op: 'update'; id: string; patch: Record<string, unknown> }
+	| { op: 'add'; parent_id: string | null; kind?: 'group' | 'item'; name: string; patch?: Record<string, unknown> }
+	| { op: 'delete'; id: string; alsoTemplate?: boolean }
+	| { op: 'promote'; id: string }
+	| { op: 'syncTemplate'; id: string }
+	| { op: 'rename'; name: string };
+
+export interface OpResult {
+	upsert: TripItem[];
+	removed: string[];
+	activity?: ReturnType<typeof logActivity>;
+	template?: { upsert: TemplateNode[]; removed: string[] };
+	trip?: { name: string };
+}
+
+export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser | null, op: TripOp): OpResult {
+	const actor = user?.name ?? '?';
+	const uid = user?.id ?? null;
+	const ids = { bags: new Set(listBags(hh.id).map((b) => b.id)), persons: new Set(listPersons(hh.id).map((p) => p.id)) };
+	const item = (id: string) => {
+		const it = getTripItem(tripId, id);
+		if (!it) error(404, 'trip.err.item');
+		return it;
+	};
+	const needTemplateRights = () => {
+		if (!canEditTemplate(hh)) error(403, 'error.forbidden');
+	};
+
+	const result = tx((): OpResult => {
+		switch (op.op) {
+			case 'check': {
+				const it = item(op.id);
+				const updated = updateTripItem(tripId, it.id, {
+					checked: !!op.checked,
+					checked_by: op.checked ? uid : null,
+					checked_at: op.checked ? now() : null
+				})!;
+				return { upsert: [updated], removed: [], activity: logActivity(tripId, uid, actor, op.checked ? 'checked' : 'unchecked', it.name) };
+			}
+			case 'update': {
+				const it = item(op.id);
+				const updated = updateTripItem(tripId, it.id, sanitizeItemPatch(op.patch ?? {}, ids))!;
+				return { upsert: [updated], removed: [], activity: logActivity(tripId, uid, actor, 'edited', updated.name) };
+			}
+			case 'add': {
+				const name = String(op.name ?? '').trim();
+				if (!name) error(400, 'template.err.name');
+				const parent = op.parent_id ? item(op.parent_id) : null;
+				if (parent && parent.kind !== 'group') error(400, 'template.err.parent');
+				const created = insertTripItem(tripId, {
+					...sanitizeItemPatch(op.patch ?? {}, ids),
+					kind: op.kind === 'group' ? 'group' : 'item',
+					name,
+					parent_id: parent?.id ?? null,
+					origin: 'manual'
+				});
+				return { upsert: [created], removed: [], activity: logActivity(tripId, uid, actor, 'added', name) };
+			}
+			case 'delete': {
+				const it = item(op.id);
+				let template: OpResult['template'];
+				if (op.alsoTemplate && it.template_id && getTemplateNode(hh.id, it.template_id)) {
+					needTemplateRights();
+					const removedNodes = [it.template_id, ...collectTemplateDescendants(hh.id, it.template_id)];
+					deleteTemplateNode(hh.id, it.template_id);
+					template = { upsert: [], removed: removedNodes };
+				}
+				const removed = deleteTripItem(tripId, it.id);
+				return {
+					upsert: [],
+					removed,
+					template,
+					activity: logActivity(tripId, uid, actor, op.alsoTemplate ? 'removed_template' : 'removed', it.name)
+				};
+			}
+			case 'promote': {
+				needTemplateRights();
+				const it = item(op.id);
+				const all = listTripItems(tripId);
+				const chain = ancestors(all, it.parent_id);
+				const tplUpsert: TemplateNode[] = [];
+				const tripUpsert: TripItem[] = [];
+				let parentTpl: string | null = null;
+				for (const g of chain) {
+					const existing = g.template_id ? getTemplateNode(hh.id, g.template_id) : null;
+					if (existing && existing.kind === 'group') {
+						parentTpl = existing.id;
+						continue;
+					}
+					if (templateDepth(hh.id, parentTpl) >= MAX_GROUP_DEPTH) break;
+					const node = insertTemplateNode(hh.id, { kind: 'group', name: g.name, parent_id: parentTpl });
+					tplUpsert.push(node);
+					tripUpsert.push(updateTripItem(tripId, g.id, { template_id: node.id, origin: 'template' })!);
+					parentTpl = node.id;
+				}
+				const node = insertTemplateNode(hh.id, {
+					kind: it.kind,
+					name: it.name,
+					parent_id: parentTpl,
+					bag_id: it.bag_id,
+					person_id: it.person_id,
+					qty: it.qty,
+					needs_power: it.needs_power,
+					consumable: it.consumable,
+					note: it.note
+				});
+				tplUpsert.push(node);
+				tripUpsert.push(updateTripItem(tripId, it.id, { template_id: node.id, origin: 'template' })!);
+				return {
+					upsert: tripUpsert,
+					removed: [],
+					template: { upsert: tplUpsert, removed: [] },
+					activity: logActivity(tripId, uid, actor, 'promoted', it.name)
+				};
+			}
+			case 'syncTemplate': {
+				needTemplateRights();
+				const it = item(op.id);
+				if (!it.template_id) error(400, 'trip.err.not_linked');
+				const node = updateTemplateNode(hh.id, it.template_id, {
+					name: it.name,
+					bag_id: it.bag_id,
+					note: it.note,
+					needs_power: it.needs_power,
+					consumable: it.consumable
+				});
+				if (!node) error(404, 'trip.err.not_linked');
+				return { upsert: [], removed: [], template: { upsert: [node], removed: [] }, activity: logActivity(tripId, uid, actor, 'synced', it.name) };
+			}
+			case 'rename': {
+				const name = String(op.name ?? '').trim().slice(0, 120);
+				if (!name) error(400, 'template.err.name');
+				run('UPDATE trips SET name = ? WHERE id = ?', name, tripId);
+				return { upsert: [], removed: [], trip: { name }, activity: logActivity(tripId, uid, actor, 'renamed', name) };
+			}
+			default:
+				error(400, 'unknown op');
+		}
+	});
+	touchTrip(tripId);
+	return result;
+}
+
+function collectTemplateDescendants(householdId: string, id: string): string[] {
+	const all = listTemplate(householdId);
+	const out: string[] = [];
+	const walk = (pid: string) => {
+		for (const n of all.filter((x) => x.parent_id === pid)) {
+			out.push(n.id);
+			walk(n.id);
+		}
+	};
+	walk(id);
+	return out;
+}
+
+export function broadcastTripOp(tripId: string, hhId: string, result: OpResult, client: string | null) {
+	publish(`trip:${tripId}`, 'ops', { ...result, client });
+	if (result.template) publish(`tpl:${hhId}`, 'nodes', { ...result.template, client: null });
+}
