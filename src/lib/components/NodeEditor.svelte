@@ -60,7 +60,6 @@
 				<input type="checkbox" checked={node.per_person} disabled={!canEdit} onchange={(e) => onpatch({ per_person: (e.currentTarget as HTMLInputElement).checked })} />
 				{t('template.per_person')}
 			</label>
-			{#if node.per_person}<p class="tiny muted">👥 {t('template.per_person_hint')}</p>{/if}
 		{/if}
 
 		<fieldset class="qty">
@@ -100,7 +99,7 @@
 	<details open={Object.keys(node.rules ?? {}).length > 0}>
 		<summary>{t('template.rules')} {#if Object.keys(node.rules ?? {}).length}<span class="badge">{Object.values(node.rules).reduce((n, c) => n + Object.keys(c).length, 0)}</span>{/if}</summary>
 		{#if !isItem}<p class="tiny muted">{t('template.group_rules_hint')}</p>{/if}
-		<RuleChips rules={node.rules ?? {}} disabled={!canEdit} onchange={(rules: Rules) => onpatch({ rules })} />
+		<RuleChips rules={node.rules ?? {}} disabled={!canEdit} perPerson={isItem && node.per_person && !node.person_id} onchange={(rules: Rules) => onpatch({ rules })} />
 	</details>
 
 	{#if node.not_needed_count > 0}

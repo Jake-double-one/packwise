@@ -234,7 +234,7 @@
 							{#if dim.auto}<span class="badge">{t('wizard.auto')}</span>{/if}
 						</div>
 						<div class="chips">
-							{#each dim.values as v}
+							{#each dim.values.filter((v) => dim.key !== 'travelers' || v !== 'adult') as v}
 								<button type="button" class="chip" class:on={(context[dim.key] ?? []).includes(v)} onclick={() => toggle(dim.key, v)}>
 									{t(`ctx.${dim.key}.${v}`)}
 								</button>

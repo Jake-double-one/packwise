@@ -684,5 +684,8 @@
 	"admin.err.only_owner": "Dieses Konto ist einziger Owner von „{household}“. Mach erst jemand anderen zum Owner.",
 	"ctx.travelers.adult": "Erwachsene",
 	"reason.no_traveller": "Kein passender Reisender dabei ({values})",
-	"template.per_person_hint": "Die Mitreisende-Chips gelten hier pro Person: „nur mit Erwachsene“ heißt, nur Erwachsene bekommen den Artikel; „nie mit Baby“ lässt nur das Baby aus."
+	"dim.travelers_for": "Für wen (pro Person)",
+	"rules.for_hint": "✓ nur für … · ✕ für alle außer …",
+	"rules.only_for": "Nur für",
+	"rules.never_for": "Nicht für"
 }

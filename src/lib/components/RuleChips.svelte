@@ -3,7 +3,12 @@
 	import { useI18n } from '$lib/i18n';
 	import type { Rules } from '$lib/types';
 
-	let { rules, onchange, disabled = false }: { rules: Rules; onchange: (rules: Rules) => void; disabled?: boolean } = $props();
+	let {
+		rules,
+		onchange,
+		disabled = false,
+		perPerson = false
+	}: { rules: Rules; onchange: (rules: Rules) => void; disabled?: boolean; perPerson?: boolean } = $props();
 	const { t } = useI18n();
 
 	/** neutral → only with → never with → neutral */
@@ -23,12 +28,15 @@
 <div class="rules">
 	<p class="tiny muted">{t('rules.hint')}</p>
 	{#each DIMENSIONS as dim}
+		{@const forWhom = perPerson && dim.key === 'travelers'}
 		<div class="dim">
-			<div class="dim-label">{dim.icon} {t(`dim.${dim.key}`)}</div>
+			<div class="dim-label">{forWhom ? `👥 ${t('dim.travelers_for')}` : `${dim.icon} ${t(`dim.${dim.key}`)}`}</div>
+			{#if forWhom}<p class="tiny muted for-hint">{t('rules.for_hint')}</p>{/if}
 			<div class="chips">
-				{#each dim.values as v}
+				<!-- "adults" only makes sense per person: a shared item always travels with an adult -->
+				{#each dim.values.filter((v) => forWhom || dim.key !== 'travelers' || v !== 'adult' || rules.travelers?.adult) as v}
 					{@const s = rules[dim.key]?.[v]}
-					<button type="button" class="chip" class:yes={s === 1} class:no={s === -1} onclick={() => cycle(dim.key, v)} {disabled} title={s === 1 ? t('rules.only') : s === -1 ? t('rules.never') : t('rules.neutral')}>
+					<button type="button" class="chip" class:yes={s === 1} class:no={s === -1} onclick={() => cycle(dim.key, v)} {disabled} title={forWhom ? (s === 1 ? t('rules.only_for') : s === -1 ? t('rules.never_for') : t('rules.neutral')) : s === 1 ? t('rules.only') : s === -1 ? t('rules.never') : t('rules.neutral')}>
 						{#if s === 1}✓{:else if s === -1}✕{/if}
 						{t(`ctx.${dim.key}.${v}`)}
 					</button>
@@ -47,6 +55,9 @@
 		font-weight: 700;
 		color: var(--text-2);
 		margin-bottom: 0.3rem;
+	}
+	.for-hint {
+		margin: -0.15rem 0 0.35rem;
 	}
 	.chip {
 		font-size: 0.8rem;

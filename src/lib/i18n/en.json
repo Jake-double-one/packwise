@@ -684,5 +684,8 @@
 	"admin.err.only_owner": "This account is the only owner of \"{household}\". Make someone else owner first.",
 	"ctx.travelers.adult": "Adults",
 	"reason.no_traveller": "No matching traveller on this trip ({values})",
-	"template.per_person_hint": "The travellers chips apply per person here: \"only with adults\" means only adults get this item; \"never with baby\" just skips the baby."
+	"dim.travelers_for": "For whom (per person)",
+	"rules.for_hint": "✓ only for … · ✕ for everyone except …",
+	"rules.only_for": "Only for",
+	"rules.never_for": "Not for"
 }
