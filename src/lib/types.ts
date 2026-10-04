@@ -130,6 +130,17 @@ export interface TripTodo {
 
 export type TripPhase = 'pack' | 'return';
 
+export type NoteKind = 'address' | 'phone' | 'link' | 'code' | 'text' | 'secret';
+export const NOTE_KINDS: NoteKind[] = ['address', 'phone', 'link', 'code', 'text', 'secret'];
+
+/** Free information about a trip: accommodation address, booking number, Wi-Fi password … */
+export interface TripNote {
+	id: string;
+	kind: NoteKind;
+	label: string;
+	value: string;
+}
+
 export interface Trip {
 	id: string;
 	name: string;
@@ -144,6 +155,7 @@ export interface Trip {
 	warnings: Warning[];
 	phase: TripPhase;
 	todos_enabled: boolean;
+	notes: TripNote[];
 	created_at: number;
 	updated_at: number;
 }

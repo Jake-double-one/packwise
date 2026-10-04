@@ -242,6 +242,7 @@ interface TripRow {
 	warnings: string;
 	phase: string;
 	todos_enabled: number;
+	notes: string;
 	created_at: number;
 	updated_at: number;
 }
@@ -262,7 +263,8 @@ function toTrip(r: TripRow): Trip & { household_id: string } {
 		weather: parse(r.weather, null),
 		warnings: parse(r.warnings, []),
 		phase: (r.phase === 'return' ? 'return' : 'pack') as TripPhase,
-		todos_enabled: !!r.todos_enabled
+		todos_enabled: !!r.todos_enabled,
+		notes: parse(r.notes, [])
 	};
 }
 

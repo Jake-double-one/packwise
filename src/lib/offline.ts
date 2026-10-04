@@ -1,4 +1,4 @@
-import type { TripItem, TripTodo } from './types';
+import type { NoteKind, TripItem, TripNote, TripTodo } from './types';
 
 /**
  * Offline support for a trip: operations are applied locally right away and,
@@ -22,7 +22,10 @@ export const OFFLINE_OPS = new Set([
 	'todoCheck',
 	'todoAdd',
 	'todoUpdate',
-	'todoDelete'
+	'todoDelete',
+	'noteAdd',
+	'noteUpdate',
+	'noteDelete'
 ]);
 
 const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -64,6 +67,7 @@ export interface TripState {
 	todos: TripTodo[];
 	name: string;
 	phase: 'pack' | 'return';
+	notes: TripNote[];
 }
 
 const ITEM_PATCH = ['name', 'qty', 'bag_id', 'person_id', 'note', 'needs_power', 'consumable'] as const;
@@ -166,6 +170,16 @@ export function applyLocal(state: TripState, op: Op, userId: string | null): Tri
 			s.todos = s.todos.map((t) => (t.id === op.id ? { ...t, ...patch } : t));
 			break;
 		}
+		case 'noteAdd':
+			if (s.notes.some((n) => n.id === op.id)) break;
+			s.notes = [...s.notes, { id: String(op.id), kind: (op.kind as NoteKind) ?? 'text', label: String(op.label ?? ''), value: String(op.value ?? '') }];
+			break;
+		case 'noteUpdate':
+			s.notes = s.notes.map((n) => (n.id === op.id ? { ...n, ...(op.patch as Partial<TripNote>) } : n));
+			break;
+		case 'noteDelete':
+			s.notes = s.notes.filter((n) => n.id !== op.id);
+			break;
 		case 'todoDelete':
 			s.todos = s.todos.filter((t) => t.id !== op.id);
 			break;

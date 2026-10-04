@@ -32,10 +32,13 @@ import {
 } from './repo';
 import { sanitizeItemPatch } from './sanitize';
 import { generate, generateTodos, type GenerateInput } from '$lib/generate';
+import { regionOf } from '$lib/data/countries';
+import { classifyClimate, seasonOf } from '$lib/weather';
+import { weatherFor } from './weather';
 import { translate } from '$lib/i18n';
 import { messagesFor } from './i18n';
 import { MAX_GROUP_DEPTH, ancestors } from '$lib/tree';
-import type { TemplateNode, TodoTemplate, TripItem, TripPhase, TripSettings, TripTodo, WeatherSummary } from '$lib/types';
+import { NOTE_KINDS, type NoteKind, type TemplateNode, type TodoTemplate, type TripItem, type TripNote, type TripPhase, type TripSettings, type TripTodo, type WeatherSummary } from '$lib/types';
 import { DIMENSION_MAP } from '$lib/context';
 import { COUNTRIES } from '$lib/data/countries';
 
@@ -198,6 +201,9 @@ export type TripOp =
 	| { op: 'syncTemplate'; id: string }
 	| { op: 'rename'; name: string }
 	| { op: 'move'; id: string; parent_id: string | null }
+	| { op: 'noteAdd'; id?: string; kind: string; label: string; value: string }
+	| { op: 'noteUpdate'; id: string; patch: Record<string, unknown> }
+	| { op: 'noteDelete'; id: string }
 	| { op: 'return'; id: string; returned: boolean }
 	| { op: 'phase'; phase: TripPhase }
 	| { op: 'resetReturn' }
@@ -213,7 +219,7 @@ export interface OpResult {
 	removed: string[];
 	activity?: ReturnType<typeof logActivity>;
 	template?: { upsert: TemplateNode[]; removed: string[] };
-	trip?: { name?: string; phase?: TripPhase; todos_enabled?: boolean };
+	trip?: { name?: string; phase?: TripPhase; todos_enabled?: boolean; notes?: TripNote[]; reload?: boolean };
 	todos?: { upsert: TripTodo[]; removed: string[] };
 	todoTemplate?: { upsert: TodoTemplate[]; removed: string[] };
 }
@@ -360,6 +366,28 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 				const updated = updateTripItem(tripId, it.id, { parent_id: parent?.id ?? null, sort })!;
 				return { upsert: [updated], removed: [], activity: logActivity(tripId, uid, actor, 'moved', it.name) };
 			}
+			case 'noteAdd':
+			case 'noteUpdate':
+			case 'noteDelete': {
+				const trip = getTrip(tripId)!;
+				let notes = [...trip.notes];
+				let subject = '';
+				if (op.op === 'noteAdd') {
+					if (notes.length >= 50) error(400, 'trip.err.too_many_notes');
+					const id = op.id && CLIENT_ID.test(op.id) ? op.id : newId();
+					if (!notes.some((n) => n.id === id)) notes.push({ id, ...cleanNote(op) });
+					subject = op.label ?? '';
+				} else if (op.op === 'noteUpdate') {
+					notes = notes.map((n) => (n.id === op.id ? { ...n, ...cleanNote({ ...n, ...op.patch }) } : n));
+					subject = notes.find((n) => n.id === op.id)?.label ?? '';
+				} else {
+					subject = notes.find((n) => n.id === op.id)?.label ?? '';
+					notes = notes.filter((n) => n.id !== op.id);
+				}
+				run('UPDATE trips SET notes = ? WHERE id = ?', JSON.stringify(notes), tripId);
+				const action = op.op === 'noteAdd' ? 'note_added' : op.op === 'noteUpdate' ? 'note_edited' : 'note_removed';
+				return { upsert: [], removed: [], trip: { notes }, activity: logActivity(tripId, uid, actor, action, subject) };
+			}
 			case 'return': {
 				const it = item(op.id);
 				const updated = updateTripItem(tripId, it.id, { returned: !!op.returned })!;
@@ -460,6 +488,11 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 	return result;
 }
 
+function cleanNote(n: Record<string, unknown>): Omit<TripNote, 'id'> {
+	const kind = (NOTE_KINDS.includes(n.kind as NoteKind) ? n.kind : 'text') as NoteKind;
+	return { kind, label: String(n.label ?? '').trim().slice(0, 80), value: String(n.value ?? '').slice(0, 2000) };
+}
+
 function clampDays(v: unknown): number {
 	const n = Math.round(Number(v));
 	return Number.isFinite(n) ? Math.max(0, Math.min(365, n)) : 0;
@@ -482,4 +515,80 @@ export function broadcastTripOp(tripId: string, hhId: string, result: OpResult, 
 	publish(`trip:${tripId}`, 'ops', { ...result, client });
 	if (result.template) publish(`tpl:${hhId}`, 'nodes', { ...result.template, client: null });
 	if (result.todoTemplate) publish(`tpl:${hhId}`, 'todos', { ...result.todoTemplate, client: null });
+}
+
+// ── Editing the trip itself ─────────────────────────────────────────────────
+
+export interface EditTripInput {
+	name?: string;
+	destination?: string;
+	country?: string | null;
+	lat?: number | null;
+	lon?: number | null;
+	start?: string;
+	end?: string;
+}
+
+/**
+ * Changes name, destination or dates. Weather, automatic context (climate,
+ * season, region) and hints are recalculated; the packing list itself is kept.
+ */
+export async function editTrip(tripId: string, hh: AppHousehold, user: SessionUser | null, body: EditTripInput, locale: string): Promise<OpResult> {
+	const trip = getTrip(tripId);
+	if (!trip) error(404, 'trip.not_found');
+	const name = body.name !== undefined ? String(body.name).trim().slice(0, 120) || trip.name : trip.name;
+	const start = body.start ?? trip.start_date;
+	const end = body.end ?? trip.end_date;
+	if (!DATE.test(start) || !DATE.test(end) || end < start) error(400, 'trip.err.dates');
+	const placeChanged = body.destination !== undefined || body.country !== undefined || body.lat !== undefined;
+	const destination = body.destination !== undefined ? String(body.destination).trim().slice(0, 200) : trip.destination;
+	const country =
+		body.country !== undefined ? (typeof body.country === 'string' && COUNTRIES[body.country.toUpperCase()] ? body.country.toUpperCase() : null) : trip.country;
+	const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+	const lat = placeChanged ? num(body.lat) : trip.lat;
+	const lon = placeChanged ? num(body.lon) : trip.lon;
+
+	let weather = trip.weather;
+	const datesChanged = start !== trip.start_date || end !== trip.end_date;
+	if (placeChanged || datesChanged) weather = lat != null && lon != null ? await weatherFor(lat, lon, start, end) : null;
+
+	// automatic context follows the new place / dates; manual choices stay
+	const settings: TripSettings = structuredClone(trip.settings);
+	settings.context.season = [seasonOf(start, end, lat)];
+	const region = regionOf(hh.home_country, country);
+	settings.context.region = region ? [region] : [];
+	settings.context.climate = classifyClimate(weather);
+
+	const messages = messagesFor(locale);
+	const { warnings } = generate({
+		nodes: listTemplate(hh.id),
+		persons: listPersons(hh.id),
+		bags: listBags(hh.id),
+		settings,
+		startDate: start,
+		endDate: end,
+		homeCountry: hh.home_country,
+		destCountry: country,
+		weather,
+		locale,
+		t: (k, p) => translate(messages, k, p)
+	});
+
+	run(
+		`UPDATE trips SET name = ?, destination = ?, country = ?, lat = ?, lon = ?, start_date = ?, end_date = ?, settings = ?, weather = ?, warnings = ?, updated_at = ?
+		 WHERE id = ?`,
+		name,
+		destination,
+		country,
+		lat,
+		lon,
+		start,
+		end,
+		JSON.stringify(settings),
+		weather ? JSON.stringify(weather) : null,
+		JSON.stringify(warnings),
+		now(),
+		tripId
+	);
+	return { upsert: [], removed: [], trip: { name, reload: true }, activity: logActivity(tripId, user?.id ?? null, user?.name ?? '?', 'edited_trip', name) };
 }

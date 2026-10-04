@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api, ApiError, clientId, describeError, live } from '$lib/api';
 	import { toast } from '$lib/toast.svelte';
@@ -9,7 +9,7 @@
 	import { formatDate, formatRange, timeAgo, useI18n } from '$lib/i18n';
 	import { applyLocal, clientRowId, loadQueue, OFFLINE_OPS, saveQueue, type Op, type TripState } from '$lib/offline';
 	import { childrenMap, mergeNodes } from '$lib/tree';
-	import type { TripItem, TripPhase, TripTodo } from '$lib/types';
+	import type { TripItem, TripNote, TripPhase, TripTodo } from '$lib/types';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import ItemEditor from '$lib/components/ItemEditor.svelte';
 	import Ring from '$lib/components/Ring.svelte';
@@ -32,6 +32,7 @@
 	let tripName = $derived(data.trip.name);
 	let phase = $derived<TripPhase>(data.trip.phase);
 	let todosEnabled = $derived(data.trip.todos_enabled);
+	let notes = $derived<TripNote[]>(data.trip.notes);
 	let template = $derived<Record<string, TemplateInfo>>(data.template);
 	let todoTemplateIds = $derived(new Set<string>(data.todoTemplateIds));
 	let activity = $derived(data.activity);
@@ -106,12 +107,13 @@
 	const todosDone = $derived(todos.filter((x) => x.done).length);
 
 	// ── sync ────────────────────────────────────────────────────────────────
-	const getState = (): TripState => ({ items, todos, name: tripName, phase });
+	const getState = (): TripState => ({ items, todos, name: tripName, phase, notes });
 	function setState(s: TripState) {
 		items = s.items;
 		todos = s.todos;
 		tripName = s.name;
 		phase = s.phase;
+		notes = s.notes;
 	}
 
 	onMount(() => {
@@ -176,6 +178,7 @@
 			tripName = fresh.trip.name;
 			phase = fresh.trip.phase;
 			todosEnabled = fresh.trip.todos_enabled;
+			notes = fresh.trip.notes ?? [];
 		} catch {
 			/* offline */
 		}
@@ -186,7 +189,7 @@
 		removed: string[];
 		activity?: (typeof activity)[number];
 		template?: { upsert: ({ id: string } & TemplateInfo)[]; removed: string[] };
-		trip?: { name?: string; phase?: TripPhase; todos_enabled?: boolean };
+		trip?: { name?: string; phase?: TripPhase; todos_enabled?: boolean; notes?: TripNote[]; reload?: boolean };
 		todos?: { upsert: TripTodo[]; removed: string[] };
 		todoTemplate?: { upsert: { id: string }[]; removed: string[] };
 	}
@@ -198,6 +201,9 @@
 		if (r.trip?.name) tripName = r.trip.name;
 		if (r.trip?.phase) phase = r.trip.phase;
 		if (r.trip && 'todos_enabled' in r.trip) todosEnabled = !!r.trip.todos_enabled;
+		if (r.trip?.notes) notes = r.trip.notes;
+		// destination / dates changed: weather, hints and header come from the server
+		if (r.trip?.reload) invalidateAll();
 		if (r.template) {
 			const next = { ...template };
 			for (const id of r.template.removed) delete next[id];
@@ -463,7 +469,7 @@
 	</header>
 
 	{#if tab === 'info'}
-		<TripInfo trip={data.trip} homeCountry={data.homeCountry} />
+		<TripInfo trip={data.trip} {notes} homeCountry={data.homeCountry} canEdit={data.canDelete} {send} />
 	{:else}
 	{#if data.trip.weather || data.trip.warnings.length}
 		<div class="info-grid no-print">

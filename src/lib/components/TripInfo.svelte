@@ -1,13 +1,27 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { analysePlugs, COUNTRIES, countryFlag, countryName, currencyName, LEFT_HAND_TRAFFIC } from '$lib/data/countries';
 	import { formatDate, useI18n } from '$lib/i18n';
 	import { dayIcon, tripLength } from '$lib/weather';
-	import type { Trip } from '$lib/types';
+	import type { Trip, TripNote } from '$lib/types';
+	import TripEditor from './TripEditor.svelte';
+	import TripNotes from './TripNotes.svelte';
 	import WarningList from './WarningList.svelte';
 	import WeatherCard from './WeatherCard.svelte';
 
-	let { trip, homeCountry }: { trip: Trip; homeCountry: string | null } = $props();
+	let {
+		trip,
+		notes,
+		homeCountry,
+		canEdit,
+		send
+	}: {
+		trip: Trip;
+		notes: TripNote[];
+		homeCountry: string | null;
+		canEdit: boolean;
+		send: (op: { op: string; [k: string]: unknown }) => Promise<unknown>;
+	} = $props();
+	let editing = $state(false);
 	const i18n = useI18n();
 	const { t } = i18n;
 
@@ -30,7 +44,15 @@
 	let info = $state<Info | null>(null);
 	let failed = $state(false);
 
-	onMount(async () => {
+	// reload map & weather when destination or dates change
+	const infoKey = $derived(`${trip.id}|${trip.lat}|${trip.lon}|${trip.country}|${trip.start_date}|${trip.end_date}`);
+	$effect(() => {
+		void infoKey;
+		load();
+	});
+
+	async function load() {
+		failed = false;
 		try {
 			const res = await fetch(`/api/trips/${trip.id}/info`);
 			if (!res.ok) throw new Error(String(res.status));
@@ -38,7 +60,7 @@
 		} catch {
 			failed = true;
 		}
-	});
+	}
 
 	const country = $derived(trip.country ? COUNTRIES[trip.country] : null);
 	const plugs = $derived(analysePlugs(homeCountry, trip.country));
@@ -62,8 +84,13 @@
 </script>
 
 <div class="info-tab">
+	<TripNotes {notes} {send} />
+
 	<section class="card map-card">
-		<h2>🗺️ {trip.destination || (trip.country ? countryName(trip.country, i18n.locale) : trip.name)}</h2>
+		<div class="row between">
+			<h2>🗺️ {trip.destination || (trip.country ? countryName(trip.country, i18n.locale) : trip.name)}</h2>
+			{#if canEdit}<button class="btn small" onclick={() => (editing = true)}>✏️ {t('trip.edit_trip')}</button>{/if}
+		</div>
 		{#if mapUrl}
 			<div class="map"><iframe title={t('info.map')} src={mapUrl} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
 			<div class="row between tiny">
@@ -77,7 +104,7 @@
 		{/if}
 	</section>
 
-	<section class="card">
+	<section class="card wide">
 		<div class="row between wrap">
 			<h2>🌤️ {t('info.weather')}</h2>
 			<div class="legend tiny">
@@ -147,6 +174,10 @@
 	{/if}
 </div>
 
+{#if editing}
+	<TripEditor {trip} onsave={(patch) => send(patch as { op: string })} onclose={() => (editing = false)} />
+{/if}
+
 <style>
 	.info-tab {
 		display: grid;
@@ -155,11 +186,11 @@
 	}
 	@media (min-width: 1000px) {
 		.info-tab {
-			grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 			align-items: start;
 		}
-		.map-card {
-			grid-row: span 2;
+		.wide {
+			grid-column: 1 / -1;
 		}
 	}
 	.info-tab .card {

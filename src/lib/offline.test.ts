@@ -25,7 +25,7 @@ const item = (id: string, parent: string | null = null, kind: 'group' | 'item' =
 	not_needed: false
 });
 
-const base: TripState = { items: [item('g', null, 'group'), item('a', 'g'), item('b', 'g')], todos: [], name: 'Trip', phase: 'pack' };
+const base: TripState = { items: [item('g', null, 'group'), item('a', 'g'), item('b', 'g')], todos: [], name: 'Trip', phase: 'pack', notes: [] };
 
 describe('applyLocal', () => {
 	it('checks and returns items', () => {
@@ -63,6 +63,13 @@ describe('applyLocal', () => {
 		const st = { ...base, items: [...base.items, item('h', null, 'group')] };
 		const s = applyLocal(st, { op: 'move', id: 'a', parent_id: 'h' }, null);
 		expect(s.items.find((i) => i.id === 'a')?.parent_id).toBe('h');
+	});
+
+	it('adds, edits and removes notes', () => {
+		let s = applyLocal(base, { op: 'noteAdd', id: 'N1', kind: 'secret', label: 'WLAN', value: 'abc' }, null);
+		s = applyLocal(s, { op: 'noteUpdate', id: 'N1', patch: { value: 'xyz' } }, null);
+		expect(s.notes).toEqual([{ id: 'N1', kind: 'secret', label: 'WLAN', value: 'xyz' }]);
+		expect(applyLocal(s, { op: 'noteDelete', id: 'N1' }, null).notes).toEqual([]);
 	});
 
 	it('only patches known item fields', () => {

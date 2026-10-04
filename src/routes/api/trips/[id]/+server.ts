@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { run } from '$lib/server/db';
 import { publish } from '$lib/server/realtime';
 import { listActivity, listTripItems, listTripTodos } from '$lib/server/repo';
-import { applyTripOp, broadcastTripOp, tripAccess, type TripOp } from '$lib/server/trips';
+import { applyTripOp, broadcastTripOp, editTrip, tripAccess, type EditTripInput, type TripOp } from '$lib/server/trips';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals, params }) => {
@@ -12,8 +12,12 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 
 export const POST: RequestHandler = async ({ locals, params, request }) => {
 	const { trip, hh } = tripAccess(locals, params.id);
-	const body = (await request.json()) as TripOp & { client?: string };
-	const result = applyTripOp(trip.id, hh, locals.user, body);
+	const body = (await request.json()) as (TripOp | ({ op: 'editTrip' } & EditTripInput)) & { client?: string };
+	let result;
+	if (body.op === 'editTrip') {
+		if (hh.role === 'packer') error(403, 'error.forbidden');
+		result = await editTrip(trip.id, hh, locals.user, body, locals.locale);
+	} else result = applyTripOp(trip.id, hh, locals.user, body);
 	broadcastTripOp(trip.id, hh.id, result, body.client ?? null);
 	return json(result);
 };
