@@ -7,8 +7,11 @@ import {
 	hashPassword,
 	PROFILE_COOKIE,
 	setAppPassword,
+	listUsers,
 	userCount
 } from '$lib/server/auth';
+import { claimAccount, needsClaim } from '$lib/server/admin';
+import { get } from '$lib/server/db';
 import { tx } from '$lib/server/db';
 import { createBag, createHousehold, seedTemplate, seedTodos } from '$lib/server/repo';
 import { addPersonWithBags } from '$lib/server/persons';
@@ -17,8 +20,11 @@ import { COUNTRIES } from '$lib/data/countries';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
+	if (needsClaim()) return { mode: config.authMode, claim: true, profiles: listUsers().map(({ id, name, color, is_admin }) => ({ id, name, color, is_admin })), needsAppPassword: false, defaultCountry: '' };
 	if (userCount() > 0) redirect(303, '/');
 	return {
+		claim: false,
+		profiles: [],
 		mode: config.authMode,
 		needsAppPassword: config.authMode === 'local' && !config.appPassword,
 		defaultCountry: config.defaultCountry || (locals.locale === 'de' ? 'DE' : '')
@@ -26,7 +32,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async (event) => {
+	/** Accounts mode on an existing install: turn one profile into the first admin account. */
+	claim: async (event) => {
+		if (!needsClaim()) redirect(303, '/');
+		const form = await event.request.formData();
+		const id = String(form.get('profile') ?? '');
+		const email = String(form.get('email') ?? '').trim().toLowerCase();
+		const password = String(form.get('password') ?? '');
+		if (!get('SELECT 1 FROM users WHERE id = ?', id)) return fail(400, { email, error: 'setup.err.profile' });
+		if (!/^\S+@\S+\.\S+$/.test(email)) return fail(400, { email, error: 'auth.err.email' });
+		if (password.length < 8) return fail(400, { email, error: 'auth.err.password_short' });
+		if (get('SELECT 1 FROM users WHERE email = ? AND id != ?', email, id)) return fail(400, { email, error: 'auth.err.email_taken' });
+		claimAccount(id, email, await hashPassword(password));
+		createSession(event, id);
+		redirect(303, '/admin');
+	},
+	create: async (event) => {
 		if (userCount() > 0) redirect(303, '/');
 		const form = await event.request.formData();
 		const str = (k: string) => String(form.get(k) ?? '').trim();

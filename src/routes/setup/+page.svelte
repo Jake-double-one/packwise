@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { useI18n } from '$lib/i18n';
+	import Avatar from '$lib/components/Avatar.svelte';
 	import CountrySelect from '$lib/components/CountrySelect.svelte';
 	import LanguageSwitch from '$lib/components/LanguageSwitch.svelte';
 
@@ -16,13 +17,55 @@
 <div class="container narrow">
 	<div class="hero">
 		<img src="/favicon.svg" alt="" width="64" height="64" />
-		<h1>{t('setup.welcome')}</h1>
-		<p class="muted">{t('setup.intro')}</p>
+		<h1>{data.claim ? t('setup.claim_welcome') : t('setup.welcome')}</h1>
+		<p class="muted">{data.claim ? t('setup.claim_hero') : t('setup.intro')}</p>
 		<LanguageSwitch />
 	</div>
 
+	{#if data.claim}
 	<form
 		method="POST"
+		action="?/claim"
+		class="card"
+		use:enhance={() => {
+			busy = true;
+			return async ({ update }) => {
+				await update();
+				busy = false;
+			};
+		}}
+	>
+		{#if form?.error}<div class="alert danger">{t(form.error)}</div>{/if}
+		<h2>🔐 {t('setup.claim_title')}</h2>
+		<p class="small muted">{t('setup.claim_intro')}</p>
+		<div class="field">
+			<span class="label">{t('setup.claim_profile')}</span>
+			<div class="profiles">
+				{#each data.profiles as p, i (p.id)}
+					<label class="profile">
+						<input type="radio" name="profile" value={p.id} checked={p.is_admin ? true : i === 0 && !data.profiles.some((x) => x.is_admin)} />
+						<Avatar name={p.name} color={p.color} />
+						<span>{p.name}</span>
+					</label>
+				{/each}
+			</div>
+		</div>
+		<div class="field">
+			<label for="email">{t('auth.email')}</label>
+			<input id="email" name="email" type="email" required autocomplete="email" value={form?.email ?? ''} />
+		</div>
+		<div class="field">
+			<label for="password">{t('auth.password')}</label>
+			<input id="password" name="password" type="password" required minlength="8" autocomplete="new-password" />
+			<p class="tiny muted">{t('auth.password_hint')}</p>
+		</div>
+		<p class="tiny muted">{t('setup.claim_others')}</p>
+		<button class="btn primary block" disabled={busy}>{busy ? t('common.saving') : t('setup.claim_button')}</button>
+	</form>
+	{:else}
+	<form
+		method="POST"
+		action="?/create"
 		class="card"
 		use:enhance={() => {
 			busy = true;
@@ -81,6 +124,7 @@
 
 		<button class="btn primary block" disabled={busy}>{busy ? t('common.saving') : t('setup.finish')}</button>
 	</form>
+	{/if}
 
 	<p class="tiny muted center">{t('setup.mode_hint', { mode: data.mode })}</p>
 </div>
@@ -102,6 +146,25 @@
 	}
 	.check {
 		margin-bottom: 0.35rem;
+	}
+	.profiles {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.profile {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		padding: 0.4rem 0.7rem;
+		cursor: pointer;
+		margin: 0;
+	}
+	.profile:has(input:checked) {
+		border-color: var(--accent);
+		background: var(--accent-soft);
 	}
 	.center {
 		text-align: center;

@@ -11,6 +11,7 @@ import {
 	readSession,
 	userCount
 } from '$lib/server/auth';
+import { needsClaim } from '$lib/server/admin';
 import { db } from '$lib/server/db';
 import { resolveLocale } from '$lib/server/i18n';
 import { startScheduler } from '$lib/server/scheduler';
@@ -86,7 +87,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (!isPublic) {
 		const deny = (to: string) =>
 			isApi ? json({ error: 'unauthorized' }, { status: 401 }) : new Response(null, { status: 303, headers: { location: to } });
-		if (userCount() === 0) return deny('/setup');
+		if (userCount() === 0 || needsClaim()) return deny('/setup');
 		if (!locals.unlocked) return deny(`/login?next=${encodeURIComponent(path + url.search)}`);
 		if (!locals.user && path !== '/profiles') return deny(`/profiles?next=${encodeURIComponent(path + url.search)}`);
 	}

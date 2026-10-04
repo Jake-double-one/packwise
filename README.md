@@ -76,6 +76,12 @@ Without Portainer: `docker compose up -d` with the [`docker-compose.yml`](docker
 
 In every mode, **profiles / users ≠ people**. People are who you pack for; profiles are who is clicking.
 
+### Accounts mode: privacy and the admin area
+
+- Every account (e-mail + password) only sees the **households it is a member of**, with a role per household (owner / member / packer). Grandparents or friends get their own login and their own household and never see your trips – trip links included.
+- The first account is **admin**. Under **Settings → Administration** the admin sees all accounts and households and can change names and e-mail addresses, set a new password, create a link for setting a password (also by e-mail with SMTP), log an account out everywhere, add accounts to households or remove them, change roles, make admins, **merge** two accounts and delete accounts or households.
+- **Switching an existing install** from `none`/`local` to `accounts`: nothing is lost. On the next visit Packwise asks you to **claim your profile** (pick it, set e-mail and password; you become admin). All other profiles stay and keep access to the households they could see before. In the admin area you then give each of them an e-mail address and send them a link to choose their own password – or merge profiles that belong to the same person.
+
 ## Configuration
 
 | Variable | Default | Description |
@@ -140,4 +146,4 @@ See [ROADMAP.md](ROADMAP.md) for what's done and what's planned next.
 
 **Brave-Browser:** Falls Funktionen nicht gehen, für die Packwise-Adresse die Shields deaktivieren (Löwen-Symbol in der Adressleiste).
 
-Login-Modi: `AUTH_MODE=none` (ohne Login), `local` (ein gemeinsames Passwort, Standard) oder `accounts` (Konten mit E-Mail und Passwort, Einladungen, SMTP).
+Login-Modi: `AUTH_MODE=none` (ohne Login), `local` (ein gemeinsames Passwort, Standard) oder `accounts` (Konten mit E-Mail und Passwort, Einladungen, SMTP). Beim Umstellen einer bestehenden Installation auf `accounts` übernimmst du dein Profil; unter **Einstellungen → Verwaltung** bekommen die anderen Profile E-Mail-Adressen und einen Link zum Passwort-Setzen.

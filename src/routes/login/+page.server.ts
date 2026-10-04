@@ -1,12 +1,13 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { checkAppPassword, clientIp, createSession, rateLimit, userCount, verifyPassword } from '$lib/server/auth';
+import { needsClaim } from '$lib/server/admin';
 import { get } from '$lib/server/db';
 import { safeNext, str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	if (userCount() === 0) redirect(303, '/setup');
+	if (userCount() === 0 || needsClaim()) redirect(303, '/setup');
 	if (config.authMode === 'none' || locals.unlocked) redirect(303, safeNext(url.searchParams.get('next')));
 	return {
 		mode: config.authMode,
