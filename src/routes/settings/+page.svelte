@@ -105,7 +105,7 @@
 				<form method="POST" action="/logout" onsubmit={clearOfflineCache}><button class="btn danger">{t('auth.logout')}</button></form>
 			{/if}
 		</div>
-		<p class="tiny muted">{t('settings.mode', { mode: data.authMode })}</p>
+		<p class="tiny muted">{t('settings.mode', { mode: data.authMode })} · Packwise v{__APP_VERSION__}</p>
 	</section>
 </div>
 

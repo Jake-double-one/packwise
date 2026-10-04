@@ -129,6 +129,8 @@ npm run check      # type check
 npm run build && node build
 ```
 
+**Releases:** bump `version` in `package.json` (`npm version 0.3.0 --no-git-tag-version`), merge to `main`, then create a GitHub release with the tag `v0.3.0`. CI publishes the image as `0.3.0` and `0.3`. The running version is shown under Settings and in `/api/health`.
+
 Stack: SvelteKit 2 / Svelte 5, Node's built-in `node:sqlite` (no native dependencies), Server-Sent Events, scrypt password hashing.
 
 ## Roadmap
