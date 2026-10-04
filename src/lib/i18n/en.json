@@ -681,5 +681,8 @@
 	"admin.err.name": "Please enter a name.",
 	"admin.err.household": "Invalid household or role.",
 	"admin.err.not_found": "Not found.",
-	"admin.err.only_owner": "This account is the only owner of \"{household}\". Make someone else owner first."
+	"admin.err.only_owner": "This account is the only owner of \"{household}\". Make someone else owner first.",
+	"ctx.travelers.adult": "Adults",
+	"reason.no_traveller": "No matching traveller on this trip ({values})",
+	"template.per_person_hint": "The travellers chips apply per person here: \"only with adults\" means only adults get this item; \"never with baby\" just skips the baby."
 }

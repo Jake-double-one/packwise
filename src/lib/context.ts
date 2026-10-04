@@ -23,7 +23,7 @@ export const DIMENSIONS: Dimension[] = [
 	{ key: 'climate', icon: '🌡️', auto: true, values: ['hot', 'warm', 'mild', 'cold', 'snow', 'rain'] },
 	{ key: 'season', icon: '🍂', auto: true, values: ['spring', 'summer', 'autumn', 'winter'] },
 	{ key: 'region', icon: '🌍', auto: true, values: ['domestic', 'eu', 'non_eu'] },
-	{ key: 'travelers', icon: '👶', auto: true, values: ['baby', 'child', 'pet'] }
+	{ key: 'travelers', icon: '👶', auto: true, values: ['adult', 'child', 'baby', 'pet'] }
 ];
 
 export const DIMENSION_MAP = Object.fromEntries(DIMENSIONS.map((d) => [d.key, d]));

@@ -115,9 +115,14 @@ export function computeQty(node: Pick<TemplateNode, 'qty' | 'qty_mode' | 'qty_ex
 
 export function generate(input: GenerateInput): GenerateResult {
 	const { t, settings } = input;
-	const ctx = settings.context;
 	const { days, nights } = tripLength(input.startDate, input.endDate);
 	const travelling = input.persons.filter((p) => settings.persons.includes(p.id));
+	// "adults" is always derived from who travels (older trips did not store it)
+	const ctx: TripContext = travelling.some((p) => p.kind === 'adult') && !settings.context.travelers?.includes('adult')
+		? { ...settings.context, travelers: [...(settings.context.travelers ?? []), 'adult'] }
+		: settings.context;
+	/** Per-traveller items check the travellers chips per person instead of for the whole trip. */
+	const ctxWithoutTravelers: TripContext = { ...ctx, travelers: undefined as unknown as string[] };
 	const personName = new Map(input.persons.map((p) => [p.id, p.name]));
 	const forceIn = new Set(input.forceInclude ?? []);
 	const bags = input.bags ?? [];
@@ -148,11 +153,33 @@ export function generate(input: GenerateInput): GenerateResult {
 	const pets = travelling.filter((p) => p.kind === 'pet');
 	/** Items that are only packed because a pet travels (directly or via their group) belong to that pet. */
 	const forPets = (rules: Rules | undefined) => rules?.travelers?.pet === 1;
-	const walk = (parentId: string | null, parentKey: string | null, path: string[], blocked: string | null, petOnly = false): boolean => {
+	/** Does a traveller of this kind get a per-traveller item, given the travellers chips of the item and its groups? */
+	const kindAllowed = (kind: string, chain: Rules['travelers'][]) => {
+		const rules = chain.filter((r): r is NonNullable<typeof r> => !!r && Object.keys(r).length > 0);
+		if (kind === 'pet' && !rules.some((r) => r.pet === 1)) return false;
+		return rules.every((r) => {
+			if (r[kind] === -1) return false;
+			const only = Object.keys(r).filter((k) => r[k] === 1);
+			return !only.length || only.includes(kind);
+		});
+	};
+	const walk = (
+		parentId: string | null,
+		parentKey: string | null,
+		path: string[],
+		blocked: string | null,
+		petOnly = false,
+		kindChain: Rules['travelers'][] = []
+	): boolean => {
 		let any = false;
 		for (const node of children.get(parentId) ?? []) {
-			const check = checkRules(node.rules, ctx);
+			const perTraveller = node.kind === 'item' && node.per_person && !node.person_id;
+			const check = checkRules(node.rules, perTraveller ? ctxWithoutTravelers : ctx);
 			let reason = describeCheck(t, check);
+			if (perTraveller && !reason) {
+				const kinds = Object.entries(node.rules?.travelers ?? {}).filter(([, v]) => v === 1).map(([k]) => t(`ctx.travelers.${k}`));
+				if (kinds.length) reason = t('reason.because', { values: kinds.join(' + ') });
+			}
 			let blockedHere = blocked;
 			if (!blockedHere && !check.ok) blockedHere = reason;
 
@@ -176,7 +203,7 @@ export function generate(input: GenerateInput): GenerateResult {
 				};
 				const index = items.length;
 				items.push(groupItem);
-				const has = walk(node.id, key, [...path, node.name], blockedHere, petOnly || forPets(node.rules));
+				const has = walk(node.id, key, [...path, node.name], blockedHere, petOnly || forPets(node.rules), [...kindChain, node.rules?.travelers]);
 				if (has) any = true;
 				else items.splice(index, 1);
 				continue;
@@ -185,6 +212,11 @@ export function generate(input: GenerateInput): GenerateResult {
 			let exclusion: string | null = blockedHere;
 			if (!exclusion && node.person_id && !settings.persons.includes(node.person_id)) {
 				exclusion = t('reason.person_absent', { name: personName.get(node.person_id) ?? '?' });
+			}
+			const owners = perTraveller ? travelling.filter((p) => kindAllowed(p.kind, [...kindChain, node.rules?.travelers])) : [];
+			if (!exclusion && perTraveller && !owners.length) {
+				const kinds = Object.entries(node.rules?.travelers ?? {}).filter(([, v]) => v === 1).map(([k]) => t(`ctx.travelers.${k}`));
+				exclusion = t('reason.no_traveller', { values: kinds.join(', ') || t('ctx.travelers.adult') });
 			}
 			if (forceOut.has(node.id)) exclusion = t('reason.removed_by_you');
 			if (exclusion && forceIn.has(node.id)) {
@@ -212,9 +244,9 @@ export function generate(input: GenerateInput): GenerateResult {
 				note: node.note
 			};
 			const isPetItem = !node.person_id && !node.per_person && (petOnly || forPets(node.rules));
-			const owners = isPetItem ? pets : node.per_person && !node.person_id ? travelling.filter((p) => p.kind !== 'pet') : [];
-			if (owners.length) {
-				owners.forEach((p, i) =>
+			const recipients = isPetItem ? pets : perTraveller ? (owners.length ? owners : travelling.filter((p) => p.kind !== 'pet')) : [];
+			if (recipients.length) {
+				recipients.forEach((p, i) =>
 					items.push({ ...base, key: `i${seq++}`, name: node.name, person_id: p.id, bag_id: ownBag(node.bag_id, p.id), sort: node.sort + i / 1000 })
 				);
 			} else {

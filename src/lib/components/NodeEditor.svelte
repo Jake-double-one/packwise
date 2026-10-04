@@ -60,6 +60,7 @@
 				<input type="checkbox" checked={node.per_person} disabled={!canEdit} onchange={(e) => onpatch({ per_person: (e.currentTarget as HTMLInputElement).checked })} />
 				{t('template.per_person')}
 			</label>
+			{#if node.per_person}<p class="tiny muted">👥 {t('template.per_person_hint')}</p>{/if}
 		{/if}
 
 		<fieldset class="qty">

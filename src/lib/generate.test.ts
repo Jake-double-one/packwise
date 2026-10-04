@@ -148,6 +148,28 @@ describe('generate', () => {
 		expect(res.items.find((i) => i.name === 'Towel')?.person_id).toBeNull();
 	});
 
+	it('applies travellers chips per person for per-traveller items', () => {
+		const family: Person[] = [...persons, { id: 'b1', name: 'Baby', kind: 'baby', color: '#555', user_id: null, sort: 4 }];
+		const charger = node({ name: 'Charger', per_person: true, rules: { travelers: { adult: 1 } } });
+		const brush = node({ name: 'Toothbrush', per_person: true, rules: { travelers: { baby: -1 } } });
+		const kids = node({ name: 'Kids', kind: 'group', rules: { travelers: { child: 1, baby: 1 } } });
+		const toy = node({ name: 'Cuddly toy', parent_id: kids.id, per_person: true });
+		const settings = { persons: ['p1', 'p3', 'b1'], context: { travelers: ['child', 'baby'] }, laundryDays: 0 };
+		const res = generate(input([charger, brush, kids, toy], { persons: family, settings }));
+		const owners = (name: string) => res.items.filter((i) => i.name === name).map((i) => i.person_id);
+		expect(owners('Charger')).toEqual(['p1']);
+		expect(owners('Toothbrush')).toEqual(['p1', 'p3']);
+		expect(owners('Cuddly toy')).toEqual(['p3', 'b1']);
+	});
+
+	it('excludes per-traveller items when nobody matches', () => {
+		const wine = node({ name: 'Corkscrew', per_person: true, rules: { travelers: { adult: 1 } } });
+		const settings = { persons: ['p3'], context: { travelers: ['child'] }, laundryDays: 0 };
+		const res = generate(input([wine], { settings }));
+		expect(res.items.some((i) => i.name === 'Corkscrew')).toBe(false);
+		expect(res.excluded.map((e) => e.name)).toContain('Corkscrew');
+	});
+
 	it('respects forced includes and excludes', () => {
 		const a = node({ name: 'A', rules: { activity: { ski: 1 } } });
 		const b = node({ name: 'B' });

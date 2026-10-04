@@ -681,5 +681,8 @@
 	"admin.err.name": "Bitte gib einen Namen ein.",
 	"admin.err.household": "Ungültiger Haushalt oder ungültige Rolle.",
 	"admin.err.not_found": "Nicht gefunden.",
-	"admin.err.only_owner": "Dieses Konto ist einziger Owner von „{household}“. Mach erst jemand anderen zum Owner."
+	"admin.err.only_owner": "Dieses Konto ist einziger Owner von „{household}“. Mach erst jemand anderen zum Owner.",
+	"ctx.travelers.adult": "Erwachsene",
+	"reason.no_traveller": "Kein passender Reisender dabei ({values})",
+	"template.per_person_hint": "Die Mitreisende-Chips gelten hier pro Person: „nur mit Erwachsene“ heißt, nur Erwachsene bekommen den Artikel; „nie mit Baby“ lässt nur das Baby aus."
 }

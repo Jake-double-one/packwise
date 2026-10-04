@@ -60,7 +60,7 @@
 		climate: classifyClimate(weather),
 		season: [seasonOf(start, end, place?.lat)],
 		region: [regionOf(data.homeCountry, country)].filter((x): x is string => !!x),
-		travelers: [...new Set(data.persons.filter((p) => persons.has(p.id) && p.kind !== 'adult').map((p) => p.kind))]
+		travelers: [...new Set(data.persons.filter((p) => persons.has(p.id)).map((p) => p.kind))]
 	});
 	const context = $derived<TripContext>({ ...manual, ...auto, ...overrides });
 

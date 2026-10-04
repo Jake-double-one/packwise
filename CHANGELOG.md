@@ -2,6 +2,12 @@
 
 All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwise:<version>`.
 
+## Unreleased
+
+### Added
+
+- **"Adults" as a travellers chip.** For items packed *once per traveller*, the travellers chips now apply per person: a phone charger with *only with adults* goes to the adults only, a toothbrush with *never with baby* skips just the baby. Per-traveller items inside a group such as *Kids* only go to the children and babies.
+
 ## v0.2.0 – Initial release
 
 The first public release of Packwise: self-hosted, collaborative packing lists in a single container.
