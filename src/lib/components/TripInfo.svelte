@@ -196,7 +196,7 @@
 			grid-column: 1 / -1;
 		}
 	}
-	.info-tab .card {
+	.info-tab > :global(.card) {
 		margin: 0;
 	}
 	h2 {
