@@ -5,6 +5,7 @@ import en from './en.json';
 import de from './de.json';
 import { DIMENSIONS } from '../context';
 import { ROAD_RULES } from '../data/road-rules';
+import { DRIVING_NOTES } from '../data/driving';
 import { translate } from './index';
 
 const base = (k: string) => k.replace(/_(one|other)$/, '');
@@ -40,6 +41,7 @@ describe('locales', () => {
 		const needed = [
 			...DIMENSIONS.flatMap((d) => [`dim.${d.key}`, ...d.values.map((v) => `ctx.${d.key}.${v}`)]),
 			...ROAD_RULES.flatMap((r) => [`road.${r.key}.name`, `road.${r.key}.note`]),
+			...DRIVING_NOTES.map((k) => `drive.note.${k}`),
 			...['adult', 'child', 'baby', 'pet'].map((k) => `kind.${k}`),
 			...['owner', 'member', 'packer'].map((k) => `role.${k}`),
 			...['system', 'light', 'dark', 'amoled'].map((k) => `settings.theme_${k}`)

@@ -3,6 +3,7 @@
 	import { formatDate, useI18n } from '$lib/i18n';
 	import { dayIcon, tripLength } from '$lib/weather';
 	import type { Trip, TripNote } from '$lib/types';
+	import DrivingCard from './DrivingCard.svelte';
 	import TripEditor from './TripEditor.svelte';
 	import TripNotes from './TripNotes.svelte';
 	import WarningList from './WarningList.svelte';
@@ -165,6 +166,8 @@
 			{/if}
 		</dl>
 	</section>
+
+	<DrivingCard {trip} {notes} />
 
 	{#if trip.warnings.length}
 		<section class="card">
