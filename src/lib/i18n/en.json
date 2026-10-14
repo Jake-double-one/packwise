@@ -687,5 +687,12 @@
 	"dim.travelers_for": "For whom (per person)",
 	"rules.for_hint": "✓ only for … · ✕ for everyone except …",
 	"rules.only_for": "Only for",
-	"rules.never_for": "Not for"
+	"rules.never_for": "Not for",
+	"trip.all": "All",
+	"trip.compact": "Compact",
+	"trip.single": "Single",
+	"trip.compact_on": "Compact checklist: one row per item, one box per traveller",
+	"trip.compact_off": "List every traveller separately",
+	"trip.confirm_delete_all": "Remove \"{name}\" for all {count} from this trip?",
+	"trip.group_edit_hint": "Changes apply to everybody: {names}. Bag and person can be changed per traveller in the single view."
 }

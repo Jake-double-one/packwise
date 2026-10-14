@@ -8,6 +8,12 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 - **"Adults" as a travellers chip.** For items packed *once per traveller*, the travellers chips now apply per person: a phone charger with *only with adults* goes to the adults only, a toothbrush with *never with baby* skips just the baby. Per-traveller items inside a group such as *Kids* only go to the children and babies. In the item editor this row is then called **"For whom (per person)"**; for shared items the *Adults* chip is hidden, since an adult always travels.
 
+- **Compact checklist (default).** In the category view, the same item of several travellers (e.g. three ID cards) is one row with a box per traveller and an *All* box that is ticked automatically once everybody is done – tapping it ticks or unticks everybody. The card header with the travellers' avatars stays visible while scrolling, also with nested categories. Switch between *Compact* and *Single* in the toolbar at any time (saved per device); checkmarks are kept. Editing a compact row changes the item for all travellers.
+
+### Fixed
+
+- Printing: no more empty last page; progress rings, counters and other screen-only elements are left out; large categories continue in the next column instead of leaving half-empty pages.
+
 ## v0.2.0 – Initial release
 
 The first public release of Packwise: self-hosted, collaborative packing lists in a single container.

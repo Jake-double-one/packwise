@@ -687,5 +687,12 @@
 	"dim.travelers_for": "Für wen (pro Person)",
 	"rules.for_hint": "✓ nur für … · ✕ für alle außer …",
 	"rules.only_for": "Nur für",
-	"rules.never_for": "Nicht für"
+	"rules.never_for": "Nicht für",
+	"trip.all": "Alle",
+	"trip.compact": "Kompakt",
+	"trip.single": "Einzeln",
+	"trip.compact_on": "Kompakte Strichliste: ein Eintrag pro Artikel, ein Kästchen pro Person",
+	"trip.compact_off": "Jede Person einzeln auflisten",
+	"trip.confirm_delete_all": "„{name}“ für alle {count} von dieser Reise entfernen?",
+	"trip.group_edit_hint": "Änderungen gelten für alle: {names}. Koffer und Person stellst du in der Einzelansicht pro Person um."
 }

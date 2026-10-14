@@ -2,7 +2,7 @@
 	import { dismiss, toasts } from '$lib/toast.svelte';
 </script>
 
-<div class="toasts" aria-live="assertive">
+<div class="toasts no-print" aria-live="assertive">
 	{#each toasts as t (t.id)}
 		<button class="toast {t.kind}" onclick={() => dismiss(t.id)}>{t.kind === 'error' ? '⚠️' : 'ℹ️'} {t.text}</button>
 	{/each}

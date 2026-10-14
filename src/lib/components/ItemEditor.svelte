@@ -13,7 +13,8 @@
 		ondelete,
 		onpromote,
 		onsync,
-		onclose
+		onclose,
+		groupNames = []
 	}: {
 		item: TripItem;
 		persons: Person[];
@@ -25,6 +26,8 @@
 		onpromote: () => void;
 		onsync: () => void;
 		onclose: () => void;
+		/** compact list: one row stands for the same item of several travellers */
+		groupNames?: string[];
 	} = $props();
 	const { t } = useI18n();
 
@@ -38,12 +41,16 @@
 		<label for="iname">{t('template.name')}</label>
 		<input id="iname" bind:value={name} onchange={() => name.trim() && onpatch({ name })} />
 	</div>
+	{#if groupNames.length > 1}
+		<p class="small muted">👥 {t('trip.group_edit_hint', { names: groupNames.join(', ') })}</p>
+	{/if}
 	{#if isItem}
 		<div class="grid-2">
 			<div class="field">
 				<label for="iqty">{t('template.quantity')}</label>
 				<input id="iqty" type="number" min="0" value={item.qty} onchange={(e) => onpatch({ qty: +(e.currentTarget as HTMLInputElement).value })} />
 			</div>
+			{#if groupNames.length <= 1}
 			<div class="field">
 				<label for="ibag">{t('template.bag')}</label>
 				<select id="ibag" value={item.bag_id ?? ''} onchange={(e) => onpatch({ bag_id: (e.currentTarget as HTMLSelectElement).value || null })}>
@@ -51,7 +58,9 @@
 					{#each bags as b}<option value={b.id}>{b.icon} {b.name}</option>{/each}
 				</select>
 			</div>
+			{/if}
 		</div>
+		{#if groupNames.length <= 1}
 		<div class="field">
 			<label for="iperson">{t('template.person')}</label>
 			<select id="iperson" value={item.person_id ?? ''} onchange={(e) => onpatch({ person_id: (e.currentTarget as HTMLSelectElement).value || null })}>
@@ -59,6 +68,7 @@
 				{#each persons as p}<option value={p.id}>{p.name}</option>{/each}
 			</select>
 		</div>
+		{/if}
 		<label class="check"><input type="checkbox" checked={item.needs_power} onchange={(e) => onpatch({ needs_power: (e.currentTarget as HTMLInputElement).checked })} /> ⚡ {t('template.needs_power')}</label>
 		<label class="check field"><input type="checkbox" checked={item.consumable} onchange={(e) => onpatch({ consumable: (e.currentTarget as HTMLInputElement).checked })} /> 🧴 {t('template.consumable')}</label>
 	{/if}

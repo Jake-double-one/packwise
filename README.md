@@ -28,6 +28,7 @@ Packwise replaces the packing list in your notes app. You maintain **one templat
 - **Plug adapters and voltage**: built-in table of about 200 countries. Packwise knows that a German Europlug fits in Italy but a Schuko plug does not fit in Switzerland. It suggests the right adapter type and the number needed. Devices marked ⚡ get a voltage warning (e.g. 120 V in the US).
 - **Road-trip hints** (car / camper only): vignettes (AT, CH, SI, CZ, SK, HU, RO, BG), Crit'Air, Umweltplakette, safety kit, Green Card, beam deflectors, winter equipment. Shown as suggestions without guarantee.
 - **Currency hint**: e.g. cash in GBP when the destination uses a different currency.
+- **Compact checklist**: the same item of several travellers (e.g. ID cards) is one row with a box per person and an *All* box; switch to a single list per device at any time.
 - **Live collaboration** via Server-Sent Events: see who is online, with an activity log of who packed what.
 - **To-dos before departure** (optional per trip): water the plants, online check-in, empty the fridge. Each to-do has a due date relative to departure and uses the same chips as items, so "Online check-in" only appears for flights. Kept in its own to-do template.
 - **Return-trip mode**: a second checkmark for "packed again", so nothing is left in the holiday home. Consumables like sunscreen are left out. The trip suggests it on the last day.

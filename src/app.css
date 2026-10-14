@@ -469,7 +469,19 @@ hr {
 	.no-print {
 		display: none !important;
 	}
+	@page {
+		margin: 12mm;
+	}
+	/* no screen-only height or bottom padding – they produced an empty last page */
+	html,
+	body {
+		height: auto;
+		min-height: 0;
+	}
 	body {
 		font-size: 11pt;
+	}
+	.container {
+		padding: 0;
 	}
 }

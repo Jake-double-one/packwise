@@ -43,7 +43,11 @@
 	let personFilter = $state<string | null>(null);
 	let hideChecked = $state(false);
 	let editingId = $state<string | null>(null);
-	let deleting = $state<{ kind: 'item' | 'todo'; id: string; name: string } | null>(null);
+	/** compact list: the editor changes the same item of all travellers in the row */
+	let editingGroup = $state<string[]>([]);
+	let deleting = $state<{ kind: 'item' | 'todo'; id: string; name: string; ids?: string[] } | null>(null);
+	/** compact checklist (one row per item, one box per traveller) – per device, on by default */
+	let compact = $state(true);
 	let showShare = $state(false);
 	let showActivity = $state(false);
 	let showWarnings = $state(true);
@@ -58,20 +62,20 @@
 
 	// drag & drop (mouse / trackpad only – on touch screens dragging fights with scrolling)
 	let canDrag = $state(false);
-	let dragId = $state<string | null>(null);
+	let dragIds = $state<string[]>([]);
 	let dropKey = $state<string | null>(null);
 
-	function dragStart(e: DragEvent, it: TripItem) {
-		dragId = it.id;
-		e.dataTransfer?.setData('text/plain', it.id);
+	function dragStart(e: DragEvent, list: TripItem[]) {
+		dragIds = list.map((i) => i.id);
+		e.dataTransfer?.setData('text/plain', dragIds[0]);
 		if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
 	}
 	function dragEnd() {
-		dragId = null;
+		dragIds = [];
 		dropKey = null;
 	}
 	function dragOver(e: DragEvent, key: string) {
-		if (!dragId) return;
+		if (!dragIds.length) return;
 		e.preventDefault();
 		e.stopPropagation();
 		dropKey = key;
@@ -80,12 +84,13 @@
 	function drop(e: DragEvent, target: { kind: 'group' | 'bag' | 'person'; id: string | null }) {
 		e.preventDefault();
 		e.stopPropagation();
-		const it = items.find((i) => i.id === dragId);
+		const moving = items.filter((i) => dragIds.includes(i.id));
 		dragEnd();
-		if (!it) return;
-		if (target.kind === 'group' && it.parent_id !== target.id && it.id !== target.id) send({ op: 'move', id: it.id, parent_id: target.id });
-		if (target.kind === 'bag' && (it.bag_id ?? null) !== target.id) send({ op: 'update', id: it.id, patch: { bag_id: target.id } });
-		if (target.kind === 'person' && (it.person_id ?? null) !== target.id) send({ op: 'update', id: it.id, patch: { person_id: target.id } });
+		for (const it of moving) {
+			if (target.kind === 'group' && it.parent_id !== target.id && it.id !== target.id) send({ op: 'move', id: it.id, parent_id: target.id });
+			if (target.kind === 'bag' && (it.bag_id ?? null) !== target.id) send({ op: 'update', id: it.id, patch: { bag_id: target.id } });
+			if (target.kind === 'person' && (it.person_id ?? null) !== target.id) send({ op: 'update', id: it.id, patch: { person_id: target.id } });
+		}
 	}
 
 	const returning = $derived(phase === 'return');
@@ -121,6 +126,7 @@
 		try {
 			view = (localStorage.getItem('pw_view') as View) || 'category';
 			hideChecked = localStorage.getItem('pw_hide_checked') === '1';
+			compact = localStorage.getItem('pw_compact') !== '0';
 		} catch {
 			/* storage unavailable */
 		}
@@ -161,6 +167,7 @@
 		try {
 			localStorage.setItem('pw_view', view);
 			localStorage.setItem('pw_hide_checked', hideChecked ? '1' : '0');
+			localStorage.setItem('pw_compact', compact ? '1' : '0');
 		} catch {
 			/* ignore */
 		}
@@ -283,6 +290,35 @@
 		send({ op: 'check', id: it.id, checked: !it.checked });
 	}
 
+	function setDone(it: TripItem, value: boolean) {
+		if (returning) {
+			if (!it.consumable && it.returned !== value) send({ op: 'return', id: it.id, returned: value });
+		} else if (it.checked !== value) send({ op: 'check', id: it.id, checked: value });
+	}
+
+	/** The "all" box of a compact row: checks everybody, or – if all are done – unchecks everybody. */
+	function toggleAll(list: TripItem[]) {
+		const rel = list.filter(relevant);
+		if (!rel.length) return;
+		const all = rel.every(isDone);
+		if (!all && !returning && navigator.vibrate) navigator.vibrate(10);
+		rel.forEach((it) => setDone(it, !all));
+	}
+
+	function openEditor(list: TripItem[]) {
+		editingId = list[0].id;
+		editingGroup = list.map((i) => i.id);
+	}
+	function closeEditor() {
+		editingId = null;
+		editingGroup = [];
+	}
+	/** In a compact row, changes apply to the item of every traveller (bag and person stay personal). */
+	function patchEditing(patch: Partial<TripItem>) {
+		const ids = editingGroup.length ? editingGroup : editingId ? [editingId] : [];
+		for (const id of ids) send({ op: 'update', id, patch });
+	}
+
 	function templateState(it: TripItem): 'linked' | 'differs' | 'new' | 'auto' {
 		if (it.origin === 'auto') return 'auto';
 		const tpl = it.template_id ? template[it.template_id] : undefined;
@@ -294,12 +330,12 @@
 		return 'linked';
 	}
 
-	function requestDelete(it: TripItem) {
+	function requestDelete(it: TripItem, ids: string[] = [it.id]) {
 		const linked = it.template_id && template[it.template_id] && data.canEditTemplate;
-		if (linked) deleting = { kind: 'item', id: it.id, name: it.name };
-		else if (confirm(t('trip.confirm_delete', { name: it.name }))) {
-			send({ op: 'delete', id: it.id });
-			editingId = null;
+		if (linked) deleting = { kind: 'item', id: it.id, name: it.name, ids };
+		else if (confirm(ids.length > 1 ? t('trip.confirm_delete_all', { name: it.name, count: ids.length }) : t('trip.confirm_delete', { name: it.name }))) {
+			ids.forEach((id) => send({ op: 'delete', id }));
+			closeEditor();
 		}
 	}
 
@@ -311,9 +347,14 @@
 
 	async function confirmDelete(alsoTemplate: boolean) {
 		if (!deleting) return;
-		const { kind, id } = deleting;
+		const { kind, id, ids } = deleting;
 		deleting = null;
-		editingId = null;
+		closeEditor();
+		if (kind === 'item' && ids && ids.length > 1) {
+			// the template entry is shared – remove it once, the other copies only from the trip
+			for (const [i, rid] of ids.entries()) await send({ op: 'delete', id: rid, alsoTemplate: alsoTemplate && i === 0 });
+			return;
+		}
 		await send({ op: kind === 'item' ? 'delete' : 'todoDelete', id, alsoTemplate });
 	}
 
@@ -395,6 +436,74 @@
 		return groups.filter((g) => g.items.length || (view === 'person' && g.id !== ''));
 	});
 
+	// ── compact checklist ───────────────────────────────────────────────────
+	const compactOn = $derived(compact && view === 'category' && personFilter === null);
+	const personOrder = $derived(new Map(data.persons.map((p, i) => [p.id, i])));
+	type Entry = { kind: 'group'; node: TripItem } | { kind: 'row'; key: string; items: TripItem[] };
+	/** The same item (same name, same category) of several travellers becomes one row – whether it comes from one per-traveller entry or from separate personal entries. */
+	const entriesByParent = $derived.by(() => {
+		const out = new Map<string | null, Entry[]>();
+		for (const [pid, list] of tree) {
+			const entries: Entry[] = [];
+			const byKey = new Map<string, { kind: 'row'; key: string; items: TripItem[] }>();
+			for (const c of list) {
+				if (c.kind === 'group') {
+					entries.push({ kind: 'group', node: c });
+					continue;
+				}
+				const k = c.person_id && personById.has(c.person_id) ? c.name.trim().toLowerCase() : null;
+				const existing = k ? byKey.get(k) : undefined;
+				// one box per traveller and row: a second copy for the same person gets its own row
+				if (existing && !existing.items.some((i) => i.person_id === c.person_id)) {
+					existing.items.push(c);
+					continue;
+				}
+				const e = { kind: 'row' as const, key: c.id, items: [c] };
+				if (k && !existing) byKey.set(k, e);
+				entries.push(e);
+			}
+			for (const e of entries) if (e.kind === 'row') e.items.sort((a, b) => (personOrder.get(a.person_id ?? '') ?? 99) - (personOrder.get(b.person_id ?? '') ?? 99));
+			out.set(pid, entries);
+		}
+		return out;
+	});
+	function collectPersons(id: string | null, acc: Set<string>) {
+		for (const c of tree.get(id) ?? []) {
+			if (c.kind === 'group') collectPersons(c.id, acc);
+			else if (c.person_id && personById.has(c.person_id)) acc.add(c.person_id);
+		}
+	}
+	const itemById = $derived(new Map(items.map((i) => [i.id, i])));
+	/** The top-level card a nested group belongs to (its columns are shared by all nested rows). */
+	function rootOf(g: TripItem): string {
+		let cur = g;
+		while (cur.parent_id && itemById.get(cur.parent_id)) cur = itemById.get(cur.parent_id)!;
+		return cur.id;
+	}
+	/** Columns of a card: everybody who has a personal item somewhere inside it. */
+	function columnsFor(id: string): typeof data.persons {
+		const acc = new Set<string>();
+		collectPersons(id, acc);
+		return data.persons.filter((p) => acc.has(p.id));
+	}
+
+	// sticky card headers sit right below the (sticky) toolbar
+	let toolbarEl = $state<HTMLElement | null>(null);
+	let stickTop = $state(0);
+	$effect(() => {
+		const el = toolbarEl;
+		if (!el) return;
+		const measure = () => (stickTop = (parseFloat(getComputedStyle(el).top) || 0) + el.offsetHeight);
+		measure();
+		const ro = new ResizeObserver(measure);
+		ro.observe(el);
+		window.addEventListener('resize', measure);
+		return () => {
+			ro.disconnect();
+			window.removeEventListener('resize', measure);
+		};
+	});
+
 	const ringsPerson = $derived(
 		travellers
 			.map((p) => {
@@ -445,7 +554,7 @@
 			<button role="tab" aria-selected={tab === 'info'} class:on={tab === 'info'} class="info" onclick={() => (tab = 'info')}>ℹ️ {t('trip.tab_info')}</button>
 		</div>
 
-		<div class="rings row wrap">
+		<div class="rings row wrap no-print">
 			<div class="ring-main row">
 				<Ring value={done} total={counted.length} size={64} />
 				<div>
@@ -507,7 +616,7 @@
 		<section class="card todos" class:all-done={todos.length > 0 && todosDone === todos.length}>
 			<div class="row between">
 				<button class="todo-head grow" onclick={() => (showTodos = !showTodos)}>
-					<h2>{showTodos ? '▾' : '▸'} ✅ {t('todo.title')}</h2>
+					<h2><span class="no-print">{showTodos ? '▾' : '▸'}</span> ✅ {t('todo.title')}</h2>
 				</button>
 				<span class="gcount tiny" class:complete={todos.length > 0 && todosDone === todos.length}>{todosDone}/{todos.length}</span>
 			</div>
@@ -542,12 +651,17 @@
 		<div class="alert no-print small">📋 {t('trip.pending_template', { count: pendingTemplate.length })}</div>
 	{/if}
 
-	<div class="toolbar row wrap no-print">
+	<div class="toolbar row wrap no-print" bind:this={toolbarEl}>
 		<div class="seg">
 			{#each [['category', '📂'], ['bag', '🧳'], ['person', '👤']] as [v, icon]}
 				<button class:on={view === v} onclick={() => (view = v as View)}>{icon} <span class="hide-sm">{t(`trip.view_${v}`)}</span></button>
 			{/each}
 		</div>
+		{#if view === 'category'}
+			<button class="btn ghost small" class:on={compact} aria-pressed={compact} onclick={() => (compact = !compact)} title={compact ? t('trip.compact_off') : t('trip.compact_on')}>
+				{compact ? '▦' : '☰'} <span class="hide-sm">{compact ? t('trip.compact') : t('trip.single')}</span>
+			</button>
+		{/if}
 		<select class="filter" bind:value={personFilter} aria-label={t('trip.filter_person')}>
 			<option value={null}>👥 {t('trip.everyone')}</option>
 			{#each data.persons as p}<option value={p.id}>{p.name}</option>{/each}
@@ -574,17 +688,17 @@
 			class:checked={isDone(it) && !used}
 			class:used
 			class:has-bag={!!bag}
-			class:dragging={dragId === it.id}
+			class:dragging={dragIds.includes(it.id)}
 			style={bag ? `--bag:${bag.color}` : ''}
 			draggable={canDrag}
-			ondragstart={(e) => dragStart(e, it)}
+			ondragstart={(e) => dragStart(e, [it])}
 			ondragend={dragEnd}
 			role="listitem"
 		>
 			<button class="box" onclick={() => toggle(it)} aria-pressed={isDone(it)} aria-label={it.name} disabled={used}>
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
 			</button>
-			<button class="label" onclick={() => (editingId = it.id)}>
+			<button class="label" onclick={() => openEditor([it])}>
 				<span class="nm">{it.name}</span>
 				{#if it.qty > 1}<span class="badge qty">×{it.qty}</span>{/if}
 				{#if it.needs_power}<span class="tiny">⚡</span>{/if}
@@ -603,9 +717,71 @@
 		</div>
 	{/snippet}
 
+	{#snippet colHead(cols: typeof data.persons)}
+		<div class="cells head" class:many={cols.length >= 5} aria-hidden="true">
+			<span class="cell all-label">{t('trip.all')}</span>
+			{#each cols as p (p.id)}<span class="cell" title={p.name}><Avatar name={p.name} color={p.color} size={22} /></span>{/each}
+		</div>
+	{/snippet}
+
+	{#snippet compactRow(list: TripItem[], cols: typeof data.persons)}
+		{@const it = list[0]}
+		{@const personal = !!it.person_id}
+		{@const bag = !personal && it.bag_id ? bagById.get(it.bag_id) : null}
+		{@const state = templateState(it)}
+		{@const used = returning && it.consumable}
+		{@const rel = list.filter(relevant)}
+		{@const allDone = rel.length > 0 && rel.every(isDone)}
+		{@const sameQty = list.every((i) => i.qty === it.qty)}
+		<div
+			class="item compact"
+			class:checked={allDone && !used}
+			class:used
+			class:has-bag={!!bag}
+			class:dragging={dragIds.includes(it.id)}
+			style={bag ? `--bag:${bag.color}` : ''}
+			draggable={canDrag}
+			ondragstart={(e) => dragStart(e, list)}
+			ondragend={dragEnd}
+			role="listitem"
+		>
+			<button class="label" onclick={() => openEditor(list)}>
+				<span class="nm">{it.name}</span>
+				{#if sameQty && it.qty > 1}<span class="badge qty">×{it.qty}</span>{/if}
+				{#if it.needs_power}<span class="tiny">⚡</span>{/if}
+				{#if used}<span class="badge">🧴 {t('trip.used_up')}</span>{/if}
+				{#if it.note}<span class="note tiny">{it.note}</span>{/if}
+			</button>
+			{#if data.canEditTemplate && state === 'new'}
+				<button class="tpl-btn new no-print" onclick={() => send({ op: 'promote', id: it.id })} title={t('trip.promote')}>↑ {t('trip.to_template')}</button>
+			{:else if data.canEditTemplate && state === 'differs'}
+				<button class="tpl-btn no-print" onclick={() => list.forEach((i) => send({ op: 'syncTemplate', id: i.id }))} title={t('trip.sync')}>⟳</button>
+			{:else if state === 'auto'}
+				<span class="auto tiny no-print" title={it.reason}>✨</span>
+			{/if}
+			{#if bag}<span class="bag-ico" title={bag.name}>{bag.icon}</span>{/if}
+			<div class="cells" class:many={cols.length >= 5}>
+				<button class="box all" class:on={allDone} onclick={() => (personal ? toggleAll(list) : toggle(it))} aria-pressed={allDone} aria-label={personal ? `${it.name}: ${t('trip.all')}` : it.name} disabled={used}>
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+				</button>
+				{#each cols as p (p.id)}
+					{@const pi = list.find((i) => i.person_id === p.id)}
+					{#if pi}
+						<button class="box" class:on={isDone(pi)} onclick={() => toggle(pi)} aria-pressed={isDone(pi)} aria-label={`${it.name}: ${p.name}`} title={p.name} disabled={used}>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+						</button>
+					{:else}
+						<span class="cell none">{personal ? '–' : ''}</span>
+					{/if}
+				{/each}
+			</div>
+		</div>
+	{/snippet}
+
 	{#snippet groupBlock(g: TripItem, depth: number)}
 		{#if hasVisible(g.id) || (!hideChecked && personFilter === null)}
 			{@const c = countIn(g.id)}
+			{@const cols = compactOn ? columnsFor(depth === 1 ? g.id : rootOf(g)) : []}
 			<section
 				class="group depth-{depth}"
 				class:drop={dropKey === g.id}
@@ -614,20 +790,31 @@
 				ondrop={(e) => drop(e, { kind: 'group', id: g.id })}
 				aria-label={g.name}
 			>
-				<div class="ghead row">
+				<div class="ghead row" class:stick={compactOn && depth === 1}>
 					<h2 class="grow">{g.name}</h2>
 					{#if data.canEditTemplate && templateState(g) === 'new' && g.origin !== 'auto'}
 						<button class="tpl-btn new no-print" onclick={() => send({ op: 'promote', id: g.id })}>↑ {t('trip.to_template')}</button>
 					{/if}
 					<span class="gcount tiny" class:complete={c.total > 0 && c.done === c.total}>{c.done}/{c.total}</span>
+					{#if compactOn && depth === 1}{@render colHead(cols)}{/if}
 				</div>
-				{#each tree.get(g.id) ?? [] as child (child.id)}
-					{#if child.kind === 'group'}
-						{@render groupBlock(child, depth + 1)}
-					{:else if matches(child)}
-						{@render itemRow(child)}
-					{/if}
-				{/each}
+				{#if compactOn}
+					{#each entriesByParent.get(g.id) ?? [] as e (e.kind === 'group' ? e.node.id : e.key)}
+						{#if e.kind === 'group'}
+							{@render groupBlock(e.node, depth + 1)}
+						{:else if e.items.some(matches)}
+							{@render compactRow(e.items, cols)}
+						{/if}
+					{/each}
+				{:else}
+					{#each tree.get(g.id) ?? [] as child (child.id)}
+						{#if child.kind === 'group'}
+							{@render groupBlock(child, depth + 1)}
+						{:else if matches(child)}
+							{@render itemRow(child)}
+						{/if}
+					{/each}
+				{/if}
 				<form class="add-row row no-print" onsubmit={async (e) => { e.preventDefault(); const n = drafts[g.id] ?? ''; drafts[g.id] = ''; await addItem(g.id, n); }}>
 					<span class="plus">+</span>
 					<input class="grow" placeholder={t('template.add_item')} bind:value={drafts[g.id]} />
@@ -637,8 +824,20 @@
 	{/snippet}
 
 	{#if canDrag}<p class="tiny muted no-print drag-hint">↕ {t('trip.drag_hint')}</p>{/if}
-	<div class="list" role="list">
-		{#if view === 'category'}
+	<div class="list" role="list" style="--stick:{stickTop}px">
+		{#if compactOn}
+			{#each entriesByParent.get(null) ?? [] as e (e.kind === 'group' ? e.node.id : e.key)}
+				{#if e.kind === 'group'}
+					{@render groupBlock(e.node, 1)}
+				{:else if e.items.some(matches)}
+					{@const cols = data.persons.filter((p) => e.items.some((i) => i.person_id === p.id))}
+					<section class="group depth-1 loose">
+						{#if cols.length}<div class="ghead row stick loose-head"><span class="grow"></span>{@render colHead(cols)}</div>{/if}
+						{@render compactRow(e.items, cols)}
+					</section>
+				{/if}
+			{/each}
+		{:else if view === 'category'}
 			{#each tree.get(null) ?? [] as top (top.id)}
 				{#if top.kind === 'group'}
 					{@render groupBlock(top, 1)}
@@ -688,11 +887,12 @@
 		bags={data.bags}
 		templateState={templateState(editing)}
 		canEditTemplate={data.canEditTemplate}
-		onpatch={(patch) => send({ op: 'update', id: editing.id, patch })}
-		ondelete={() => requestDelete(editing)}
+		groupNames={editingGroup.length > 1 ? editingGroup.map((id) => personById.get(items.find((i) => i.id === id)?.person_id ?? '')?.name ?? '?') : []}
+		onpatch={patchEditing}
+		ondelete={() => requestDelete(editing, editingGroup.length ? editingGroup : [editing.id])}
 		onpromote={() => send({ op: 'promote', id: editing.id })}
-		onsync={() => send({ op: 'syncTemplate', id: editing.id })}
-		onclose={() => (editingId = null)}
+		onsync={() => (editingGroup.length ? editingGroup : [editing.id]).forEach((id) => send({ op: 'syncTemplate', id }))}
+		onclose={closeEditor}
 	/>
 {/if}
 
@@ -966,7 +1166,8 @@
 		border-radius: var(--radius);
 		box-shadow: var(--shadow);
 		padding: 0 0.6rem 0.4rem;
-		overflow: hidden;
+		/* clip (not hidden) so the sticky card header still sticks to the viewport */
+		overflow: clip;
 	}
 	.group.depth-1 > .ghead {
 		margin: 0 -0.6rem 0.35rem;
@@ -991,6 +1192,74 @@
 		outline: 2px dashed var(--accent);
 		outline-offset: 2px;
 		background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+	}
+	/* compact checklist: card header with the travellers stays visible while scrolling */
+	.group.depth-1 > .ghead.stick {
+		position: sticky;
+		top: var(--stick, 0px);
+		z-index: 3;
+		/* same right edge as the boxes of the rows (card padding + row padding) */
+		padding-right: 0.95rem;
+	}
+	.cells {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		flex-shrink: 0;
+		--cell: 1.75rem;
+	}
+	.cells.many {
+		--cell: 1.45rem;
+		gap: 0.2rem;
+	}
+	.cells .box,
+	.cells .cell {
+		width: var(--cell);
+		height: var(--cell);
+	}
+	.cells .cell {
+		display: grid;
+		place-items: center;
+		flex-shrink: 0;
+	}
+	.cells.head .cell :global(.avatar) {
+		width: min(22px, var(--cell)) !important;
+		height: min(22px, var(--cell)) !important;
+	}
+	/* the "all" box is set apart from the travellers' boxes */
+	.cells .box.all,
+	.cells .all-label {
+		margin-right: 0.3rem;
+	}
+	.cells .box.all {
+		border-radius: 50%;
+	}
+	.all-label {
+		font-size: 0.62rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--text-2);
+		overflow: hidden;
+	}
+	.cell.none {
+		color: var(--text-3);
+	}
+	.box.on {
+		background: var(--success);
+		border-color: var(--success);
+	}
+	.box.on svg {
+		stroke-dashoffset: 0;
+		stroke: #fff;
+	}
+	.item.compact {
+		gap: 0.4rem;
+	}
+	.loose-head {
+		min-height: 0;
+		padding-top: 0.3rem !important;
+		padding-bottom: 0.3rem !important;
 	}
 	.ghead h2 {
 		font-size: 1.05rem;
@@ -1164,6 +1433,17 @@
 		}
 	}
 	@media print {
+		.group.depth-1 > .ghead.stick {
+			position: static;
+		}
+		.gcount {
+			display: none;
+		}
+		.box,
+		.cells :global(.avatar) {
+			-webkit-print-color-adjust: exact;
+			print-color-adjust: exact;
+		}
 		.item {
 			min-height: 0;
 			padding: 0.05rem 0;
@@ -1175,18 +1455,20 @@
 			border-radius: 3px;
 			border-width: 1px;
 		}
+		/* cards may continue in the next column / on the next page (only rows stay whole),
+		   so big categories don't leave half-empty pages behind */
 		.group.depth-1 {
 			box-shadow: none;
-			break-inside: avoid-page;
+			margin-bottom: 0.6rem;
+			break-inside: auto;
+		}
+		.ghead {
+			break-after: avoid;
 		}
 		.list {
 			display: block;
 			columns: 2;
 			column-gap: 1.5rem;
-		}
-		.group.depth-1 {
-			margin-bottom: 0.6rem;
-			break-inside: avoid;
 		}
 	}
 </style>
