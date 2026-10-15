@@ -37,7 +37,8 @@
 	}
 
 	let { data, form } = $props();
-	const { t } = useI18n();
+	const i18n = useI18n();
+	const { t } = i18n;
 	const themes = ['system', 'light', 'dark', 'amoled'];
 	let theme = $derived(data.theme);
 
@@ -135,6 +136,7 @@
 	{#if data.authMode === 'accounts'}
 		<section class="card">
 			<h2>{t('auth.change_password')}</h2>
+			{#if data.adminReset}<p class="small muted">🔑 {t('settings.admin_reset', { date: new Date(data.adminReset).toLocaleString(i18n.locale, { dateStyle: 'medium', timeStyle: 'short' }) })}</p>{/if}
 			<form method="POST" action="?/password" use:enhance>
 				{#if form?.pwError}<div class="alert danger">{t(form.pwError)}</div>{/if}
 				{#if form?.saved === 'password'}<div class="alert success">{t('common.saved')}</div>{/if}

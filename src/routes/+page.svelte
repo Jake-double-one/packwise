@@ -41,6 +41,10 @@
 		{#if !data.noHousehold}<a class="btn primary" href="/trips/new">✨ {t('trips.new')}</a>{/if}
 	</div>
 
+	{#if data.adminReset}
+		<div class="alert warning small">🔑 {t('trips.admin_reset', { date: new Date(data.adminReset).toLocaleString(i18n.locale, { dateStyle: 'medium', timeStyle: 'short' }) })}</div>
+	{/if}
+
 	{#if data.noHousehold}
 		<!-- an account without a household (left it, or only invited to a trip) -->
 		<div class="card empty">

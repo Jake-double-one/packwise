@@ -9,13 +9,15 @@ export interface TokenRow {
 	trip_id: string | null;
 	email: string | null;
 	role: Role | null;
+	/** a reset link created in the admin area */
+	by_admin: number;
 	expires_at: number;
 }
 
 export function createToken(kind: TokenRow['kind'], data: Partial<TokenRow>, ttlMs: number): string {
 	const token = randomToken();
 	run(
-		'INSERT INTO tokens (id, kind, user_id, household_id, trip_id, email, role, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+		'INSERT INTO tokens (id, kind, user_id, household_id, trip_id, email, role, by_admin, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		sha256(token),
 		kind,
 		data.user_id ?? null,
@@ -23,6 +25,7 @@ export function createToken(kind: TokenRow['kind'], data: Partial<TokenRow>, ttl
 		data.trip_id ?? null,
 		data.email ?? null,
 		data.role ?? null,
+		data.by_admin ? 1 : 0,
 		now() + ttlMs,
 		now()
 	);
@@ -31,7 +34,7 @@ export function createToken(kind: TokenRow['kind'], data: Partial<TokenRow>, ttl
 
 export function readToken(token: string | null | undefined, kind: TokenRow['kind']): TokenRow | null {
 	if (!token) return null;
-	const row = get<TokenRow>('SELECT kind, user_id, household_id, trip_id, email, role, expires_at FROM tokens WHERE id = ? AND kind = ?', sha256(token), kind);
+	const row = get<TokenRow>('SELECT kind, user_id, household_id, trip_id, email, role, by_admin, expires_at FROM tokens WHERE id = ? AND kind = ?', sha256(token), kind);
 	return row && row.expires_at > now() ? row : null;
 }
 

@@ -21,6 +21,8 @@ export interface AdminHousehold {
 	name: string;
 	home_country: string | null;
 	members: number;
+	/** names of the members – the admin sees who is in a household, never what is inside */
+	member_names: string | null;
 	trips: number;
 	created_at: number;
 }
@@ -46,6 +48,7 @@ export function adminHouseholds(): AdminHousehold[] {
 	return all<AdminHousehold>(
 		`SELECT h.id, h.name, h.home_country, h.created_at,
 		        (SELECT COUNT(*) FROM memberships m WHERE m.household_id = h.id) AS members,
+		        (SELECT group_concat(u.name, ', ') FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.household_id = h.id) AS member_names,
 		        (SELECT COUNT(*) FROM trips t WHERE t.household_id = h.id) AS trips
 		 FROM households h ORDER BY h.created_at`
 	);
@@ -53,6 +56,12 @@ export function adminHouseholds(): AdminHousehold[] {
 
 export function adminCount(): number {
 	return get<{ n: number }>('SELECT COUNT(*) AS n FROM users WHERE is_admin = 1 AND email IS NOT NULL AND password_hash IS NOT NULL')!.n;
+}
+
+/** When the administration last replaced this account's password (null: never). */
+export function adminResetAt(userId: string | undefined): number | null {
+	if (config.authMode !== 'accounts' || !userId) return null;
+	return get<{ at: number | null }>('SELECT admin_reset_at AS at FROM users WHERE id = ?', userId)?.at ?? null;
 }
 
 export function ownerCount(householdId: string): number {

@@ -1,14 +1,12 @@
 import { error, fail } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { createUser, hashPassword, publicOrigin } from '$lib/server/auth';
-import { adminCount, adminHouseholds, adminUsers, mergeUsers, ownerCount } from '$lib/server/admin';
-import { get, run, tx } from '$lib/server/db';
+import { adminCount, adminHouseholds, adminUsers, mergeUsers } from '$lib/server/admin';
+import { all, get, now, run, tx } from '$lib/server/db';
 import { messagesFor } from '$lib/server/i18n';
 import { sendMail } from '$lib/server/mail';
-import { addMember, createBag, createHousehold, seedTemplate, seedTodos } from '$lib/server/repo';
-import { addPersonWithBags } from '$lib/server/persons';
+import { createOwnHousehold } from '$lib/server/households';
 import { createToken } from '$lib/server/tokens';
-import { starterSharedBag, starterTemplate, starterTodos } from '$lib/data/starter';
 import { translate } from '$lib/i18n';
 import { str } from '$lib/server/util';
 import type { Role } from '$lib/types';
@@ -16,6 +14,11 @@ import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 const EMAIL = /^\S+@\S+\.\S+$/;
 
+/**
+ * The admin area manages accounts – it never opens a household: no joining foreign
+ * households, no merging active accounts into one's own, no renaming or deleting
+ * households that still have members. Only orphaned households can be cleaned up.
+ */
 function guard(locals: App.Locals) {
 	if (config.authMode !== 'accounts' || !locals.user?.is_admin) error(403, 'error.forbidden');
 	return locals.user;
@@ -29,7 +32,7 @@ const emailTaken = (email: string, exceptId = '') => !!get('SELECT 1 FROM users 
 async function passwordLink(event: RequestEvent, userId: string, mail: boolean) {
 	const user = get<{ email: string | null; name: string }>('SELECT email, name FROM users WHERE id = ?', userId);
 	if (!user?.email) return fail(400, { error: 'admin.err.no_email', for: userId });
-	const token = createToken('reset', { user_id: userId }, 72 * 3_600_000);
+	const token = createToken('reset', { user_id: userId, by_admin: 1 }, 72 * 3_600_000);
 	const link = `${publicOrigin(event.request)}/reset/${token}`;
 	let mailed = false;
 	if (mail && config.smtp.enabled) {
@@ -56,26 +59,16 @@ export const actions: Actions = {
 		const name = str(form, 'name');
 		const email = str(form, 'email').toLowerCase();
 		const password = String(form.get('password') ?? '');
-		const household = str(form, 'household') || 'new';
 		if (!name) return fail(400, { error: 'admin.err.name' });
 		if (!EMAIL.test(email)) return fail(400, { error: 'auth.err.email' });
 		if (password && password.length < 8) return fail(400, { error: 'auth.err.password_short' });
 		if (emailTaken(email)) return fail(400, { error: 'auth.err.email_taken' });
-		if (household !== 'new' && !householdExists(household)) return fail(400, { error: 'admin.err.household' });
 		const hash = password ? await hashPassword(password) : null;
 		const locale = event.locals.locale;
 		const uid = tx(() => {
+			// always a household of their own – others invite them into theirs
 			const uid = createUser({ name, email, passwordHash: hash, locale });
-			if (household === 'new') {
-				const hh = createHousehold(name, null, uid);
-				const own = addPersonWithBags(hh, name, 'adult', '#6366f1', uid, locale).bags;
-				const shared = starterSharedBag(locale);
-				const bags = [own.suitcase!, createBag(hh, shared.name, shared.color, shared.icon), own.carryon!];
-				seedTemplate(hh, starterTemplate(locale), bags);
-				seedTodos(hh, starterTodos(locale));
-			} else {
-				addMember(household, uid, ownerCount(household) ? 'member' : 'owner');
-			}
+			createOwnHousehold(name, null, { id: uid, name, color: '#6366f1' }, locale, true);
 			return uid;
 		});
 		// without a password the new user sets one via link
@@ -107,7 +100,10 @@ export const actions: Actions = {
 		const password = String(form.get('password') ?? '');
 		if (!userExists(id)) return fail(404, { error: 'admin.err.not_found' });
 		if (password.length < 8) return fail(400, { error: 'auth.err.password_short', for: id });
+		// replacing someone's existing password is shown to them (Settings and start page)
+		const hadPassword = !!get<{ p: string | null }>('SELECT password_hash AS p FROM users WHERE id = ?', id)?.p;
 		run('UPDATE users SET password_hash = ? WHERE id = ?', await hashPassword(password), id);
+		if (hadPassword && id !== me.id) run('UPDATE users SET admin_reset_at = ? WHERE id = ?', now(), id);
 		// log the user out everywhere (but keep the admin's own current session)
 		if (id !== me.id) run('DELETE FROM sessions WHERE user_id = ?', id);
 		return { done: 'password_set', for: id };
@@ -145,14 +141,9 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const userId = str(form, 'user_id');
 		const householdId = str(form, 'household_id');
-		const remove = str(form, 'role') === 'remove';
 		if (!userExists(userId) || !householdExists(householdId)) return fail(404, { error: 'admin.err.not_found' });
+		// only removing: joining a household happens by invitation from its members, never from here
 		const current = get<{ role: Role }>('SELECT role FROM memberships WHERE household_id = ? AND user_id = ?', householdId, userId);
-		if (!remove) {
-			// no roles any more – only the household's creator is marked as owner
-			if (!current) addMember(householdId, userId, ownerCount(householdId) ? 'member' : 'owner');
-			return { done: 'saved', for: userId };
-		}
 		if (!current) return { done: 'saved', for: userId };
 		const next = get<{ user_id: string }>(
 			'SELECT user_id FROM memberships WHERE household_id = ? AND user_id != ? ORDER BY rowid LIMIT 1',
@@ -176,6 +167,9 @@ export const actions: Actions = {
 		const into = str(form, 'into');
 		if (from === me.id || from === into) return fail(400, { error: 'admin.err.self', for: from });
 		if (!userExists(from) || !userExists(into)) return fail(404, { error: 'admin.err.not_found' });
+		// only profiles nobody logs in with (left over from none/local) – an active account's
+		// households must not be handed to somebody else
+		if (get<{ p: string | null }>('SELECT password_hash AS p FROM users WHERE id = ?', from)?.p) return fail(400, { error: 'admin.err.merge_active', for: from });
 		mergeUsers(from, into);
 		return { done: 'merged' };
 	},
@@ -184,15 +178,21 @@ export const actions: Actions = {
 		const me = guard(locals);
 		const id = str(await request.formData(), 'id');
 		if (id === me.id) return fail(400, { error: 'admin.err.self', for: id });
-		const owned = get<{ name: string }>(
-			`SELECT h.name FROM memberships m JOIN households h ON h.id = m.household_id
-			 WHERE m.user_id = ? AND m.role = 'owner'
-			   AND (SELECT COUNT(*) FROM memberships o WHERE o.household_id = m.household_id AND o.role = 'owner') = 1
-			   AND (SELECT COUNT(*) FROM memberships x WHERE x.household_id = m.household_id) > 1`,
-			id
-		);
-		if (owned) return fail(400, { error: 'admin.err.only_owner', household: owned.name, for: id });
-		run('DELETE FROM users WHERE id = ?', id);
+		if (!userExists(id)) return fail(404, { error: 'admin.err.not_found' });
+		tx(() => {
+			// households they created and share with others: the longest member takes over;
+			// households they were alone in stay behind as orphans (see below)
+			const created = all<{ household_id: string }>("SELECT household_id FROM memberships WHERE user_id = ? AND role = 'owner'", id);
+			for (const { household_id } of created) {
+				const next = get<{ user_id: string }>(
+					'SELECT user_id FROM memberships WHERE household_id = ? AND user_id != ? ORDER BY rowid LIMIT 1',
+					household_id,
+					id
+				);
+				if (next) run("UPDATE memberships SET role = 'owner' WHERE household_id = ? AND user_id = ?", household_id, next.user_id);
+			}
+			run('DELETE FROM users WHERE id = ?', id);
+		});
 		if (adminCount() === 0) run('UPDATE users SET is_admin = 1 WHERE id = ?', me.id);
 		return { done: 'deleted' };
 	},
@@ -201,17 +201,9 @@ export const actions: Actions = {
 		guard(locals);
 		const id = str(await request.formData(), 'id');
 		if (!householdExists(id)) return fail(404, { error: 'admin.err.not_found' });
+		// households with members belong to them – their creator deletes them
+		if (get<{ n: number }>('SELECT COUNT(*) AS n FROM memberships WHERE household_id = ?', id)!.n) return fail(400, { error: 'admin.err.not_orphaned' });
 		run('DELETE FROM households WHERE id = ?', id);
 		return { done: 'deleted' };
-	},
-
-	renameHousehold: async ({ request, locals }) => {
-		guard(locals);
-		const form = await request.formData();
-		const id = str(form, 'id');
-		const name = str(form, 'name');
-		if (!householdExists(id) || !name) return fail(400, { error: 'admin.err.household' });
-		run('UPDATE households SET name = ? WHERE id = ?', name.slice(0, 80), id);
-		return { done: 'saved' };
 	}
 };

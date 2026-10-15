@@ -14,7 +14,6 @@
 
 	let open = $state<string | null>(null);
 	let query = $state('');
-	let newHousehold = $state('new');
 
 	const users = $derived(
 		data.users.filter((u) => !query.trim() || `${u.name} ${u.email ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()))
@@ -25,6 +24,9 @@
 		admins: data.users.filter((u) => u.is_admin).length,
 		households: data.households.length
 	});
+	/** households nobody is a member of any more (e.g. after deleting an account) */
+	const orphaned = $derived(data.households.filter((h) => !h.members));
+	const inUse = $derived(data.households.filter((h) => h.members));
 
 	const confirmSubmit =
 		(message: string): SubmitFunction =>
@@ -41,6 +43,7 @@
 <div class="container">
 	<h1>🛡️ {t('admin.title')}</h1>
 	<p class="muted small">{t('admin.registration', { mode: data.registration })} · SMTP: {data.smtp ? '✅' : '—'}</p>
+	<p class="alert small">🛡️ {t('admin.role_hint')}</p>
 
 	<div class="stats">
 		<div class="stat"><strong>{stats.users}</strong><span class="tiny muted">{t('admin.stat_users')}</span></div>
@@ -73,8 +76,7 @@
 			{#each users as u (u.id)}
 				{@const st = status(u)}
 				{@const others = data.users.filter((o) => o.id !== u.id)}
-				{@const missing = data.households.filter((h) => !u.memberships.some((m) => m.household_id === h.id))}
-				<li class="user" class:open={open === u.id}>
+<li class="user" class:open={open === u.id}>
 					<button class="head" aria-expanded={open === u.id} onclick={() => (open = open === u.id ? null : u.id)}>
 						<Avatar name={u.name} color={u.color} avatar={u.avatar} size={34} />
 						<div class="grow who">
@@ -111,6 +113,7 @@
 							{#if !u.email}<p class="tiny muted">{t('admin.no_email_hint')}</p>{/if}
 
 							<h3>{t('admin.password')}</h3>
+							<p class="tiny muted">{t('admin.password_hint')}</p>
 							<form method="POST" action="?/password" use:enhance class="row wrap">
 								<input type="hidden" name="id" value={u.id} />
 								<input class="grow" name="password" type="password" minlength="8" required autocomplete="new-password" placeholder={t('admin.new_password')} aria-label={t('admin.new_password')} />
@@ -138,8 +141,7 @@
 											<form method="POST" action="?/member" use:enhance={confirmSubmit(t('admin.confirm_remove', { name: u.name, household: m.name }))}>
 												<input type="hidden" name="user_id" value={u.id} />
 												<input type="hidden" name="household_id" value={m.household_id} />
-												<input type="hidden" name="role" value="remove" />
-												<button class="btn ghost icon" title={t('admin.remove_from')}>✕</button>
+<button class="btn ghost icon" title={t('admin.remove_from')}>✕</button>
 											</form>
 										</li>
 									{/each}
@@ -147,15 +149,7 @@
 							{:else}
 								<p class="small muted">{t('admin.no_household')}</p>
 							{/if}
-							{#if missing.length}
-								<form method="POST" action="?/member" use:enhance={keep} class="row wrap">
-									<input type="hidden" name="user_id" value={u.id} />
-									<select name="household_id" class="grow" aria-label={t('admin.households')}>
-										{#each missing as h (h.id)}<option value={h.id}>{h.name}</option>{/each}
-									</select>
-									<button class="btn small">+ {t('admin.add_to')}</button>
-								</form>
-							{/if}
+							<p class="tiny muted">{t('admin.memberships_hint')}</p>
 
 							{#if u.id !== data.user?.id}
 								<h3>{t('admin.more')}</h3>
@@ -171,7 +165,8 @@
 										</form>
 									{/if}
 								</div>
-								{#if others.length}
+								<!-- only profiles without their own login can be merged (left over from none/local) -->
+								{#if others.length && !u.has_password}
 									<form
 										method="POST"
 										action="?/merge"
@@ -214,14 +209,8 @@
 					<input id="cp" name="password" type="password" minlength="8" autocomplete="new-password" />
 					<p class="tiny muted">{t('admin.password_optional_hint')}</p>
 				</div>
-				<div class="field">
-					<label for="ch">{t('admin.household')}</label>
-					<select id="ch" name="household" bind:value={newHousehold}>
-						<option value="new">{t('admin.own_household')}</option>
-						{#each data.households as h (h.id)}<option value={h.id}>{t('admin.join_household', { name: h.name })}</option>{/each}
-					</select>
-				</div>
 			</div>
+			<p class="tiny muted">{t('admin.own_household')}</p>
 			{#if data.smtp}<label class="check small"><input type="checkbox" name="mail" checked /> {t('admin.send_mail')}</label>{/if}
 			<button class="btn primary">{t('admin.create_user')}</button>
 		</form>
@@ -231,22 +220,40 @@
 		<h2>🏠 {t('admin.households')}</h2>
 		<p class="tiny muted">{t('admin.households_hint')}</p>
 		<ul class="households">
-			{#each data.households as h (h.id)}
+			{#each inUse as h (h.id)}
 				<li class="row wrap">
-					<form method="POST" action="?/renameHousehold" use:enhance={keep} class="row grow">
-						<input type="hidden" name="id" value={h.id} />
-						<span>{h.home_country ? countryFlag(h.home_country) : '🏠'}</span>
-						<input class="grow" name="name" value={h.name} aria-label={t('household.name')} onchange={(e) => e.currentTarget.form?.requestSubmit()} />
-					</form>
-					<span class="tiny muted">{t('admin.hh_counts', { members: h.members, trips: h.trips })}</span>
-					<form method="POST" action="?/deleteHousehold" use:enhance={confirmSubmit(t('admin.confirm_delete_household', { name: h.name, trips: h.trips }))}>
-						<input type="hidden" name="id" value={h.id} />
-						<button class="btn ghost icon" title={t('common.delete')}>🗑</button>
-					</form>
+					<span>{h.home_country ? countryFlag(h.home_country) : '🏠'}</span>
+					<div class="grow">
+						<strong>{h.name}</strong>
+						<div class="tiny muted">{h.member_names}</div>
+					</div>
+					<span class="tiny muted" title="{t('admin.stat_users')} · {t('nav.trips')}">{t('admin.hh_counts', { members: h.members, trips: h.trips })}</span>
 				</li>
 			{/each}
 		</ul>
 	</section>
+
+	{#if orphaned.length}
+		<section class="card">
+			<h2>🏚️ {t('admin.orphaned')}</h2>
+			<p class="tiny muted">{t('admin.orphaned_hint')}</p>
+			<ul class="households">
+				{#each orphaned as h (h.id)}
+					<li class="row wrap">
+						<span>{h.home_country ? countryFlag(h.home_country) : '🏠'}</span>
+						<div class="grow">
+							<strong>{h.name}</strong>
+							<div class="tiny muted">{t('admin.orphaned_meta', { trips: h.trips, date: new Date(h.created_at).toLocaleDateString(i18n.locale) })}</div>
+						</div>
+						<form method="POST" action="?/deleteHousehold" use:enhance={confirmSubmit(t('admin.confirm_delete_household', { name: h.name, trips: h.trips }))}>
+							<input type="hidden" name="id" value={h.id} />
+							<button class="btn small danger">🗑 {t('common.delete')}</button>
+						</form>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
 </div>
 
 <style>

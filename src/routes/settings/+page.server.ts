@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { adminResetAt } from '$lib/server/admin';
 import { config } from '$lib/server/config';
 import { hashPassword, verifyPassword } from '$lib/server/auth';
 import { get, run } from '$lib/server/db';
@@ -10,6 +11,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, request }) => ({
 	smtp: config.smtp.enabled,
+	adminReset: adminResetAt(locals.user?.id),
 	mcp: config.mcpEnabled && locals.user ? { tokens: listTokens(locals.user.id), max: MAX_TOKENS, url: `${publicOrigin(request)}/mcp` } : null
 });
 

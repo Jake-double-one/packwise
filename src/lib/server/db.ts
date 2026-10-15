@@ -222,6 +222,11 @@ const MIGRATIONS: string[] = [
 		PRIMARY KEY (trip_id, user_id)
 	);
 	CREATE INDEX idx_trip_guests_user ON trip_guests(user_id);
+	`,
+	/* 8 – transparency: when the administration sets the password of an active account,
+	       the person is told (reset links made by an admin are marked) */ `
+	ALTER TABLE users ADD COLUMN admin_reset_at INTEGER;
+	ALTER TABLE tokens ADD COLUMN by_admin INTEGER NOT NULL DEFAULT 0;
 	`
 ];
 

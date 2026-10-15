@@ -29,6 +29,9 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 - **No more roles inside a household** (`accounts` mode): everybody in a household may edit everything and invite others; only the creator can delete the household. Former *packers* become members.
 - **Leaving a household** (`accounts` mode) is always possible – also your last one. The creator can leave once somebody else stays (the longest member takes over) and can always delete the household, also their only one. Without a household the start page offers *Create household* (with the starter list if you like) and still shows trips shared with you; *Template* and *New trip* lead there instead of showing an error. With `none` / `local` the last household stays protected.
 
+- **Admin area without access to contents** (`accounts` mode): the admin sees households only by name, members and number of trips. Adding accounts (including oneself) to households, creating accounts inside an existing household, renaming households and merging active accounts are gone; only profiles without their own login can be merged. Households with members can only be deleted by their creator – the admin cleans up **orphaned households** in a new section. Deleting an account that created a shared household hands it to the longest member instead of refusing.
+- **Transparency**: when the admin replaces the password of an active account (directly or by reset link), the person sees a notice on the start page for 14 days and permanently under *Settings*.
+
 ### Fixed
 
 - Groups (categories) of a trip can be renamed again: tap the group name to edit it. A renamed group can be taken over into the template with ⟳, and the editor now says *group* instead of *item*.

@@ -11,7 +11,7 @@ What's done and what's planned for Packwise. Ideas and feedback are welcome as G
 - Plug adapters, voltage check, currency and road-trip hints (vignettes, Crit'Air, …)
 - Live collaboration (presence, activity log) and template sync (↑ Template, remove from template)
 - Login modes `none` / `local` / `accounts`, households, invitations to a household or a single trip, SMTP
-- Admin area for accounts mode (accounts, passwords, households, merging) and claiming profiles when switching an existing install to `accounts`
+- Admin area for accounts mode (accounts, passwords, orphaned households, merging old profiles) without access to household contents, and claiming profiles when switching an existing install to `accounts`
 - Import with review step (text, Markdown, OneNote / Word, JSON) and JSON export
 - Light / dark / AMOLED themes, English and German, extra languages via `/data/locales`
 - To-dos before departure (optional per trip, due dates, chips, own template)
@@ -34,6 +34,7 @@ What's done and what's planned for Packwise. Ideas and feedback are welcome as G
 - **Reminders** by e-mail, Web Push and ntfy / Gotify: "3 days to go – 60 % packed, 2 to-dos open"
 - **Weather updates**: re-check when the trip comes into forecast range and suggest changes
 - **Calendar export** (`.ics`) for trips and to-dos
+- **Support access on request** (`accounts` mode): the admin can ask a household for temporary access (e.g. to help with a problem); only after the household's creator agrees, visible to all members and revocable by them at any time
 - **Optional 2FA (TOTP)** per user and **OIDC login** (e.g. Authentik)
 - **Template gallery and community templates** (`COMMUNITY_CATALOG_URL`)
 - **REST API and webhooks** (personal tokens already exist for MCP) and a share target (e.g. to connect a shopping-list app)
