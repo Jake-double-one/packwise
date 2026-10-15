@@ -9,7 +9,17 @@
 	const { t } = i18n;
 	const today = new Date().toISOString().slice(0, 10);
 	const upcoming = $derived(data.trips.filter((tr) => tr.end_date >= today).sort((a, b) => a.start_date.localeCompare(b.start_date)));
-	const past = $derived(data.trips.filter((tr) => tr.end_date < today));
+	/** finished trips move into the (collapsed) archive, newest first, by year */
+	const past = $derived(data.trips.filter((tr) => tr.end_date < today).sort((a, b) => b.start_date.localeCompare(a.start_date)));
+	const pastByYear = $derived(
+		past.reduce<[string, typeof past][]>((acc, tr) => {
+			const year = tr.start_date.slice(0, 4);
+			const last = acc[acc.length - 1];
+			if (last && last[0] === year) last[1].push(tr);
+			else acc.push([year, [tr]]);
+			return acc;
+		}, [])
+	);
 
 	function countdown(start: string, end: string) {
 		const days = Math.round((Date.parse(start) - Date.parse(today)) / 86_400_000);
@@ -63,8 +73,13 @@
 		<div class="stack">{#each upcoming as tr (tr.id)}{@render tripCard(tr)}{/each}</div>
 	{/if}
 	{#if past.length}
-		<h2 class="section">{t('trips.past')}</h2>
-		<div class="stack past">{#each past as tr (tr.id)}{@render tripCard(tr)}{/each}</div>
+		<details class="archive">
+			<summary><h2 class="section">🗄️ {t('trips.archive', { count: past.length })}</h2></summary>
+			{#each pastByYear as [year, list] (year)}
+				<h3 class="year tiny">{year}</h3>
+				<div class="stack past">{#each list as tr (tr.id)}{@render tripCard(tr)}{/each}</div>
+			{/each}
+		</details>
 	{/if}
 </div>
 
@@ -101,6 +116,26 @@
 		gap: 0.6rem;
 		margin-top: 0.2rem;
 		flex-wrap: wrap;
+	}
+	.archive summary {
+		cursor: pointer;
+		list-style: none;
+	}
+	.archive summary::-webkit-details-marker {
+		display: none;
+	}
+	.archive summary h2::after {
+		content: ' ▾';
+		color: var(--text-3);
+	}
+	.archive[open] summary h2::after {
+		content: ' ▴';
+	}
+	.year {
+		margin: 0.9rem 0 0.4rem;
+		color: var(--text-3);
+		font-weight: 800;
+		letter-spacing: 0.05em;
 	}
 	.past .trip {
 		opacity: 0.75;

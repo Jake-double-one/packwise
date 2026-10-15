@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api, ApiError, clientId, describeError, live } from '$lib/api';
@@ -48,6 +49,13 @@
 	let deleting = $state<{ kind: 'item' | 'todo'; id: string; name: string; ids?: string[] } | null>(null);
 	/** compact checklist (one row per item, one box per traveller) – per device, on by default */
 	let compact = $state(true);
+	/** search in the list (names, notes and group names) */
+	let query = $state('');
+	let searchEl = $state<HTMLInputElement | null>(null);
+	/** packing mode: screen stays on, done items disappear, bigger boxes */
+	let packing = $state(false);
+	/** just ticked – stay visible for a moment even when done items are hidden */
+	const recent = new SvelteSet<string>();
 	let showShare = $state(false);
 	let showActivity = $state(false);
 	let showWarnings = $state(true);
@@ -108,7 +116,11 @@
 	const today = new Date().toISOString().slice(0, 10);
 	const daysUntil = $derived(Math.round((Date.parse(data.trip.start_date) - Date.parse(today)) / 86_400_000));
 	const homeward = $derived(!returning && today >= data.trip.end_date.slice(0, 10) && Date.parse(today) - Date.parse(data.trip.end_date) < 3 * 86_400_000);
-	const sortedTodos = $derived([...todos].sort((a, b) => b.days_before - a.days_before || a.name.localeCompare(b.name)));
+	const sortedTodos = $derived(
+		[...todos]
+			.filter((td) => !query.trim() || td.name.toLowerCase().includes(query.trim().toLowerCase()))
+			.sort((a, b) => b.days_before - a.days_before || a.name.localeCompare(b.name))
+	);
 	const todosDone = $derived(todos.filter((x) => x.done).length);
 
 	// ── sync ────────────────────────────────────────────────────────────────
@@ -161,6 +173,19 @@
 			close();
 			window.removeEventListener('online', onOnline);
 		};
+	});
+
+	// another trip opened in the same page (e.g. after duplicating): start on its list
+	let shownTrip = '';
+	$effect(() => {
+		const id = data.trip.id;
+		if (shownTrip && shownTrip !== id) {
+			tab = 'list';
+			query = '';
+			packing = false;
+			closeEditor();
+		}
+		shownTrip = id;
 	});
 
 	$effect(() => {
@@ -281,13 +306,43 @@
 		}
 	}
 
+	function markRecent(list: TripItem[]) {
+		for (const it of list) recent.add(it.id);
+		setTimeout(() => list.forEach((it) => recent.delete(it.id)), 1600);
+	}
+
+	/** "✓ Socks packed · Undo" – puts the previous checkmarks back. */
+	function offerUndo(list: TripItem[], label: string) {
+		const prev = list.map((i) => ({ id: i.id, checked: i.checked, returned: i.returned }));
+		const wasReturning = returning;
+		toast(label, 'info', 5000, {
+			group: 'undo',
+			action: {
+				label: t('undo.action'),
+				run: () => {
+					for (const p of prev) {
+						const it = items.find((i) => i.id === p.id);
+						if (!it) continue;
+						if (wasReturning) {
+							if (it.returned !== p.returned) send({ op: 'return', id: p.id, returned: p.returned });
+						} else if (it.checked !== p.checked) send({ op: 'check', id: p.id, checked: p.checked });
+					}
+				}
+			}
+		});
+	}
+
 	function toggle(it: TripItem) {
+		if (returning && it.consumable) return;
+		const value = !isDone(it);
+		offerUndo([it], t(value ? (returning ? 'undo.returned' : 'undo.checked') : 'undo.unchecked', { name: it.name }));
+		if (value) markRecent([it]);
 		if (returning) {
-			if (!it.consumable) send({ op: 'return', id: it.id, returned: !it.returned });
+			send({ op: 'return', id: it.id, returned: value });
 			return;
 		}
-		if (!it.checked && navigator.vibrate) navigator.vibrate(10);
-		send({ op: 'check', id: it.id, checked: !it.checked });
+		if (value && navigator.vibrate) navigator.vibrate(10);
+		send({ op: 'check', id: it.id, checked: value });
 	}
 
 	function setDone(it: TripItem, value: boolean) {
@@ -302,6 +357,8 @@
 		if (!rel.length) return;
 		const all = rel.every(isDone);
 		if (!all && !returning && navigator.vibrate) navigator.vibrate(10);
+		offerUndo(rel, t(all ? 'undo.unchecked_all' : returning ? 'undo.returned_all' : 'undo.checked_all', { name: rel[0].name }));
+		if (!all) markRecent(rel);
 		rel.forEach((it) => setDone(it, !all));
 	}
 
@@ -330,12 +387,36 @@
 		return 'linked';
 	}
 
+	/** The rows that go away with these ids (incl. everything inside a group), parents first. */
+	function snapshot(ids: string[]): TripItem[] {
+		const out: TripItem[] = [];
+		const walk = (it: TripItem) => {
+			out.push($state.snapshot(it) as TripItem);
+			for (const c of tree.get(it.id) ?? []) walk(c);
+		};
+		for (const id of ids) {
+			const it = items.find((i) => i.id === id);
+			if (it) walk(it);
+		}
+		return out;
+	}
+
+	/** Delete only from this trip – with "Undo", which puts the rows back with their checkmarks. */
+	async function deleteFromTrip(ids: string[], name: string) {
+		const rows = snapshot(ids);
+		for (const id of ids) await send({ op: 'delete', id });
+		toast(t('undo.deleted', { name }), 'info', 7000, {
+			group: 'undo',
+			action: { label: t('undo.action'), run: () => send({ op: 'restore', items: rows }) }
+		});
+	}
+
 	function requestDelete(it: TripItem, ids: string[] = [it.id]) {
 		const linked = it.template_id && template[it.template_id] && data.canEditTemplate;
 		if (linked) deleting = { kind: 'item', id: it.id, name: it.name, ids };
 		else if (confirm(ids.length > 1 ? t('trip.confirm_delete_all', { name: it.name, count: ids.length }) : t('trip.confirm_delete', { name: it.name }))) {
-			ids.forEach((id) => send({ op: 'delete', id }));
 			closeEditor();
+			deleteFromTrip(ids, it.name);
 		}
 	}
 
@@ -347,9 +428,10 @@
 
 	async function confirmDelete(alsoTemplate: boolean) {
 		if (!deleting) return;
-		const { kind, id, ids } = deleting;
+		const { kind, id, ids, name } = deleting;
 		deleting = null;
 		closeEditor();
+		if (kind === 'item' && !alsoTemplate) return deleteFromTrip(ids ?? [id], name);
 		if (kind === 'item' && ids && ids.length > 1) {
 			// the template entry is shared – remove it once, the other copies only from the trip
 			for (const [i, rid] of ids.entries()) await send({ op: 'delete', id: rid, alsoTemplate: alsoTemplate && i === 0 });
@@ -396,8 +478,20 @@
 	}
 
 	// ── filtering / grouping ────────────────────────────────────────────────
+	const hideDone = $derived(hideChecked || packing);
+	const q = $derived(query.trim().toLowerCase());
+	/** search hits the item itself or one of its groups ("Kleidung" shows all clothes) */
+	function searchHit(it: TripItem): boolean {
+		if (!q) return true;
+		for (let cur: TripItem | undefined = it; cur; cur = cur.parent_id ? itemById.get(cur.parent_id) : undefined) {
+			if (cur.name.toLowerCase().includes(q) || (cur === it && cur.note.toLowerCase().includes(q))) return true;
+		}
+		return false;
+	}
 	const matches = (it: TripItem) =>
-		(!hideChecked || !isDone(it) || !relevant(it)) && (personFilter === null || (personFilter === '' ? !it.person_id : it.person_id === personFilter));
+		(!hideDone || !isDone(it) || !relevant(it) || recent.has(it.id)) &&
+		(personFilter === null || (personFilter === '' ? !it.person_id : it.person_id === personFilter)) &&
+		searchHit(it);
 
 	function countIn(id: string): { total: number; done: number } {
 		let total = 0;
@@ -487,6 +581,37 @@
 		return data.persons.filter((p) => acc.has(p.id));
 	}
 
+	// packing mode keeps the screen on (Wake Lock API, where supported)
+	const wakeLockSupported = typeof navigator !== 'undefined' && 'wakeLock' in navigator;
+	$effect(() => {
+		if (!packing || !wakeLockSupported) return;
+		let lock: { release: () => Promise<void> } | null = null;
+		let active = true;
+		const acquire = async () => {
+			try {
+				if (active && document.visibilityState === 'visible') lock = await navigator.wakeLock.request('screen');
+			} catch {
+				/* e.g. battery saver – the list works anyway */
+			}
+		};
+		acquire();
+		document.addEventListener('visibilitychange', acquire);
+		return () => {
+			active = false;
+			document.removeEventListener('visibilitychange', acquire);
+			lock?.release().catch(() => {});
+		};
+	});
+	function onKey(e: KeyboardEvent) {
+		const target = e.target as HTMLElement;
+		if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) && !target.isContentEditable) {
+			e.preventDefault();
+			searchEl?.focus();
+		}
+		if (e.key === 'Escape' && document.activeElement === searchEl) query = '';
+	}
+	const openCount = $derived(counted.filter((i) => !isDone(i)).length);
+
 	// sticky card headers sit right below the (sticky) toolbar
 	let toolbarEl = $state<HTMLElement | null>(null);
 	let stickTop = $state(0);
@@ -525,7 +650,9 @@
 
 <svelte:head><title>{tripName} · Packwise</title></svelte:head>
 
-<div class="container trip-page" class:return-mode={returning}>
+<svelte:window onkeydown={onKey} />
+
+<div class="container trip-page" class:return-mode={returning} class:packing>
 	<header class="trip-head">
 		<div class="row between top">
 			<div class="grow">
@@ -581,7 +708,7 @@
 		<TripInfo trip={data.trip} {notes} homeCountry={data.homeCountry} canEdit={data.canDelete} {send} />
 	{:else}
 	{#if data.trip.weather || data.trip.warnings.length}
-		<div class="info-grid no-print">
+		<div class="info-grid no-print pk-hide">
 			{#if data.trip.weather}<WeatherCard weather={data.trip.weather} compact />{/if}
 			{#if data.trip.warnings.length}
 				<div>
@@ -599,7 +726,7 @@
 	{/if}
 
 	{#if homeward}
-		<div class="alert success no-print row wrap">
+		<div class="alert success no-print row wrap pk-hide">
 			<span class="grow">🏠 {t('trip.homeward')}</span>
 			<button class="btn small primary" onclick={() => setPhase('return')}>{t('trip.start_return')}</button>
 		</div>
@@ -613,7 +740,7 @@
 	{/if}
 
 	{#if todosEnabled && !returning}
-		<section class="card todos" class:all-done={todos.length > 0 && todosDone === todos.length}>
+		<section class="card todos pk-hide" class:all-done={todos.length > 0 && todosDone === todos.length}>
 			<div class="row between">
 				<button class="todo-head grow" onclick={() => (showTodos = !showTodos)}>
 					<h2><span class="no-print">{showTodos ? '▾' : '▸'}</span> ✅ {t('todo.title')}</h2>
@@ -648,7 +775,7 @@
 	{/if}
 
 	{#if pendingTemplate.length && data.canEditTemplate}
-		<div class="alert no-print small">📋 {t('trip.pending_template', { count: pendingTemplate.length })}</div>
+		<div class="alert no-print small pk-hide">📋 {t('trip.pending_template', { count: pendingTemplate.length })}</div>
 	{/if}
 
 	<div class="toolbar row wrap no-print" bind:this={toolbarEl}>
@@ -667,8 +794,10 @@
 			{#each data.persons as p}<option value={p.id}>{p.name}</option>{/each}
 			<option value="">{t('trip.shared')}</option>
 		</select>
-		<label class="check small"><input type="checkbox" bind:checked={hideChecked} /> {returning ? t('trip.hide_returned') : t('trip.hide_checked')}</label>
+		{#if !packing}<label class="check small"><input type="checkbox" bind:checked={hideChecked} /> {returning ? t('trip.hide_returned') : t('trip.hide_checked')}</label>{/if}
+		<input class="search" type="search" bind:this={searchEl} bind:value={query} placeholder="🔍 {t('trip.search')}" aria-label={t('trip.search')} title={t('trip.search_hint')} />
 		<div class="grow"></div>
+		<button class="btn small" class:primary={packing} onclick={() => (packing = !packing)} title={t('trip.pack_mode_hint')}>🎒 <span class="hide-sm">{packing ? t('trip.pack_mode_end') : t('trip.pack_mode')}</span></button>
 		{#if !todosEnabled}
 			<button class="btn ghost small" onclick={() => send({ op: 'todos', enabled: true })}>✅ <span class="hide-sm">{t('todo.enable')}</span></button>
 		{/if}
@@ -779,7 +908,7 @@
 	{/snippet}
 
 	{#snippet groupBlock(g: TripItem, depth: number)}
-		{#if hasVisible(g.id) || (!hideChecked && personFilter === null)}
+		{#if hasVisible(g.id) || (!hideDone && personFilter === null && !q)}
 			{@const c = countIn(g.id)}
 			{@const cols = compactOn ? columnsFor(depth === 1 ? g.id : rootOf(g)) : []}
 			<section
@@ -825,7 +954,8 @@
 		{/if}
 	{/snippet}
 
-	{#if canDrag}<p class="tiny muted no-print drag-hint">↕ {t('trip.drag_hint')}</p>{/if}
+	{#if q && !items.some((i) => i.kind === 'item' && matches(i))}<p class="muted">{t('trip.search_none', { query })}</p>{/if}
+	{#if canDrag}<p class="tiny muted no-print drag-hint pk-hide">↕ {t('trip.drag_hint')}</p>{/if}
 	<div class="list" role="list" style="--stick:{stickTop}px">
 		{#if compactOn}
 			{#each entriesByParent.get(null) ?? [] as e (e.kind === 'group' ? e.node.id : e.key)}
@@ -869,18 +999,25 @@
 		{/if}
 	</div>
 
-	<form class="card quick no-print row" onsubmit={async (e) => { e.preventDefault(); const n = quickAdd; quickAdd = ''; await addItem(null, n, view === 'person' && personFilter ? { person_id: personFilter } : {}); }}>
+	<form class="card quick no-print row pk-hide" onsubmit={async (e) => { e.preventDefault(); const n = quickAdd; quickAdd = ''; await addItem(null, n, view === 'person' && personFilter ? { person_id: personFilter } : {}); }}>
 		<input class="grow" placeholder={t('trip.quick_add')} bind:value={quickAdd} />
 		<button class="btn primary">+</button>
 	</form>
 	{/if}
 
 	{#if data.canDelete}
-		<div class="danger-zone no-print">
+		<div class="danger-zone no-print pk-hide">
 			<button class="btn ghost small" onclick={deleteTrip}>🗑 {t('trip.delete')}</button>
 		</div>
 	{/if}
 </div>
+
+{#if packing && tab === 'list'}
+	<div class="pack-bar no-print" role="status">
+		<span class="grow">🎒 <strong>{openCount ? t('trip.pack_open', { count: openCount }) : t('trip.pack_done')}</strong>{#if wakeLockSupported}<span class="tiny muted"> · {t('trip.pack_awake')}</span>{/if}</span>
+		<button class="btn small primary" onclick={() => (packing = false)}>{t('trip.pack_mode_end')}</button>
+	</div>
+{/if}
 
 {#if editing}
 	<ItemEditor
@@ -1143,6 +1280,57 @@
 	}
 	.trip-page {
 		max-width: 1320px;
+	}
+	.search {
+		width: 11rem;
+		padding: 0.35rem 0.7rem;
+		font-size: 0.85rem;
+		border-radius: 999px;
+	}
+	@media (max-width: 640px) {
+		.search {
+			width: auto;
+			flex: 1 1 8rem;
+		}
+	}
+	/* packing mode: just the list, bigger targets */
+	.packing .pk-hide {
+		display: none !important;
+	}
+	.packing .box {
+		width: 2.2rem;
+		height: 2.2rem;
+	}
+	.packing .cells {
+		--cell: 2.2rem;
+	}
+	.packing .cells.many {
+		--cell: 1.8rem;
+	}
+	.packing .item {
+		min-height: 3.2rem;
+	}
+	.packing .nm {
+		font-size: 1.05rem;
+	}
+	.packing {
+		padding-bottom: 6rem;
+	}
+	.pack-bar {
+		position: fixed;
+		z-index: 30;
+		left: 50%;
+		transform: translateX(-50%);
+		bottom: calc(0.8rem + env(safe-area-inset-bottom));
+		width: min(560px, calc(100vw - 24px));
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.55rem 0.6rem 0.55rem 0.9rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		box-shadow: var(--shadow-lg);
 	}
 	.list {
 		display: flex;

@@ -31,9 +31,9 @@ import {
 	updateTripItem
 } from './repo';
 import { sanitizeItemPatch } from './sanitize';
-import { generate, generateTodos, type GenerateInput } from '$lib/generate';
+import { computeQty, generate, generateTodos, type GenerateInput } from '$lib/generate';
 import { regionOf } from '$lib/data/countries';
-import { classifyClimate, seasonOf } from '$lib/weather';
+import { classifyClimate, seasonOf, tripLength } from '$lib/weather';
 import { weatherFor } from './weather';
 import { translate } from '$lib/i18n';
 import { messagesFor } from './i18n';
@@ -212,7 +212,8 @@ export type TripOp =
 	| { op: 'todoAdd'; id?: string; name: string; days_before?: number; person_id?: string | null }
 	| { op: 'todoUpdate'; id: string; patch: Record<string, unknown> }
 	| { op: 'todoDelete'; id: string; alsoTemplate?: boolean }
-	| { op: 'todoPromote'; id: string };
+	| { op: 'todoPromote'; id: string }
+	| { op: 'restore'; items: Record<string, unknown>[] };
 
 export interface OpResult {
 	upsert: TripItem[];
@@ -292,6 +293,44 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 					template,
 					activity: logActivity(tripId, uid, actor, op.alsoTemplate ? 'removed_template' : 'removed', it.name)
 				};
+			}
+			/** Undo of a delete: put the removed rows back (parents first) with their ids and checkmarks. */
+			case 'restore': {
+				const list = Array.isArray(op.items) ? op.items.slice(0, 1000) : [];
+				const known = new Set(listTripItems(tripId).map((i) => i.id));
+				const restored: TripItem[] = [];
+				for (const raw of list) {
+					const id = String(raw.id ?? '');
+					const parent = typeof raw.parent_id === 'string' ? raw.parent_id : null;
+					if (!CLIENT_ID.test(id) || known.has(id) || (parent && !known.has(parent))) continue;
+					const origin = ['template', 'manual', 'auto'].includes(String(raw.origin)) ? (raw.origin as TripItem['origin']) : 'manual';
+					insertTripItem(
+						tripId,
+						{
+							...sanitizeItemPatch(raw, ids),
+							kind: raw.kind === 'group' ? 'group' : 'item',
+							name: String(raw.name ?? '').trim().slice(0, 200) || '?',
+							parent_id: parent,
+							template_id: typeof raw.template_id === 'string' ? raw.template_id : null,
+							origin,
+							reason: String(raw.reason ?? '').slice(0, 500),
+							sort: typeof raw.sort === 'number' && Number.isFinite(raw.sort) ? raw.sort : undefined
+						},
+						id
+					);
+					const checked = !!raw.checked;
+					const back = updateTripItem(tripId, id, {
+						checked,
+						checked_by: checked && typeof raw.checked_by === 'string' ? raw.checked_by : null,
+						checked_at: checked && typeof raw.checked_at === 'number' ? raw.checked_at : null,
+						returned: !!raw.returned,
+						not_needed: !!raw.not_needed
+					})!;
+					known.add(id);
+					restored.push(back);
+				}
+				if (!restored.length) return { upsert: [], removed: [] };
+				return { upsert: restored, removed: [], activity: logActivity(tripId, uid, actor, 'restored', restored[0].name) };
 			}
 			case 'promote': {
 				needTemplateRights();
@@ -592,3 +631,80 @@ export async function editTrip(tripId: string, hh: AppHousehold, user: SessionUs
 	);
 	return { upsert: [], removed: [], trip: { name, reload: true }, activity: logActivity(tripId, user?.id ?? null, user?.name ?? '?', 'edited_trip', name) };
 }
+
+/**
+ * Copy a trip for new dates: same destination, travellers, chips, notes and
+ * list (incl. changes made on the trip), all checkmarks reset. Quantities that
+ * depend on the length of the trip are recalculated, weather and hints follow
+ * the new dates.
+ */
+export async function duplicateTrip(srcId: string, hh: AppHousehold, user: SessionUser | null, body: { name?: unknown; start?: unknown; end?: unknown }, locale: string): Promise<string> {
+	const src = getTrip(srcId);
+	if (!src) error(404, 'trip.not_found');
+	const start = String(body.start ?? '');
+	const end = String(body.end ?? '');
+	if (!DATE.test(start) || !DATE.test(end) || end < start) error(400, 'trip.err.dates');
+	const name = String(body.name ?? '').trim().slice(0, 120) || src.name;
+	const id = newId(12);
+	const { days, nights } = tripLength(start, end);
+	const nodes = new Map(listTemplate(hh.id).map((n) => [n.id, n]));
+	const laundry = src.settings.laundryDays ?? 0;
+	tx(() => {
+		run(
+			`INSERT INTO trips (id, household_id, name, destination, country, lat, lon, start_date, end_date, settings, weather, warnings, notes, todos_enabled, created_by, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			id,
+			hh.id,
+			name,
+			src.destination,
+			src.country,
+			src.lat,
+			src.lon,
+			src.start_date,
+			src.end_date,
+			JSON.stringify(src.settings),
+			src.weather ? JSON.stringify(src.weather) : null,
+			JSON.stringify(src.warnings),
+			JSON.stringify(src.notes ?? []),
+			src.todos_enabled ? 1 : 0,
+			user?.id ?? null,
+			now(),
+			now()
+		);
+		// parents before children, so the new parent ids are known
+		const items = listTripItems(srcId);
+		const byParent = new Map<string | null, TripItem[]>();
+		for (const it of items) byParent.set(it.parent_id, [...(byParent.get(it.parent_id) ?? []), it]);
+		const copy = (oldParent: string | null, newParent: string | null) => {
+			for (const it of byParent.get(oldParent) ?? []) {
+				const node = it.template_id ? nodes.get(it.template_id) : undefined;
+				const qty = node && node.kind === 'item' && node.qty_mode !== 'fixed' ? computeQty(node, days, nights, laundry) : it.qty;
+				const created = insertTripItem(id, {
+					kind: it.kind,
+					name: it.name,
+					parent_id: newParent,
+					sort: it.sort,
+					template_id: it.template_id,
+					origin: it.origin,
+					reason: it.reason,
+					bag_id: it.bag_id,
+					person_id: it.person_id,
+					qty,
+					needs_power: it.needs_power,
+					consumable: it.consumable,
+					note: it.note
+				});
+				copy(it.id, created.id);
+			}
+		};
+		copy(null, null);
+		for (const td of listTripTodos(srcId)) {
+			insertTripTodo(id, { name: td.name, days_before: td.days_before, person_id: td.person_id, note: td.note, template_id: td.template_id, origin: td.origin });
+		}
+		logActivity(id, user?.id ?? null, user?.name ?? '?', 'duplicated', src.name);
+	});
+	// new dates: weather, season and hints are recalculated like when editing the trip
+	if (start !== src.start_date || end !== src.end_date) await editTrip(id, hh, user, { start, end }, locale);
+	return id;
+}
+

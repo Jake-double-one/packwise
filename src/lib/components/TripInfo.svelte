@@ -4,6 +4,7 @@
 	import { dayIcon, tripLength } from '$lib/weather';
 	import type { Trip, TripNote } from '$lib/types';
 	import DrivingCard from './DrivingCard.svelte';
+	import DuplicateTrip from './DuplicateTrip.svelte';
 	import TripEditor from './TripEditor.svelte';
 	import TripNotes from './TripNotes.svelte';
 	import WarningList from './WarningList.svelte';
@@ -23,6 +24,7 @@
 		send: (op: { op: string; [k: string]: unknown }) => Promise<unknown>;
 	} = $props();
 	let editing = $state(false);
+	let duplicating = $state(false);
 	const i18n = useI18n();
 	const { t } = i18n;
 
@@ -90,7 +92,12 @@
 	<section class="card map-card">
 		<div class="row between">
 			<h2>🗺️ {trip.destination || (trip.country ? countryName(trip.country, i18n.locale) : trip.name)}</h2>
-			{#if canEdit}<button class="btn small" onclick={() => (editing = true)}>✏️ {t('trip.edit_trip')}</button>{/if}
+			{#if canEdit}
+				<div class="row">
+					<button class="btn small" onclick={() => (duplicating = true)} title={t('trip.duplicate_intro')}>⧉ <span class="hide-sm">{t('trip.duplicate')}</span></button>
+					<button class="btn small" onclick={() => (editing = true)}>✏️ {t('trip.edit_trip')}</button>
+				</div>
+			{/if}
 		</div>
 		{#if mapUrl}
 			<div class="map"><iframe title={t('info.map')} src={mapUrl} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
@@ -177,11 +184,20 @@
 	{/if}
 </div>
 
+{#if duplicating}
+	<DuplicateTrip {trip} onclose={() => (duplicating = false)} />
+{/if}
+
 {#if editing}
 	<TripEditor {trip} onsave={(patch) => send(patch as { op: string })} onclose={() => (editing = false)} />
 {/if}
 
 <style>
+	@media (max-width: 640px) {
+		.hide-sm {
+			display: none;
+		}
+	}
 	.info-tab {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);

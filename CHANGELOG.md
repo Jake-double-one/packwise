@@ -13,6 +13,12 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 - **Profile pictures.** Under *Settings → Profile* pick one of 32 symbols or upload your own picture (resized to 160 × 160 px in the browser). It is shown in the header, in the admin area, next to who is online and for your traveller in the packing lists.
 - **Activity "Work & Travel"** as a new chip.
 
+- **Undo.** After ticking, unticking or removing something from a trip, a message with *Undo* appears for a few seconds. Removed items (also whole groups) come back with their checkmarks.
+- **Packing mode** (🎒 in the toolbar): only open items, bigger boxes, the screen stays on while packing, and a bar shows how much is left. Just ticked items stay visible for a moment.
+- **Search** in the packing list: items, notes and categories (also to-dos). Press `/` on a keyboard to jump into it.
+- **Duplicate a trip** (Trip info → ⧉ Duplicate): same list incl. your changes, destination, travellers and notes with new dates; checkmarks reset, quantities per day/night, weather and hints recalculated.
+- **Archive**: past trips are collected in a collapsed archive on the start page, newest first, grouped by year.
+
 ### Fixed
 
 - Groups (categories) of a trip can be renamed again: tap the group name to edit it. A renamed group can be taken over into the template with ⟳, and the editor now says *group* instead of *item*.
