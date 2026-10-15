@@ -116,7 +116,7 @@ Packwise works behind Traefik, Nginx Proxy Manager, Caddy and Authentik without 
 
 ## Troubleshooting
 
-**Brave browser: some functions don't work.** With Brave Shields active, some requests can be blocked (Brave's filter lists also apply to self-hosted apps). Open Packwise, tap the Brave lion icon in the address bar and turn **Shields off for this site**. The setting is remembered per domain. Packwise loads no ads, trackers or third-party scripts, so nothing is lost.
+**Brave browser: some functions don't work.** With Brave Shields active, some requests can be blocked (Brave's filter lists also apply to self-hosted apps). Open Packwise, tap the Brave lion icon in the address bar and turn **Shields off for this site**. The setting is remembered per domain. Packwise loads no ads, trackers or third-party scripts, so nothing is lost. Packwise shows this hint by itself in Brave when the live connection stays blocked.
 
 **Live updates don't arrive behind a reverse proxy.** Disable response buffering for `/api/*/live` (Server-Sent Events).
 
@@ -169,6 +169,10 @@ Stack: SvelteKit 2 / Svelte 5, Node's built-in `node:sqlite` (no native dependen
 ## Roadmap
 
 See [ROADMAP.md](ROADMAP.md) for what's done and what's planned next. Release notes: [CHANGELOG.md](CHANGELOG.md).
+
+## Credits
+
+Country flags on Windows (which has no flag emojis) come from the "Twemoji Country Flags" font of [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT), with flag graphics from [Twemoji](https://github.com/twitter/twemoji) by Twitter, Inc. and other contributors, licensed [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/). The font is served by Packwise itself and only loaded where needed.
 
 ---
 

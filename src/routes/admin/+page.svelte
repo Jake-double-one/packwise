@@ -246,9 +246,9 @@
 						<span>{h.home_country ? countryFlag(h.home_country) : '🏠'}</span>
 						<div class="grow">
 							<strong>{h.name}</strong>
-							<div class="tiny muted">{t('admin.orphaned_meta', { trips: h.trips, date: new Date(h.created_at).toLocaleDateString(i18n.locale) })}</div>
+							<div class="tiny muted">{t('admin.orphaned_trips', { count: h.trips })} · {t('admin.created_on', { date: new Date(h.created_at).toLocaleDateString(i18n.locale) })}</div>
 						</div>
-						<form method="POST" action="?/deleteHousehold" use:enhance={confirmSubmit(t('admin.confirm_delete_household', { name: h.name, trips: h.trips }))}>
+						<form method="POST" action="?/deleteHousehold" use:enhance={confirmSubmit(t('admin.confirm_delete_household', { name: h.name, count: h.trips }))}>
 							<input type="hidden" name="id" value={h.id} />
 							<button class="btn small danger">🗑 {t('common.delete')}</button>
 						</form>

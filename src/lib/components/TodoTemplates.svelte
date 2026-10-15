@@ -62,12 +62,12 @@
 	{/each}
 	{#if canEdit}
 		<form class="row add" onsubmit={(e) => { e.preventDefault(); if (!newName.trim()) return; send({ op: 'add', name: newName, patch: { days_before: newDays } }); newName = ''; }}>
-			<input class="grow" placeholder={t('todo.new')} bind:value={newName} />
+			<input class="grow" placeholder={t('todo.new')} aria-label={t('todo.new')} bind:value={newName} />
 			<label class="days">
 				<input type="number" min="0" max="365" bind:value={newDays} />
 				<span class="tiny">{t('todo.days_short')}</span>
 			</label>
-			<button class="btn primary">+</button>
+			<button class="btn primary" aria-label={t('common.add')} title={t('common.add')}>+</button>
 		</form>
 	{/if}
 </div>

@@ -5,6 +5,8 @@
 	import { AVATAR_EMOJIS } from '$lib/avatars';
 	import CountrySelect from '$lib/components/CountrySelect.svelte';
 	import CopyField from '$lib/components/CopyField.svelte';
+	import { toast } from '$lib/toast.svelte';
+	import type { SubmitFunction } from '@sveltejs/kit';
 
 	let { data, form } = $props();
 	const { t } = useI18n();
@@ -17,6 +19,12 @@
 	const canEdit = $derived(data.hh?.role === 'owner' || data.hh?.role === 'member');
 	let country = $derived(data.hh?.home_country ?? '');
 	const keep = () => async ({ update }: { update: (o?: { reset?: boolean }) => Promise<void> }) => update({ reset: false });
+	/** rows of travellers and bags save themselves on every change – a short note confirms it */
+	const autosave: SubmitFunction = () => async ({ result, update }) => {
+		await update({ reset: false });
+		if (result.type === 'success') toast(t('common.saved'), 'info', 1800, { group: 'saved' });
+	};
+	const submit = (e: Event) => (e.currentTarget as HTMLInputElement | HTMLSelectElement).form?.requestSubmit();
 </script>
 
 <svelte:head><title>{t('nav.household')} · Packwise</title></svelte:head>
@@ -61,7 +69,7 @@
 			<ul class="list">
 				{#each data.persons as p, i (p.id)}
 					<li>
-						<form method="POST" action="?/updatePerson" class="row wrap" use:enhance={keep}>
+						<form method="POST" action="?/updatePerson" class="row wrap" use:enhance={autosave}>
 							<input type="hidden" name="id" value={p.id} />
 							<!-- Enter in a field must save, not move: the first submit button is the default -->
 							<button class="sr-only" tabindex="-1" aria-hidden="true">{t('common.save')}</button>
@@ -84,17 +92,16 @@
 							{:else}
 								<Avatar name={p.name} color={p.color} avatar={p.avatar} size={32} />
 							{/if}
-							<input class="grow name" name="name" value={p.name} aria-label={t('settings.name')} disabled={!canEdit} />
-							<select name="kind" value={p.kind} aria-label={t('household.kind')} disabled={!canEdit}>
+							<input class="grow name" name="name" value={p.name} aria-label={t('settings.name')} disabled={!canEdit} required onchange={submit} />
+							<select name="kind" value={p.kind} aria-label={t('household.kind')} disabled={!canEdit} onchange={submit}>
 								{#each kinds as k}<option value={k}>{kindIcon[k]} {t(`kind.${k}`)}</option>{/each}
 							</select>
-							<input type="color" name="color" value={p.color} aria-label={t('settings.color')} disabled={!canEdit} />
+							<input type="color" name="color" value={p.color} aria-label={t('settings.color')} disabled={!canEdit} onchange={submit} />
 							{#if canEdit}
-								<button class="btn small">{t('common.save')}</button>
 								{#if p.kind !== 'pet' && !data.bags.some((b) => b.person_id === p.id)}
 									<button class="btn small" formaction="?/createBags" title={t('household.create_bags_hint')}>🧳 {t('household.create_bags')}</button>
 								{/if}
-								<button class="btn small danger" formaction="?/deletePerson" onclick={(e) => { if (!confirm(t('household.confirm_delete_person', { name: p.name }))) e.preventDefault(); }}>✕</button>
+								<button class="btn small danger" formaction="?/deletePerson" aria-label={t('common.delete')} title={t('common.delete')} onclick={(e) => { if (!confirm(t('household.confirm_delete_person', { name: p.name }))) e.preventDefault(); }}>✕</button>
 							{/if}
 						</form>
 					</li>
@@ -102,8 +109,8 @@
 			</ul>
 			{#if canEdit}
 				<form method="POST" action="?/addPerson" class="row wrap add" use:enhance>
-					<input class="grow" name="name" placeholder={t('household.new_person')} required />
-					<select name="kind">
+					<input class="grow" name="name" placeholder={t('household.new_person')} aria-label={t('household.new_person')} required />
+					<select name="kind" aria-label={t('household.kind')}>
 						{#each kinds as k}<option value={k}>{kindIcon[k]} {t(`kind.${k}`)}</option>{/each}
 					</select>
 					<button class="btn primary">+ {t('common.add')}</button>
@@ -117,7 +124,7 @@
 			<ul class="list">
 				{#each data.bags as b, i (b.id)}
 					<li class="bag" style="--bag:{b.color}">
-						<form method="POST" action="?/updateBag" class="row wrap" use:enhance={keep}>
+						<form method="POST" action="?/updateBag" class="row wrap" use:enhance={autosave}>
 							<input type="hidden" name="id" value={b.id} />
 							<!-- Enter in a field must save, not move: the first submit button is the default -->
 							<button class="sr-only" tabindex="-1" aria-hidden="true">{t('common.save')}</button>
@@ -127,18 +134,18 @@
 									<button class="btn ghost icon" formaction="?/moveBag" name="dir" value="down" disabled={i === data.bags.length - 1} title={t('common.move_down')}>↓</button>
 								</div>
 							{/if}
-							<select name="icon" value={b.icon} class="icon" aria-label="Icon" disabled={!canEdit}>
+							<select name="icon" value={b.icon} class="icon" aria-label="Icon" disabled={!canEdit} onchange={submit}>
 								{#each bagIcons as i}<option value={i}>{i}</option>{/each}
 							</select>
-							<input class="grow name" name="name" value={b.name} aria-label={t('settings.name')} disabled={!canEdit} />
+							<input class="grow name" name="name" value={b.name} aria-label={t('settings.name')} disabled={!canEdit} required onchange={submit} />
+							<span class="break" aria-hidden="true"></span>
 							{#if b.person_id}
 								{@const owner = data.persons.find((p) => p.id === b.person_id)}
 								{#if owner}<span title={t('household.bag_owner', { name: owner.name })}><Avatar name={owner.name} color={owner.color} avatar={owner.avatar} size={26} /></span>{/if}
 							{/if}
-							<input type="color" name="color" value={b.color} aria-label={t('settings.color')} disabled={!canEdit} />
+							<input type="color" name="color" value={b.color} aria-label={t('settings.color')} disabled={!canEdit} onchange={submit} />
 							{#if canEdit}
-								<button class="btn small">{t('common.save')}</button>
-								<button class="btn small danger" formaction="?/deleteBag" onclick={(e) => { if (!confirm(t('household.confirm_delete_bag', { name: b.name }))) e.preventDefault(); }}>✕</button>
+								<button class="btn small danger" formaction="?/deleteBag" aria-label={t('common.delete')} title={t('common.delete')} onclick={(e) => { if (!confirm(t('household.confirm_delete_bag', { name: b.name }))) e.preventDefault(); }}>✕</button>
 							{/if}
 						</form>
 					</li>
@@ -146,9 +153,9 @@
 			</ul>
 			{#if canEdit}
 				<form method="POST" action="?/addBag" class="row wrap add" use:enhance>
-					<select name="icon" class="icon">{#each bagIcons as i}<option value={i}>{i}</option>{/each}</select>
-					<input class="grow" name="name" placeholder={t('household.new_bag')} required />
-					<input type="color" name="color" value="#8b5cf6" />
+					<select name="icon" class="icon" aria-label="Icon">{#each bagIcons as i}<option value={i}>{i}</option>{/each}</select>
+					<input class="grow" name="name" placeholder={t('household.new_bag')} aria-label={t('household.new_bag')} required />
+					<input type="color" name="color" value="#8b5cf6" aria-label={t('settings.color')} />
 					<button class="btn primary">+ {t('common.add')}</button>
 				</form>
 			{/if}
@@ -174,7 +181,7 @@
 									}}
 								>
 									<input type="hidden" name="user_id" value={m.user_id} />
-									<button class="btn small" class:danger={m.user_id !== data.user?.id}>{m.user_id === data.user?.id ? t('household.leave') : '✕'}</button>
+									<button class="btn small" class:danger={m.user_id !== data.user?.id} aria-label={m.user_id === data.user?.id ? t('household.leave') : t('admin.remove_from')}>{m.user_id === data.user?.id ? t('household.leave') : '✕'}</button>
 								</form>
 							{/if}
 						</li>
@@ -185,7 +192,7 @@
 					<h3>{t('household.invite')}</h3>
 					<p class="small muted">{t('household.invite_hint')}</p>
 					<form method="POST" action="?/invite" class="row wrap" use:enhance={keep}>
-						<input class="grow" name="email" type="email" placeholder={data.smtp ? t('household.invite_email') : t('household.invite_email_nosmtp')} />
+						<input class="grow" name="email" type="email" placeholder={data.smtp ? t('household.invite_email') : t('household.invite_email_nosmtp')} aria-label={t('auth.email')} />
 						<button class="btn primary">{t('household.create_invite')}</button>
 					</form>
 					{#if form?.inviteLink}
@@ -204,7 +211,7 @@
 		<h2>{data.hh ? t('household.new_household') : t('household.create_own')}</h2>
 		<p class="small muted">{data.hh ? t('household.new_household_hint') : t('household.none_text')}</p>
 		<form method="POST" action="?/create" class="row wrap" use:enhance>
-			<input class="grow" name="name" placeholder={t('household.name')} required value={data.hh ? '' : (data.user?.name ?? '')} />
+			<input class="grow" name="name" placeholder={t('household.name')} aria-label={t('household.name')} required value={data.hh ? '' : (data.user?.name ?? '')} />
 			<label class="check small"><input type="checkbox" name="starter" checked={!data.hh} /> {t('household.with_starter')}</label>
 			<button class="btn" class:primary={!data.hh}>+ {t('household.create')}</button>
 		</form>
@@ -326,5 +333,26 @@
 	}
 	.order .btn:disabled {
 		opacity: 0.2;
+	}
+	.break {
+		display: none;
+	}
+	/* phones: a bit tighter, so a row needs two lines at most */
+	@media (max-width: 560px) {
+		.list form.row {
+			gap: 0.4rem;
+		}
+		.name {
+			min-width: 6.5rem;
+		}
+		.add .grow {
+			min-width: 9rem;
+		}
+		/* bags: owner, colour and delete go to the second line */
+		.break {
+			display: block;
+			flex-basis: 100%;
+			height: 0;
+		}
 	}
 </style>

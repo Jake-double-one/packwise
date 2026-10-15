@@ -13,7 +13,8 @@ export function describeError(err: unknown, t: (key: string, params?: Record<str
 		const reason = t(err.message);
 		return err.status === 400 || err.status === 404 ? reason : t('error.save_failed', { reason, status: err.status });
 	}
-	return t('error.network', { reason: (err as Error)?.message ?? '' });
+	const text = t('error.network', { reason: (err as Error)?.message ?? '' });
+	return isBrave() ? `${text} ${t('error.brave')}` : text;
 }
 
 /** JSON POST helper; throws ApiError with the server's message key. */
@@ -38,6 +39,9 @@ export async function api<T = unknown>(url: string, body: unknown, method = 'POS
 
 /** Stable per-tab id so a client can ignore echoes of its own changes. */
 export const clientId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : String(Math.random());
+
+/** Brave's Shields can block requests to self-hosted apps – then the error says how to fix it. */
+export const isBrave = () => typeof navigator !== 'undefined' && 'brave' in navigator;
 
 /** EventSource with automatic resubscribe; returns a close function. */
 export function live(url: string, handlers: Record<string, (data: any) => void>, onState?: (online: boolean) => void): () => void {

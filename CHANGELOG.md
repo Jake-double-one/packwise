@@ -38,6 +38,11 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 ### Fixed
 
+- **Country flags on Windows**: flags are shown as flags instead of letters ("IT") – a small flag font is served by Packwise itself and only loaded on systems without flag emojis.
+- **Brave**: the hint about Shields now only appears in Brave, and also when the live connection of a trip stays blocked (once per session).
+- **Household**: travellers and bags save themselves on every change (a short "Saved" confirms it) – no more save button per row; on phones a row takes two lines at most. To-dos in a trip show their due date under the name on phones.
+- Wording: "1 trip", "1 day, 0 nights" instead of plural forms; page titles for *Forgot password*, *New password* and invitations; buttons and fields without a visible label (✕, +, add forms) now have one for screen readers.
+- Old entries of the reminder log are cleaned up after two months.
 - Groups (categories) of a trip can be renamed again: tap the group name to edit it. A renamed group can be taken over into the template with ⟳, and the editor now says *group* instead of *item*.
 - Printing: no more empty last page; progress rings, counters and other screen-only elements are left out; large categories continue in the next column instead of leaving half-empty pages.
 

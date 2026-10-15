@@ -8,6 +8,8 @@
 	const token = $derived(page.params.token);
 </script>
 
+<svelte:head><title>{data.trip ? t('invite.accept_trip') : t('invite.accept')} · Packwise</title></svelte:head>
+
 <div class="container narrow">
 	<div class="card hero">
 		<div class="big">✉️</div>

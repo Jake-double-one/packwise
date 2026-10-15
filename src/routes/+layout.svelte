@@ -4,6 +4,8 @@
 	import { provideI18n } from '$lib/i18n';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import Toasts from '$lib/components/Toasts.svelte';
+	import { browser } from '$app/environment';
+	import { polyfillCountryFlagEmojis } from 'country-flag-emoji-polyfill';
 
 	let { data, children } = $props();
 	const { t } = provideI18n(() => ({ locale: data.locale, messages: data.messages }));
@@ -15,6 +17,8 @@
 	]);
 	const active = (href: string) => (href === '/' ? page.url.pathname === '/' || page.url.pathname.startsWith('/trips') : page.url.pathname.startsWith(href));
 	const showNav = $derived(!!data.user && !page.url.pathname.startsWith('/setup'));
+	// Windows has no flag emojis: then a small self-hosted flag font is loaded (only there)
+	if (browser) polyfillCountryFlagEmojis('Twemoji Country Flags', '/fonts/TwemojiCountryFlags.woff2');
 </script>
 
 <svelte:head>

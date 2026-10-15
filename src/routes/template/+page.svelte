@@ -169,7 +169,7 @@
 		<TodoTemplates todos={data.todos} persons={data.persons} canEdit={data.canEdit} />
 	{:else}
 	<div class="row toolbar">
-		<input type="search" class="grow" placeholder={t('template.search')} bind:value={query} />
+		<input type="search" class="grow" placeholder={t('template.search')} aria-label={t('template.search')} bind:value={query} />
 		<button class="btn" onclick={toggleAll} title={t('template.toggle_all')}>{collapsed.size ? '⊞' : '⊟'}</button>
 	</div>
 
@@ -227,7 +227,7 @@
 							{#if data.canEdit}
 								<form class="add-row row" onsubmit={async (e) => { e.preventDefault(); const name = drafts[n.id] ?? ''; drafts[n.id] = ''; await addNode(n.id, 'item', name); }}>
 									<span class="plus">+</span>
-									<input class="grow" placeholder={t('template.add_item')} bind:value={drafts[n.id]} />
+									<input class="grow" placeholder={t('template.add_item')} aria-label={t('template.add_item')} bind:value={drafts[n.id]} />
 								</form>
 							{/if}
 						</div>
@@ -281,7 +281,7 @@
 
 	{#if data.canEdit}
 		<form class="card new-cat row" onsubmit={async (e) => { e.preventDefault(); const name = newCategory; newCategory = ''; await addNode(null, 'group', name); }}>
-			<input class="grow" placeholder={t('template.new_category')} bind:value={newCategory} />
+			<input class="grow" placeholder={t('template.new_category')} aria-label={t('template.new_category')} bind:value={newCategory} />
 			<button class="btn primary">+ {t('template.add_category')}</button>
 		</form>
 	{/if}

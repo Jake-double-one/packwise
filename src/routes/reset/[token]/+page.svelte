@@ -6,6 +6,8 @@
 	const { t } = useI18n();
 </script>
 
+<svelte:head><title>{t('auth.new_password')} · Packwise</title></svelte:head>
+
 <div class="container narrow">
 	<h1 class="title">{t('auth.new_password')}</h1>
 	<form method="POST" class="card" use:enhance>

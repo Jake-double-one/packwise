@@ -85,7 +85,7 @@
 	{#if step === 'input'}
 		<section class="card">
 			<p class="muted small">{t('import.intro')}</p>
-			<textarea rows="14" bind:value={text} onpaste={onPaste} placeholder={t('import.placeholder')}></textarea>
+			<textarea rows="14" bind:value={text} onpaste={onPaste} placeholder={t('import.placeholder')} aria-label={t('import.title')}></textarea>
 			<div class="row wrap actions">
 				<label class="btn file">📄 {t('import.file')}<input type="file" accept=".txt,.md,.markdown,.json,text/plain" onchange={onFile} hidden /></label>
 				<div class="grow"></div>

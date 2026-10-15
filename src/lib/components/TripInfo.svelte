@@ -155,7 +155,7 @@
 		<h2>🧭 {t('info.facts')}</h2>
 		<dl class="facts">
 			<dt>{t('info.when')}</dt>
-			<dd>{formatDate(trip.start_date, i18n.locale, { weekday: 'short', day: 'numeric', month: 'long' })} – {formatDate(trip.end_date, i18n.locale, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })} · {t('wizard.length', { days: dayCount, nights })}</dd>
+			<dd>{formatDate(trip.start_date, i18n.locale, { weekday: 'short', day: 'numeric', month: 'long' })} – {formatDate(trip.end_date, i18n.locale, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })} · {t('wizard.days', { count: dayCount })}, {t('wizard.nights', { count: nights })}</dd>
 			{#if trip.country}
 				<dt>{t('info.country')}</dt>
 				<dd>{countryFlag(trip.country)} {countryName(trip.country, i18n.locale)}</dd>

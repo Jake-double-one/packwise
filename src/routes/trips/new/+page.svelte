@@ -196,7 +196,7 @@
 						<input id="end" type="date" bind:value={end} min={start} />
 					</div>
 				</div>
-				<p class="small muted">{t('wizard.length', { days, nights })}</p>
+				<p class="small muted">{t('wizard.days', { count: days })}, {t('wizard.nights', { count: nights })}</p>
 				<div class="field">
 					<label for="tname">{t('wizard.name')}</label>
 					<input id="tname" bind:value={name} oninput={() => (nameTouched = true)} placeholder={t('wizard.name_placeholder')} />

@@ -3,7 +3,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api, ApiError, clientId, describeError, live } from '$lib/api';
+	import { api, ApiError, clientId, describeError, isBrave, live } from '$lib/api';
 	import { toast } from '$lib/toast.svelte';
 	import { countryFlag } from '$lib/data/countries';
 	import { todoDue } from '$lib/generate';
@@ -152,6 +152,16 @@
 			flush();
 		}
 		const onOnline = () => flush();
+		/** once per session, not on every reconnect attempt */
+		const braveHint = () => {
+			try {
+				if (sessionStorage.getItem('pw_brave_hint')) return;
+				sessionStorage.setItem('pw_brave_hint', '1');
+			} catch {
+				/* storage blocked – show it anyway */
+			}
+			toast(t('error.brave'), 'info', 12_000, { group: 'brave' });
+		};
 		window.addEventListener('online', onOnline);
 		const close = live(
 			`/api/trips/${tripId}/live`,
@@ -167,6 +177,8 @@
 				const wasOffline = !online;
 				online = state;
 				if (state && (wasOffline || queue.length)) flush();
+				// online, but the live connection stays down: in Brave the Shields are the usual cause
+				if (!state && navigator.onLine && isBrave()) setTimeout(() => !online && braveHint(), 8000);
 			}
 		);
 		return () => {
@@ -756,8 +768,10 @@
 						<button class="box" onclick={() => send({ op: 'todoCheck', id: td.id, done: !td.done })} aria-pressed={td.done} aria-label={td.name}>
 							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
 						</button>
-						<span class="label static-label"><span class="nm">{td.name}</span>{#if td.note}<span class="note tiny">{td.note}</span>{/if}</span>
-						<span class="due tiny {due.cls}">{due.label}</span>
+						<span class="label static-label"
+							><span class="nm">{td.name}</span>{#if td.note}<span class="note tiny">{td.note}</span>{/if}<span class="due due-inline tiny {due.cls}">{due.label}</span></span
+						>
+						<span class="due due-col tiny {due.cls}">{due.label}</span>
 						{#if data.canEditTemplate && (!td.template_id || !todoTemplateIds.has(td.template_id))}
 							<button class="tpl-btn new no-print" onclick={() => send({ op: 'todoPromote', id: td.id })} title={t('trip.promote')}>↑ {t('trip.to_template')}</button>
 						{/if}
@@ -767,7 +781,7 @@
 				{/each}
 				<form class="add-row row no-print" onsubmit={(e) => { e.preventDefault(); addTodo(); }}>
 					<span class="plus">+</span>
-					<input class="grow" placeholder={t('todo.new')} bind:value={newTodo} />
+					<input class="grow" placeholder={t('todo.new')} aria-label={t('todo.new')} bind:value={newTodo} />
 					<input class="days" type="number" min="0" max="365" bind:value={newTodoDays} aria-label={t('todo.due')} />
 					<span class="tiny muted">{t('todo.days_short')}</span>
 				</form>
@@ -949,7 +963,7 @@
 				{/if}
 				<form class="add-row row no-print" onsubmit={async (e) => { e.preventDefault(); const n = drafts[g.id] ?? ''; drafts[g.id] = ''; await addItem(g.id, n); }}>
 					<span class="plus">+</span>
-					<input class="grow" placeholder={t('template.add_item')} bind:value={drafts[g.id]} />
+					<input class="grow" placeholder={t('template.add_item')} aria-label={t('template.add_item')} bind:value={drafts[g.id]} />
 				</form>
 			</section>
 		{/if}
@@ -1001,8 +1015,8 @@
 	</div>
 
 	<form class="card quick no-print row pk-hide" onsubmit={async (e) => { e.preventDefault(); const n = quickAdd; quickAdd = ''; await addItem(null, n, view === 'person' && personFilter ? { person_id: personFilter } : {}); }}>
-		<input class="grow" placeholder={t('trip.quick_add')} bind:value={quickAdd} />
-		<button class="btn primary">+</button>
+		<input class="grow" placeholder={t('trip.quick_add')} aria-label={t('trip.quick_add')} bind:value={quickAdd} />
+		<button class="btn primary" aria-label={t('common.add')} title={t('common.add')}>+</button>
 	</form>
 	{/if}
 
@@ -1151,6 +1165,21 @@
 	.due.today,
 	.due.overdue {
 		color: var(--danger);
+	}
+	/* phones: the due date goes under the name, so the name keeps the width */
+	.due-inline {
+		display: none;
+	}
+	@media (max-width: 560px) {
+		.due-inline {
+			display: block;
+		}
+		.due-col {
+			display: none;
+		}
+		.add-row .days {
+			width: 3.2rem;
+		}
 	}
 	.todo .del {
 		min-width: 1.9rem;
