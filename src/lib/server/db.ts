@@ -227,6 +227,27 @@ const MIGRATIONS: string[] = [
 	       the person is told (reset links made by an admin are marked) */ `
 	ALTER TABLE users ADD COLUMN admin_reset_at INTEGER;
 	ALTER TABLE tokens ADD COLUMN by_admin INTEGER NOT NULL DEFAULT 0;
+	`,
+	/* 9 – notifications: channels per person (e-mail, ntfy, Gotify, Web Push), their
+	       preferences, and a log so a reminder goes out only once */ `
+	CREATE TABLE notify_channels (
+		id TEXT PRIMARY KEY,
+		user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		kind TEXT NOT NULL,            -- email | ntfy | gotify | webpush
+		label TEXT NOT NULL,           -- shown in the list: address, topic, device
+		config_enc TEXT NOT NULL,      -- encrypted JSON
+		endpoint_hash TEXT,            -- webpush: the same browser subscribes only once
+		last_error TEXT,
+		created_at INTEGER NOT NULL
+	);
+	CREATE INDEX idx_notify_channels_user ON notify_channels(user_id);
+	CREATE TABLE notify_log (
+		user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		key TEXT NOT NULL,
+		sent_at INTEGER NOT NULL,
+		PRIMARY KEY (user_id, key)
+	);
+	ALTER TABLE users ADD COLUMN notify_prefs TEXT;
 	`
 ];
 

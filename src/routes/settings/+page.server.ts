@@ -3,11 +3,15 @@ import { adminResetAt } from '$lib/server/admin';
 import { config } from '$lib/server/config';
 import { smtpEnabled, smtpView } from '$lib/server/mail';
 import { smtpAction } from '$lib/server/smtp-actions';
+import { addChannel, deleteChannel, getPrefs, listChannels, MAX_CHANNELS, parseChannel, rememberOrigin, sendToChannel, setPrefs } from '$lib/server/notify';
+import { messagesFor } from '$lib/server/i18n';
+import { translate } from '$lib/i18n';
 import { hashPassword, verifyPassword } from '$lib/server/auth';
 import { get, run } from '$lib/server/db';
 import { AVATAR_DATA_URL, MAX_AVATAR_CHARS } from '$lib/server/avatar';
 import { createApiToken, deleteToken, listTokens, MAX_TOKENS, renameToken } from '$lib/server/apitokens';
 import { publicOrigin } from '$lib/server/auth';
+import { passwordChangedMail } from '$lib/server/security-mail';
 import { str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -16,6 +20,9 @@ export const load: PageServerLoad = async ({ locals, request }) => ({
 	adminReset: adminResetAt(locals.user?.id),
 	/** none/local: e-mail settings live here (with accounts in the admin area) */
 	smtpSettings: config.authMode !== 'accounts' ? smtpView() : null,
+	notify: locals.user
+		? { channels: listChannels(locals.user.id), prefs: getPrefs(locals.user.id), max: MAX_CHANNELS, tz: Intl.DateTimeFormat().resolvedOptions().timeZone }
+		: null,
 	mcp: config.mcpEnabled && locals.user ? { tokens: listTokens(locals.user.id), max: MAX_TOKENS, url: `${publicOrigin(request)}/mcp` } : null
 });
 
@@ -23,6 +30,47 @@ export const load: PageServerLoad = async ({ locals, request }) => ({
 const smtpGuard = (locals: App.Locals) => config.authMode !== 'accounts' && locals.unlocked;
 
 export const actions: Actions = {
+	/** Notifications: add an e-mail, ntfy or Gotify channel (Web Push goes through /api/notify/webpush). */
+	notifyAdd: async ({ request, locals }) => {
+		if (!locals.user) return fail(401);
+		const cfg = parseChannel(await request.formData());
+		if ('error' in cfg) return fail(400, { notifyError: cfg.error });
+		if (!addChannel(locals.user.id, cfg)) return fail(400, { notifyError: 'notify.err.max' });
+		rememberOrigin(publicOrigin(request));
+		return { notifySaved: 'added' };
+	},
+	notifyDelete: async ({ request, locals }) => {
+		if (!locals.user) return fail(401);
+		deleteChannel(locals.user.id, str(await request.formData(), 'id'));
+		return { notifySaved: 'deleted' };
+	},
+	notifyTest: async ({ request, locals }) => {
+		if (!locals.user) return fail(401);
+		const id = str(await request.formData(), 'id');
+		const m = messagesFor(locals.locale);
+		rememberOrigin(publicOrigin(request));
+		const err = await sendToChannel(locals.user.id, id, {
+			title: translate(m, 'notify.test_title'),
+			body: translate(m, 'notify.test_body'),
+			url: publicOrigin(request) + '/settings',
+			tags: ['white_check_mark']
+		});
+		if (err === 'gone') return fail(400, { notifyError: 'notify.err.gone' });
+		if (err === 'SMTP') return fail(400, { notifyError: 'notify.err.smtp', notifyFor: id });
+		return err ? fail(400, { notifyError: 'notify.err.send', notifyDetail: err, notifyFor: id }) : { notifySaved: 'tested', notifyFor: id };
+	},
+	notifyPrefs: async ({ request, locals }) => {
+		if (!locals.user) return fail(401);
+		const form = await request.formData();
+		setPrefs(locals.user.id, {
+			departureDays: form.get('departure') === 'on' ? Number(form.get('days')) || 3 : 0,
+			dayBefore: form.get('day_before') === 'on',
+			todos: form.get('todos') === 'on',
+			hour: Number(form.get('hour'))
+		});
+		rememberOrigin(publicOrigin(request));
+		return { notifySaved: 'prefs' };
+	},
 	smtpSave: async ({ request, locals }) => (smtpGuard(locals) ? smtpAction('save', request, locals.locale) : fail(403)),
 	smtpTest: async ({ request, locals }) => (smtpGuard(locals) ? smtpAction('test', request, locals.locale) : fail(403)),
 	smtpClear: async ({ request, locals }) => (smtpGuard(locals) ? smtpAction('clear', request, locals.locale) : fail(403)),
@@ -78,6 +126,7 @@ export const actions: Actions = {
 		if (!(await verifyPassword(current, row?.password_hash))) return fail(400, { pwError: 'auth.err.wrong_password' });
 		if (next.length < 8) return fail(400, { pwError: 'auth.err.password_short' });
 		run('UPDATE users SET password_hash = ? WHERE id = ?', await hashPassword(next), locals.user.id);
+		passwordChangedMail(locals.user.id, false, publicOrigin(request));
 		return { saved: 'password' };
 	}
 };

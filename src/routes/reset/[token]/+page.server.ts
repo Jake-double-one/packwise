@@ -1,5 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { createSession, hashPassword } from '$lib/server/auth';
+import { createSession, hashPassword, publicOrigin } from '$lib/server/auth';
+import { passwordChangedMail } from '$lib/server/security-mail';
 import { get, now, run } from '$lib/server/db';
 import { consumeToken, readToken } from '$lib/server/tokens';
 import type { Actions, PageServerLoad } from './$types';
@@ -19,6 +20,7 @@ export const actions: Actions = {
 		const hadPassword = !!get<{ p: string | null }>('SELECT password_hash AS p FROM users WHERE id = ?', token.user_id)?.p;
 		run('UPDATE users SET password_hash = ? WHERE id = ?', await hashPassword(password), token.user_id);
 		if (token.by_admin && hadPassword) run('UPDATE users SET admin_reset_at = ? WHERE id = ?', now(), token.user_id);
+		if (hadPassword) passwordChangedMail(token.user_id, !!token.by_admin, publicOrigin(event.request));
 		run('DELETE FROM sessions WHERE user_id = ?', token.user_id);
 		consumeToken(event.params.token);
 		createSession(event, token.user_id);

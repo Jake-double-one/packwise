@@ -9,6 +9,7 @@ import { smtpAction } from '$lib/server/smtp-actions';
 import { createOwnHousehold } from '$lib/server/households';
 import { createToken } from '$lib/server/tokens';
 import { translate } from '$lib/i18n';
+import { passwordChangedMail } from '$lib/server/security-mail';
 import { str } from '$lib/server/util';
 import type { Role } from '$lib/types';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
@@ -109,6 +110,7 @@ export const actions: Actions = {
 		const hadPassword = !!get<{ p: string | null }>('SELECT password_hash AS p FROM users WHERE id = ?', id)?.p;
 		run('UPDATE users SET password_hash = ? WHERE id = ?', await hashPassword(password), id);
 		if (hadPassword && id !== me.id) run('UPDATE users SET admin_reset_at = ? WHERE id = ?', now(), id);
+		if (hadPassword) passwordChangedMail(id, id !== me.id, publicOrigin(event.request));
 		// log the user out everywhere (but keep the admin's own current session)
 		if (id !== me.id) run('DELETE FROM sessions WHERE user_id = ?', id);
 		return { done: 'password_set', for: id };

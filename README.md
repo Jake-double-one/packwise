@@ -20,6 +20,7 @@ Packwise replaces the packing list in your notes app. You maintain **one templat
   - Destination: domestic / EU / outside the EU (automatic)
   - Travelling with: baby / kids / pet (automatic)
 - **Quantity rules**: fixed, per day or per night, plus extra and a maximum. A *laundry available* switch caps clothing. Items can be marked *once per traveller* (e.g. toothbrush).
+- **Reminders** before departure and for due to-dos by e-mail, ntfy, Gotify or Web Push (see *Notifications*).
 - **Emoji per traveller** (👩 🧔 👶 🐶 …) under *Household*; in `accounts` mode users can also set a profile picture.
 - **People ≠ accounts**: kids and pets are people without a login. Items assigned to a person only come along when that person travels, so each person gets their own base set (glasses, medication, cuddly toy).
 - **Bags with colours**: Suitcase 1 is blue, Suitcase 2 is green, carry-on is orange. Items are tinted by bag, and the trip can be viewed by category, bag or person.
@@ -102,11 +103,12 @@ In every mode, **profiles / users ≠ people**. People are who you pack for; pro
 | `PUID` / `PGID` | `1000` | User / group the app runs as. `/data` is chowned automatically. |
 | `WEATHER_ENABLED` | `true` | Set to `false` to never contact Open-Meteo |
 | `SESSION_DAYS` | `90` | Login lifetime |
+| `TZ` | `UTC` | Time zone, e.g. `Europe/Berlin` – reminders go out from the chosen hour in this time zone |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | – | Optional e-mail for invitations and password resets. Can also be set up in the app: *Settings → Sending e-mail* (`none` / `local`) or *Administration* (`accounts`), with a test mail; the password is stored encrypted. Environment variables take precedence. |
 | `ADDRESS_HEADER` | – | e.g. `X-Forwarded-For` behind a proxy, so login rate limiting sees real client IPs |
 | `BODY_SIZE_LIMIT` | `512K` | Raise it if you import very large lists |
 | `MCP_ENABLED` | `false` | `true` turns on the MCP endpoint `/mcp` for AI assistants and the *API tokens* section in the settings (`MCP_API` works too) |
-| `SECRET_KEY` | – | Optional key for encrypting API tokens. Without it, a random key is created in `/data/secret.key` (keep it with your backup, or tokens can no longer be shown – they keep working) |
+| `SECRET_KEY` | – | Optional key for encrypting stored secrets (API tokens, SMTP password, notification channels, Web Push keys). Without it, a random key is created in `/data/secret.key` – keep it with your backup, otherwise notification channels have to be set up again and API tokens can no longer be shown (they keep working) |
 
 ### Reverse proxy notes
 
@@ -117,6 +119,18 @@ Packwise works behind Traefik, Nginx Proxy Manager, Caddy and Authentik without 
 **Brave browser: some functions don't work.** With Brave Shields active, some requests can be blocked (Brave's filter lists also apply to self-hosted apps). Open Packwise, tap the Brave lion icon in the address bar and turn **Shields off for this site**. The setting is remembered per domain. Packwise loads no ads, trackers or third-party scripts, so nothing is lost.
 
 **Live updates don't arrive behind a reverse proxy.** Disable response buffering for `/api/*/live` (Server-Sent Events).
+
+## Notifications
+
+Under **Settings → Notifications** everybody sets up their own reminders:
+
+- **When**: X days before departure (packing progress and open to-dos), optionally again the day before, and to-dos that are due. From a chosen hour of the day – set `TZ` (e.g. `Europe/Berlin`) so that this is your local time. You get reminders for trips you are a traveller on (your profile or account is linked to one of the trip's travellers) or were invited to; at most one message per trip and day.
+- **Where** (several at once, each with a *Test* button):
+  - **E-mail** – needs SMTP (see *Configuration*).
+  - **[ntfy](https://ntfy.sh)** – server (default `https://ntfy.sh`), topic and an optional access token. On the public server, anybody who knows the topic can read it, so pick a hard-to-guess name.
+  - **[Gotify](https://gotify.net)** – server and the token of an app created in Gotify.
+  - **Push notification on this device** (Web Push, no third-party account): needs **HTTPS with a valid certificate** (e.g. behind a reverse proxy) – browsers don't allow push over `http://` or an IP address (`http://localhost` is the only exception). The server must be able to reach the browser's push service on the internet (Google, Mozilla, Apple). On iPhone/iPad, push only works once Packwise was added to the home screen (iOS 16.4+). Keys (VAPID) are created automatically.
+- In `accounts` mode, a **security e-mail** goes out when the password of an account changes (by the person or by the admin).
 
 ## AI assistants (MCP)
 
@@ -166,6 +180,7 @@ See [ROADMAP.md](ROADMAP.md) for what's done and what's planned next. Release no
 4. **Neue Reise**: Ziel, Datum, Mitreisende, Anreise und Unterkunft wählen. Die Vorschau zeigt, was warum eingepackt wird, und bezieht Wetter, Adapter und Vignetten mit ein.
 5. Den Link oder QR-Code teilen und gemeinsam abhaken. Mit **↑ Template** landen neue Artikel fürs nächste Mal im Template.
 6. Optional die **To-dos vor der Abfahrt** einschalten. Für die Heimreise auf **🏠 Rückreise** umschalten. Abhaken funktioniert auch **offline**.
+7. **Erinnerungen** unter **Einstellungen → Benachrichtigungen**: X Tage vor der Abreise und bei fälligen To-dos, per E-Mail (SMTP direkt in den Einstellungen eintragen), ntfy, Gotify oder als Push-Nachricht aufs Handy (braucht HTTPS). `TZ: Europe/Berlin` setzen, damit die Uhrzeit stimmt.
 
 **Brave-Browser:** Falls Funktionen nicht gehen, für die Packwise-Adresse die Shields deaktivieren (Löwen-Symbol in der Adressleiste).
 

@@ -18,13 +18,14 @@ services:
       APP_PASSWORD: change-me              # AUTH_MODE=local (or set it in the setup wizard)
       # REGISTRATION: invite               # accounts: closed | invite | open
       DEFAULT_LANG: en                     # en | de | any file in /data/locales
+      TZ: Europe/Berlin                    # time zone for reminders (e.g. "from 08:00")
       # DEFAULT_COUNTRY: DE                # pre-selected home country in the setup
       # ORIGIN: https://packwise.example.com   # public URL (links in e-mails, secure cookies)
       # PUID: 1000
       # PGID: 1000
       # WEATHER_ENABLED: "true"            # Open-Meteo forecast / climate (no API key)
       # MCP_ENABLED: "true"                # AI assistants (Claude, ChatGPT, Grok) via /mcp + personal API tokens
-      # SECRET_KEY: some-long-random-text  # optional key for encrypting API tokens (default: /data/secret.key)
+      # SECRET_KEY: some-long-random-text  # optional key for encrypting stored secrets (default: /data/secret.key)
       # SMTP – or set it up in the app under Settings (none/local) or Administration (accounts)
       # SMTP_HOST: smtp.example.com
       # SMTP_PORT: 587

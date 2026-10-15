@@ -23,6 +23,7 @@ What's done and what's planned for Packwise. Ideas and feedback are welcome as G
 - Trip notes (address, rental car, phone, link, code, text, secret fields) shared live and offline; editing destination and dates
 - Compact checklist, undo, packing mode, search, duplicating trips, archive, profile pictures
 - MCP server for AI assistants (Claude, ChatGPT, Grok) with personal API tokens
+- SMTP settings in the app; reminders by e-mail, ntfy, Gotify and Web Push
 
 ## 🔜 Next
 
@@ -31,7 +32,6 @@ What's done and what's planned for Packwise. Ideas and feedback are welcome as G
 
 ## 💡 Later
 
-- **Reminders** by e-mail, Web Push and ntfy / Gotify: "3 days to go – 60 % packed, 2 to-dos open"
 - **Weather updates**: re-check when the trip comes into forecast range and suggest changes
 - **Calendar export** (`.ics`) for trips and to-dos
 - **Support access on request** (`accounts` mode): the admin can ask a household for temporary access (e.g. to help with a problem); only after the household's creator agrees, visible to all members and revocable by them at any time

@@ -77,3 +77,38 @@ sw.addEventListener('fetch', (event) => {
 	}
 	if (cacheable(url, request)) event.respondWith(networkFirst(request));
 });
+
+// ── Web Push: reminders from the server (see $lib/server/notify) ────────────
+
+sw.addEventListener('push', (event) => {
+	let data: { title?: string; body?: string; url?: string } = {};
+	try {
+		data = event.data?.json() ?? {};
+	} catch {
+		data = { body: event.data?.text() };
+	}
+	event.waitUntil(
+		sw.registration.showNotification(data.title || 'Packwise', {
+			body: data.body ?? '',
+			icon: '/icon-192.png',
+			badge: '/icon-192.png',
+			data: { url: data.url || '/' }
+		})
+	);
+});
+
+sw.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	const target = new URL((event.notification.data as { url?: string })?.url || '/', sw.location.origin);
+	// links point to this app only; focus an open window if there is one
+	const url = target.origin === sw.location.origin ? target.href : sw.location.origin;
+	event.waitUntil(
+		sw.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+			const win = wins.find((w) => new URL(w.url).origin === sw.location.origin) as WindowClient | undefined;
+			const open = () => sw.clients.openWindow(url);
+			// navigate() fails on windows this worker doesn't control – then open a new one
+			if (win) return win.navigate(url).then((w) => (w ? w.focus() : open())).catch(open);
+			return open();
+		})
+	);
+});
