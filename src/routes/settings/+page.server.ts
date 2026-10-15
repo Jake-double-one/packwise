@@ -25,7 +25,7 @@ export const actions: Actions = {
 	},
 	/** Profile picture: an emoji, an uploaded (already resized) picture, or back to initials. */
 	avatar: async ({ request, locals }) => {
-		if (!locals.user) return fail(401);
+		if (!locals.user || config.authMode !== 'accounts') return fail(403);
 		const form = await request.formData();
 		const emoji = str(form, 'emoji');
 		const image = String(form.get('image') ?? '');

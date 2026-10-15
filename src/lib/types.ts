@@ -14,7 +14,9 @@ export interface Person {
 	color: string;
 	user_id: string | null;
 	sort: number;
-	/** profile picture of the linked account (emoji or URL) */
+	/** the traveller's own emoji */
+	emoji?: string | null;
+	/** what to show: the linked account's picture (accounts mode), else the emoji */
 	avatar?: string | null;
 }
 

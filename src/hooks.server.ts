@@ -18,6 +18,8 @@ import { startScheduler } from '$lib/server/scheduler';
 
 db();
 purgeExpiredSessions();
+// profile pictures only exist with real accounts – drop leftovers from none/local
+if (config.authMode !== 'accounts') db().exec('UPDATE users SET avatar = NULL, avatar_img = NULL WHERE avatar IS NOT NULL OR avatar_img IS NOT NULL');
 startScheduler();
 
 /** Paths reachable without passing the gate. */

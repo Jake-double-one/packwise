@@ -10,7 +10,8 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 - **Compact checklist (default).** In the category view, the same item of several travellers (e.g. three ID cards) is one row with a box per traveller and an *All* box that is ticked automatically once everybody is done – tapping it ticks or unticks everybody. The card header with the travellers' avatars stays visible while scrolling, also with nested categories. Switch between *Compact* and *Single* in the toolbar at any time (saved per device); checkmarks are kept. Editing a compact row changes the item for all travellers.
 
-- **Profile pictures.** Under *Settings → Profile* pick one of 32 symbols or upload your own picture (resized to 160 × 160 px in the browser). It is shown in the header, in the admin area, next to who is online and for your traveller in the packing lists.
+- **Emoji per traveller.** Under *Household → Travellers* every person, kid and pet can get an emoji (👩 🧔 👶 🐶 …). It is shown wherever travellers appear: compact checklist, template, trip wizard, bag owners.
+- **Profile pictures for accounts** (`AUTH_MODE=accounts` only): pick a symbol or upload a picture (resized to 160 × 160 px in the browser) under *Settings → Profile*. It is shown in the header, the admin area, next to who is online and – instead of the emoji – for the traveller linked to the account. With `none` and `local` a profile is only "who is clicking", so there are no profile pictures (leftovers are removed on start).
 - **Activity "Work & Travel"** as a new chip.
 
 - **Undo.** After ticking, unticking or removing something from a trip, a message with *Undo* appears for a few seconds. Removed items (also whole groups) come back with their checkmarks.

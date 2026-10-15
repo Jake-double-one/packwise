@@ -1,9 +1,11 @@
 import { error } from '@sveltejs/kit';
+import { config } from '$lib/server/config';
 import { get } from '$lib/server/db';
 import type { RequestHandler } from './$types';
 
 /** Uploaded profile picture. The URL carries a version, so it can be cached for good. */
 export const GET: RequestHandler = async ({ params }) => {
+	if (config.authMode !== 'accounts') error(404);
 	const row = get<{ avatar_img: string | null }>('SELECT avatar_img FROM users WHERE id = ?', params.id);
 	const match = row?.avatar_img?.match(/^data:(image\/(?:webp|jpeg|png));base64,(.+)$/);
 	if (!match) error(404);

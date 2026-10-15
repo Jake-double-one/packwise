@@ -4,10 +4,10 @@
 	import { useI18n } from '$lib/i18n';
 	import LanguageSwitch from '$lib/components/LanguageSwitch.svelte';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import { AVATAR_EMOJIS } from '$lib/avatars';
 	import ApiTokens from '$lib/components/ApiTokens.svelte';
 	import { tick } from 'svelte';
 
-	const AVATAR_EMOJIS = ['😀', '😎', '🤠', '🥳', '😴', '🤓', '🧔', '👩', '👨', '👧', '👦', '👵', '👴', '🐶', '🐱', '🦊', '🐻', '🐼', '🐨', '🦁', '🐸', '🐵', '🦄', '🐢', '🐙', '🌴', '🏔️', '✈️', '🚐', '⛵', '🌍', '🎒'];
 	let avatarForm = $state<HTMLFormElement | null>(null);
 	let avatarImage = $state('');
 	let uploading = $state(false);
@@ -86,6 +86,7 @@
 
 	<section class="card">
 		<h2>{t('settings.profile')}</h2>
+		{#if data.authMode === 'accounts'}
 		<div class="avatar-row">
 			<Avatar name={data.user?.name ?? '?'} color={data.user?.color ?? '#888'} avatar={data.user?.avatar} size={72} />
 			<div class="grow">
@@ -109,6 +110,7 @@
 				<p class="tiny muted">{t('settings.avatar_hint')}</p>
 			</div>
 		</div>
+		{/if}
 		<form method="POST" action="?/profile" use:enhance={() => async ({ update }) => update({ reset: false })}>
 			{#if form?.error}<div class="alert danger">{t(form.error)}</div>{/if}
 			{#if form?.saved === 'profile'}<div class="alert success">{t('common.saved')}</div>{/if}

@@ -20,6 +20,7 @@ Packwise replaces the packing list in your notes app. You maintain **one templat
   - Destination: domestic / EU / outside the EU (automatic)
   - Travelling with: baby / kids / pet (automatic)
 - **Quantity rules**: fixed, per day or per night, plus extra and a maximum. A *laundry available* switch caps clothing. Items can be marked *once per traveller* (e.g. toothbrush).
+- **Emoji per traveller** (👩 🧔 👶 🐶 …) under *Household*; in `accounts` mode users can also set a profile picture.
 - **People ≠ accounts**: kids and pets are people without a login. Items assigned to a person only come along when that person travels, so each person gets their own base set (glasses, medication, cuddly toy).
 - **Bags with colours**: Suitcase 1 is blue, Suitcase 2 is green, carry-on is orange. Items are tinted by bag, and the trip can be viewed by category, bag or person.
 - **Weather from [Open-Meteo](https://open-meteo.com)** (no API key):

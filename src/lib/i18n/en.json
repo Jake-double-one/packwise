@@ -110,7 +110,7 @@
 	"household.home_country": "Home country",
 	"household.home_country_hint": "Used to detect trips abroad, plug adapters and currency.",
 	"household.persons": "People",
-	"household.persons_hint": "Everyone you pack for – including kids and pets. People don't need an account.",
+	"household.persons_hint": "Everyone you pack for – including kids and pets. People don't need an account. Tap the symbol on the left to pick an emoji.",
 	"household.new_person": "Name of the person",
 	"household.kind": "Type",
 	"household.confirm_delete_person": "Remove {name} together with their bags?",
@@ -698,7 +698,7 @@
 	"settings.avatar": "Profile picture",
 	"settings.avatar_upload": "Upload a picture",
 	"settings.avatar_clear": "Use initials",
-	"settings.avatar_hint": "Pick a symbol or upload a photo – it is shrunk to 160 × 160 pixels. It is also shown for your traveller in the packing lists.",
+	"settings.avatar_hint": "Pick a symbol or upload a photo – it is shrunk to 160 × 160 pixels. It is also shown for your traveller in the packing lists (instead of their symbol).",
 	"settings.avatar_invalid": "This picture could not be used.",
 	"trip.tpl_new_group": "This group is not in your template yet.",
 	"trip.tpl_differs_group": "This group was changed here and differs from the template.",
@@ -750,5 +750,7 @@
 	"tokens.help_chatgpt": "ChatGPT: Settings → Apps & Connectors → Advanced → turn on developer mode, then \"Create connector\", enter this address and choose \"No authentication\":",
 	"tokens.help_grok": "Grok via the xAI API (remote MCP tools) – as a tool in the request:",
 	"tokens.help_https": "The Claude and ChatGPT apps connect over the internet: Packwise must be reachable from outside via HTTPS (e.g. through your reverse proxy). Treat the address with the token like a password.",
-	"mcp.ai": "AI"
+	"mcp.ai": "AI",
+	"household.pick_emoji": "Pick a symbol",
+	"household.emoji_clear": "Use initials"
 }

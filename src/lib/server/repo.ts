@@ -45,10 +45,10 @@ export function moveInList(table: 'persons' | 'bags', householdId: string, id: s
 
 export function listPersons(householdId: string): Person[] {
 	return all<Person>(
-		`SELECT p.id, p.name, p.kind, p.color, p.user_id, p.sort, u.avatar FROM persons p LEFT JOIN users u ON u.id = p.user_id
+		`SELECT p.id, p.name, p.kind, p.color, p.user_id, p.sort, p.emoji, u.avatar FROM persons p LEFT JOIN users u ON u.id = p.user_id
 		 WHERE p.household_id = ? ORDER BY p.sort, p.name`,
 		householdId
-	).map((p) => ({ ...p, avatar: p.user_id ? avatarUrl(p.user_id, p.avatar) : null }));
+	).map((p) => ({ ...p, avatar: (p.user_id ? avatarUrl(p.user_id, p.avatar) : null) ?? p.emoji ?? null }));
 }
 
 export function createPerson(householdId: string, name: string, kind: PersonKind, color: string, userId: string | null = null) {

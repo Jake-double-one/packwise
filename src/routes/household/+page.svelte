@@ -2,11 +2,13 @@
 	import { enhance } from '$app/forms';
 	import { useI18n } from '$lib/i18n';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import { AVATAR_EMOJIS } from '$lib/avatars';
 	import CountrySelect from '$lib/components/CountrySelect.svelte';
 	import CopyField from '$lib/components/CopyField.svelte';
 
 	let { data, form } = $props();
 	const { t } = useI18n();
+	const emojiOpen = $state<Record<string, boolean>>({});
 	const kinds = ['adult', 'child', 'baby', 'pet'];
 	const kindIcon: Record<string, string> = { adult: '🧑', child: '🧒', baby: '👶', pet: '🐾' };
 	const bagIcons = ['🧳', '🎒', '👜', '💼', '🛍️', '📦', '🚗', '🧺'];
@@ -68,7 +70,19 @@
 									<button class="btn ghost icon" formaction="?/movePerson" name="dir" value="down" disabled={i === data.persons.length - 1} title={t('common.move_down')}>↓</button>
 								</div>
 							{/if}
-							<Avatar name={p.name} color={p.color} avatar={p.avatar} size={32} />
+							{#if canEdit}
+								<details class="emoji-pick" bind:open={emojiOpen[p.id]}>
+									<summary title={t('household.pick_emoji')} aria-label={t('household.pick_emoji')}><Avatar name={p.name} color={p.color} avatar={p.avatar} size={32} /></summary>
+									<div class="emoji-pop">
+										{#each AVATAR_EMOJIS as e}
+											<button class="emoji" class:on={p.emoji === e} formaction="?/personEmoji" name="emoji" value={e} onclick={() => (emojiOpen[p.id] = false)}>{e}</button>
+										{/each}
+										{#if p.emoji}<button class="btn small ghost clear" formaction="?/personEmoji" name="emoji" value="" onclick={() => (emojiOpen[p.id] = false)}>{t('household.emoji_clear')}</button>{/if}
+									</div>
+								</details>
+							{:else}
+								<Avatar name={p.name} color={p.color} avatar={p.avatar} size={32} />
+							{/if}
 							<input class="grow name" name="name" value={p.name} aria-label={t('settings.name')} disabled={!canEdit} />
 							<select name="kind" value={p.kind} aria-label={t('household.kind')} disabled={!canEdit}>
 								{#each kinds as k}<option value={k}>{kindIcon[k]} {t(`kind.${k}`)}</option>{/each}
@@ -206,6 +220,66 @@
 </div>
 
 <style>
+	.emoji-pick {
+		position: relative;
+	}
+	.emoji-pick summary {
+		list-style: none;
+		cursor: pointer;
+		border-radius: 50%;
+	}
+	.emoji-pick summary::-webkit-details-marker {
+		display: none;
+	}
+	.emoji-pick summary:hover :global(.avatar) {
+		outline: 2px solid var(--accent);
+		outline-offset: 1px;
+	}
+	.emoji-pop {
+		position: absolute;
+		z-index: 10;
+		top: calc(100% + 6px);
+		left: 0;
+		width: min(19rem, calc(100vw - 48px));
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.2rem;
+		padding: 0.5rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		box-shadow: var(--shadow-lg);
+	}
+	.emoji {
+		width: 2.1rem;
+		height: 2.1rem;
+		font-size: 1.2rem;
+		line-height: 1;
+		padding: 0;
+		border-radius: 50%;
+		border: 2px solid transparent;
+		background: var(--surface-2);
+		cursor: pointer;
+	}
+	.emoji.on {
+		border-color: var(--accent);
+	}
+	/* phones: open as a bar at the bottom instead of next to the avatar */
+	@media (max-width: 560px) {
+		.emoji-pop {
+			position: fixed;
+			top: auto;
+			left: 16px;
+			right: 16px;
+			bottom: calc(16px + env(safe-area-inset-bottom));
+			width: auto;
+			justify-content: center;
+		}
+	}
+	.emoji-pop .clear {
+		width: 100%;
+		margin-top: 0.2rem;
+	}
 	.switch {
 		margin-bottom: 1rem;
 	}

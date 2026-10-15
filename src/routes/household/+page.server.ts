@@ -73,6 +73,15 @@ export const actions: Actions = {
 		syncPersonBags(hh.id, id, oldName, locals.locale);
 		return { saved: 'person' };
 	},
+	personEmoji: async ({ request, locals }) => {
+		const hh = requireRole(locals, ['owner', 'member']);
+		const form = await request.formData();
+		const emoji = str(form, 'emoji');
+		const valid = !emoji || ([...emoji].length <= 4 && emoji.length <= 16 && !/[\w\s<>"'&]/.test(emoji));
+		if (!valid) return fail(400);
+		run('UPDATE persons SET emoji = ? WHERE id = ? AND household_id = ?', emoji || null, str(form, 'id'), hh.id);
+		return { saved: 'person' };
+	},
 	createBags: async ({ request, locals }) => {
 		const hh = requireRole(locals, ['owner', 'member']);
 		createPersonBags(hh.id, str(await request.formData(), 'id'), locals.locale);

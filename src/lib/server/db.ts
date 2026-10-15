@@ -206,6 +206,9 @@ const MIGRATIONS: string[] = [
 		last_used_at INTEGER
 	);
 	CREATE INDEX idx_api_tokens_user ON api_tokens(user_id);
+	`,
+	/* 6 – an emoji per traveller (people, kids, pets) */ `
+	ALTER TABLE persons ADD COLUMN emoji TEXT;
 	`
 ];
 
