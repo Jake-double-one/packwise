@@ -5,7 +5,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const hh = locals.household;
-	if (!hh) redirect(303, '/household');
+	if (!hh) redirect(303, '/'); // the start page offers to create a household
 	const previous = listTrips(hh.id)
 		.slice(0, 8)
 		.map((tr) => ({ id: tr.id, name: tr.name, settings: tr.settings }));

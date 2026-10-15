@@ -5,12 +5,12 @@ import { get, run, tx } from '$lib/server/db';
 import { sendMail } from '$lib/server/mail';
 import { messagesFor } from '$lib/server/i18n';
 import { translate } from '$lib/i18n';
-import { addMember, createBag, createHousehold, listBags, listMembers, listPersons, moveInList } from '$lib/server/repo';
+import { addMember, createBag, listBags, listMembers, listPersons, moveInList } from '$lib/server/repo';
+import { createOwnHousehold } from '$lib/server/households';
 import { addPersonWithBags, createPersonBags, syncPersonBags } from '$lib/server/persons';
 import { createToken } from '$lib/server/tokens';
 import { str } from '$lib/server/util';
 import { COUNTRIES } from '$lib/data/countries';
-import { starterSharedBag } from '$lib/data/starter';
 import type { Actions, PageServerLoad } from './$types';
 import type { PersonKind, Role } from '$lib/types';
 
@@ -137,24 +137,23 @@ export const actions: Actions = {
 		event.cookies.set(HOUSEHOLD_COOKIE, id, cookieOptions(event, 3650));
 		redirect(303, '/household');
 	},
+	/** New household (also the way back for accounts without one): starter list optional, but on by default. */
 	create: async (event) => {
 		const form = await event.request.formData();
 		const name = str(form, 'name');
 		if (!name) return fail(400, { error: 'setup.err.household' });
 		const user = event.locals.user;
-		const id = tx(() => {
-			const hh = createHousehold(name, event.locals.household?.home_country ?? null, config.authMode === 'accounts' ? user!.id : null);
-			if (user) addPersonWithBags(hh, user.name, 'adult', user.color, user.id, event.locals.locale);
-			const shared = starterSharedBag(event.locals.locale);
-			createBag(hh, shared.name, shared.color, shared.icon);
-			return hh;
-		});
+		const id = createOwnHousehold(name, event.locals.household?.home_country ?? null, user, event.locals.locale, form.get('starter') === 'on');
 		event.cookies.set(HOUSEHOLD_COOKIE, id, cookieOptions(event, 3650));
-		redirect(303, '/household');
+		redirect(303, str(form, 'next') === 'home' ? '/' : '/household');
 	},
+	/**
+	 * Only the creator may delete a household. With accounts also their last one (the start page
+	 * then offers a new one); without accounts the last household is everybody's, so it stays.
+	 */
 	delete: async (event) => {
 		const hh = requireRole(event.locals, ['owner']);
-		if (householdsFor(event.locals.user).length < 2) return fail(400, { error: 'household.err.last' });
+		if (config.authMode !== 'accounts' && householdsFor(event.locals.user).length < 2) return fail(400, { error: 'household.err.last' });
 		run('DELETE FROM households WHERE id = ?', hh.id);
 		event.cookies.delete(HOUSEHOLD_COOKIE, { path: '/' });
 		redirect(303, '/');
@@ -176,18 +175,26 @@ export const actions: Actions = {
 		}
 		return { inviteLink: link, mailed };
 	},
-	/** Remove someone (or leave yourself). The creator stays; nobody is left without a household. */
+	/**
+	 * Remove someone or leave yourself – even your last household (the start page then offers
+	 * to create a new one). Nobody can remove the creator; the creator can leave once others are
+	 * there (the longest member takes over), otherwise they delete the household instead.
+	 */
 	removeMember: async ({ request, locals }) => {
 		const hh = requireRole(locals, MEMBERS);
 		const userId = str(await request.formData(), 'user_id');
+		const self = userId === locals.user?.id;
 		const target = get<{ role: Role }>('SELECT role FROM memberships WHERE household_id = ? AND user_id = ?', hh.id, userId);
 		if (!target) return fail(404);
-		if (target.role === 'owner') return fail(400, { error: 'household.err.owner_stays' });
-		const others = get<{ n: number }>('SELECT COUNT(*) AS n FROM memberships WHERE user_id = ? AND household_id != ?', userId, hh.id)!.n;
-		if (!others) return fail(400, { error: userId === locals.user?.id ? 'household.err.last' : 'household.err.member_last' });
-		run('DELETE FROM memberships WHERE household_id = ? AND user_id = ?', hh.id, userId);
-		run('UPDATE persons SET user_id = NULL WHERE household_id = ? AND user_id = ?', hh.id, userId);
-		if (userId === locals.user?.id) redirect(303, '/');
+		const next = get<{ user_id: string }>('SELECT user_id FROM memberships WHERE household_id = ? AND user_id != ? ORDER BY rowid LIMIT 1', hh.id, userId);
+		if (target.role === 'owner' && !self) return fail(400, { error: 'household.err.owner_stays' });
+		if (target.role === 'owner' && !next) return fail(400, { error: 'household.err.owner_alone' });
+		tx(() => {
+			run('DELETE FROM memberships WHERE household_id = ? AND user_id = ?', hh.id, userId);
+			run('UPDATE persons SET user_id = NULL WHERE household_id = ? AND user_id = ?', hh.id, userId);
+			if (target.role === 'owner') run("UPDATE memberships SET role = 'owner' WHERE household_id = ? AND user_id = ?", hh.id, next!.user_id);
+		});
+		if (self) redirect(303, '/');
 		return { saved: 'member' };
 	}
 };

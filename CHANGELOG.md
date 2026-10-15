@@ -22,11 +22,12 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 - **AI assistants via MCP** (`MCP_ENABLED=true`): an MCP server at `/mcp` lets Claude, ChatGPT or Grok read packing lists and – with write access – tick items, add items and create trips. Each user can create up to 5 named personal API tokens (read only or read & change) under *Settings*; they are stored encrypted, can be shown again with 👁 and deleted at any time. Changes show up live and are logged as "Name (AI)".
 
-- **Invite accounts to a single trip** (`accounts` mode): *Share → Fellow travellers with an account* creates an invitation link (7 days, single use, optionally by e-mail). Guests can edit the trip completely but see nothing else of the household; new people create an account (with their own household) when opening the link. Shared trips appear under *Shared with me*; guests can leave, household members can remove them. MCP tokens of guests see their shared trips too.
+- **Invite accounts to a single trip** (`accounts` mode): *Share → Fellow travellers with an account* creates an invitation link (7 days, single use, optionally by e-mail). Guests can edit the trip completely but see nothing else of the household; new people create an account when opening the link and land right in the trip – no household needed. Shared trips appear under *Shared with me*; guests can leave, household members can remove them. MCP tokens of guests see their shared trips too.
 
 ### Changed
 
-- **No more roles inside a household** (`accounts` mode): everybody in a household may edit everything and invite others; only the creator can delete the household. Former *packers* become members. Members can leave a household as long as they keep one of their own.
+- **No more roles inside a household** (`accounts` mode): everybody in a household may edit everything and invite others; only the creator can delete the household. Former *packers* become members.
+- **Leaving a household** (`accounts` mode) is always possible – also your last one. The creator can leave once somebody else stays (the longest member takes over) and can always delete the household, also their only one. Without a household the start page offers *Create household* (with the starter list if you like) and still shows trips shared with you; *Template* and *New trip* lead there instead of showing an error. With `none` / `local` the last household stays protected.
 
 ### Fixed
 

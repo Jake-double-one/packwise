@@ -52,8 +52,10 @@ export const actions: Actions = {
 			if (res.token?.household_id) {
 				addMember(res.token.household_id, uid, 'member');
 				addPersonWithBags(res.token.household_id, name, 'adult', PALETTE[Math.floor(Math.random() * PALETTE.length)], uid, lang);
+			} else if (res.token?.trip_id) {
+				// invited to a single trip: no household needed – the start page offers one any time
+				addTripGuest(res.token.trip_id, uid, null);
 			} else {
-				// own account and own household – a trip invitation adds the trip on top
 				const hh = createHousehold(name, null, uid);
 				const own = addPersonWithBags(hh, name, 'adult', '#6366f1', uid, lang).bags;
 				const shared = starterSharedBag(lang);
@@ -61,7 +63,6 @@ export const actions: Actions = {
 				seedTemplate(hh, starterTemplate(lang), bags);
 				seedTodos(hh, starterTodos(lang));
 			}
-			if (res.token?.trip_id) addTripGuest(res.token.trip_id, uid, null);
 			return uid;
 		});
 		if (invite && res.token) consumeToken(invite);

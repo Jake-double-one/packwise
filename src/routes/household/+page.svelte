@@ -163,7 +163,8 @@
 							<Avatar name={m.name} color={m.color} avatar={m.avatar} />
 							<div class="grow"><strong>{m.name}</strong><div class="tiny muted">{m.email}</div></div>
 							{#if m.role === 'owner'}<span class="badge">{t('household.creator')}</span>{/if}
-							{#if m.role !== 'owner'}
+							<!-- nobody removes the creator; they may leave once someone else stays -->
+							{#if m.role !== 'owner' || (m.user_id === data.user?.id && data.members.length > 1)}
 								<form
 									method="POST"
 									action="?/removeMember"
@@ -200,13 +201,14 @@
 	{/if}
 
 	<section class="card">
-		<h2>{t('household.new_household')}</h2>
-		<p class="small muted">{t('household.new_household_hint')}</p>
+		<h2>{data.hh ? t('household.new_household') : t('household.create_own')}</h2>
+		<p class="small muted">{data.hh ? t('household.new_household_hint') : t('household.none_text')}</p>
 		<form method="POST" action="?/create" class="row wrap" use:enhance>
-			<input class="grow" name="name" placeholder={t('household.name')} required />
-			<button class="btn">+ {t('household.create')}</button>
+			<input class="grow" name="name" placeholder={t('household.name')} required value={data.hh ? '' : (data.user?.name ?? '')} />
+			<label class="check small"><input type="checkbox" name="starter" checked={!data.hh} /> {t('household.with_starter')}</label>
+			<button class="btn" class:primary={!data.hh}>+ {t('household.create')}</button>
 		</form>
-		{#if isOwner && data.households.length > 1}
+		{#if isOwner && (data.authMode === 'accounts' || data.households.length > 1)}
 			<hr />
 			<form method="POST" action="?/delete" use:enhance={({ cancel }) => { if (!confirm(t('household.confirm_delete', { name: data.hh?.name ?? '' }))) cancel(); }}>
 				<button class="btn danger">{t('household.delete')}</button>

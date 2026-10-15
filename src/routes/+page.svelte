@@ -38,10 +38,23 @@
 			<h1>{t('trips.title')}</h1>
 			<p class="muted small">{data.household?.name}</p>
 		</div>
-		<a class="btn primary" href="/trips/new">✨ {t('trips.new')}</a>
+		{#if !data.noHousehold}<a class="btn primary" href="/trips/new">✨ {t('trips.new')}</a>{/if}
 	</div>
 
-	{#if data.trips.length === 0 && data.shared.length === 0}
+	{#if data.noHousehold}
+		<!-- an account without a household (left it, or only invited to a trip) -->
+		<div class="card empty">
+			<div class="big">🏠</div>
+			<h2>{t('household.none_title')}</h2>
+			<p>{t('household.none_text')}</p>
+			<form method="POST" action="/household?/create" class="create-hh">
+				<input type="hidden" name="next" value="home" />
+				<input name="name" required value={data.user?.name ?? ''} aria-label={t('household.name')} placeholder={t('household.name')} />
+				<label class="check small"><input type="checkbox" name="starter" checked /> {t('household.with_starter')}</label>
+				<button class="btn primary">🏠 {t('household.create_own')}</button>
+			</form>
+		</div>
+	{:else if data.trips.length === 0 && data.shared.length === 0}
 		<div class="card empty">
 			<div class="big">🧳</div>
 			<h2>{t('trips.empty_title')}</h2>
@@ -159,6 +172,14 @@
 		right: 0.8rem;
 		color: var(--accent);
 		font-weight: 700;
+	}
+	.create-hh {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		max-width: 22rem;
+		margin: 0.5rem auto 0;
+		text-align: left;
 	}
 	.past .trip {
 		opacity: 0.75;
