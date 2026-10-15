@@ -12,6 +12,7 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 ### Fixed
 
+- Groups (categories) of a trip can be renamed again: tap the group name to edit it. A renamed group can be taken over into the template with ⟳.
 - Printing: no more empty last page; progress rings, counters and other screen-only elements are left out; large categories continue in the next column instead of leaving half-empty pages.
 
 ## v0.2.0 – Initial release

@@ -791,9 +791,11 @@
 				aria-label={g.name}
 			>
 				<div class="ghead row" class:stick={compactOn && depth === 1}>
-					<h2 class="grow">{g.name}</h2>
+					<h2 class="grow"><button class="gname" onclick={() => openEditor([g])} title={t('trip.edit_group')}>{g.name}</button></h2>
 					{#if data.canEditTemplate && templateState(g) === 'new' && g.origin !== 'auto'}
 						<button class="tpl-btn new no-print" onclick={() => send({ op: 'promote', id: g.id })}>↑ {t('trip.to_template')}</button>
+					{:else if data.canEditTemplate && templateState(g) === 'differs'}
+						<button class="tpl-btn no-print" onclick={() => send({ op: 'syncTemplate', id: g.id })} title={t('trip.sync')}>⟳</button>
 					{/if}
 					<span class="gcount tiny" class:complete={c.total > 0 && c.done === c.total}>{c.done}/{c.total}</span>
 					{#if compactOn && depth === 1}{@render colHead(cols)}{/if}
@@ -1260,6 +1262,21 @@
 		min-height: 0;
 		padding-top: 0.3rem !important;
 		padding-bottom: 0.3rem !important;
+	}
+	.gname {
+		background: none;
+		border: none;
+		padding: 0;
+		font: inherit;
+		color: inherit;
+		text-transform: inherit;
+		letter-spacing: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+	.gname:hover {
+		text-decoration: underline dotted;
+		text-underline-offset: 3px;
 	}
 	.ghead h2 {
 		font-size: 1.05rem;
