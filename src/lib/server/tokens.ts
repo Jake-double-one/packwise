@@ -3,9 +3,10 @@ import { randomToken, sha256 } from './auth';
 import type { Role } from '$lib/types';
 
 export interface TokenRow {
-	kind: 'invite' | 'reset';
+	kind: 'invite' | 'reset' | 'trip_invite';
 	user_id: string | null;
 	household_id: string | null;
+	trip_id: string | null;
 	email: string | null;
 	role: Role | null;
 	expires_at: number;
@@ -14,11 +15,12 @@ export interface TokenRow {
 export function createToken(kind: TokenRow['kind'], data: Partial<TokenRow>, ttlMs: number): string {
 	const token = randomToken();
 	run(
-		'INSERT INTO tokens (id, kind, user_id, household_id, email, role, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+		'INSERT INTO tokens (id, kind, user_id, household_id, trip_id, email, role, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		sha256(token),
 		kind,
 		data.user_id ?? null,
 		data.household_id ?? null,
+		data.trip_id ?? null,
 		data.email ?? null,
 		data.role ?? null,
 		now() + ttlMs,
@@ -29,7 +31,7 @@ export function createToken(kind: TokenRow['kind'], data: Partial<TokenRow>, ttl
 
 export function readToken(token: string | null | undefined, kind: TokenRow['kind']): TokenRow | null {
 	if (!token) return null;
-	const row = get<TokenRow>('SELECT kind, user_id, household_id, email, role, expires_at FROM tokens WHERE id = ? AND kind = ?', sha256(token), kind);
+	const row = get<TokenRow>('SELECT kind, user_id, household_id, trip_id, email, role, expires_at FROM tokens WHERE id = ? AND kind = ?', sha256(token), kind);
 	return row && row.expires_at > now() ? row : null;
 }
 

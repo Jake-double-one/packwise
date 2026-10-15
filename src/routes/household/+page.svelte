@@ -13,6 +13,7 @@
 	const kindIcon: Record<string, string> = { adult: '🧑', child: '🧒', baby: '👶', pet: '🐾' };
 	const bagIcons = ['🧳', '🎒', '👜', '💼', '🛍️', '📦', '🚗', '🧺'];
 	const isOwner = $derived(data.hh?.role === 'owner');
+	/** no roles: everybody in the household may edit; only its creator ("owner") may delete it */
 	const canEdit = $derived(data.hh?.role === 'owner' || data.hh?.role === 'member');
 	let country = $derived(data.hh?.home_country ?? '');
 	const keep = () => async ({ update }: { update: (o?: { reset?: boolean }) => Promise<void> }) => update({ reset: false });
@@ -42,7 +43,7 @@
 				<div class="grid-2">
 					<div class="field">
 						<label for="hname">{t('household.name')}</label>
-						<input id="hname" name="name" value={data.hh.name} required disabled={!isOwner} />
+						<input id="hname" name="name" value={data.hh.name} required disabled={!canEdit} />
 					</div>
 					<div class="field">
 						<label for="country">{t('household.home_country')}</label>
@@ -50,7 +51,7 @@
 					</div>
 				</div>
 				<p class="tiny muted">{t('household.home_country_hint')}</p>
-				{#if isOwner}<button class="btn primary">{t('common.save')}</button>{/if}
+				{#if canEdit}<button class="btn primary">{t('common.save')}</button>{/if}
 			</form>
 		</section>
 
@@ -161,34 +162,29 @@
 						<li class="row wrap">
 							<Avatar name={m.name} color={m.color} avatar={m.avatar} />
 							<div class="grow"><strong>{m.name}</strong><div class="tiny muted">{m.email}</div></div>
-							{#if isOwner}
-								<form method="POST" action="?/role" class="row" use:enhance={keep}>
+							{#if m.role === 'owner'}<span class="badge">{t('household.creator')}</span>{/if}
+							{#if m.role !== 'owner'}
+								<form
+									method="POST"
+									action="?/removeMember"
+									use:enhance={({ cancel }) => {
+										const self = m.user_id === data.user?.id;
+										if (!confirm(self ? t('household.confirm_leave', { household: data.hh?.name ?? '' }) : t('household.confirm_remove_member', { name: m.name }))) cancel();
+									}}
+								>
 									<input type="hidden" name="user_id" value={m.user_id} />
-									<select name="role" value={m.role} onchange={(e) => (e.currentTarget as HTMLSelectElement).form?.requestSubmit()}>
-										{#each ['owner', 'member', 'packer'] as r}<option value={r}>{t(`role.${r}`)}</option>{/each}
-									</select>
+									<button class="btn small" class:danger={m.user_id !== data.user?.id}>{m.user_id === data.user?.id ? t('household.leave') : '✕'}</button>
 								</form>
-								{#if m.user_id !== data.user?.id}
-									<form method="POST" action="?/removeMember" use:enhance>
-										<input type="hidden" name="user_id" value={m.user_id} />
-										<button class="btn small danger">✕</button>
-									</form>
-								{/if}
-							{:else}
-								<span class="badge">{t(`role.${m.role}`)}</span>
 							{/if}
 						</li>
 					{/each}
 				</ul>
-				{#if isOwner}
-					<hr />
+				<hr />
+				{#if canEdit}
 					<h3>{t('household.invite')}</h3>
 					<p class="small muted">{t('household.invite_hint')}</p>
 					<form method="POST" action="?/invite" class="row wrap" use:enhance={keep}>
 						<input class="grow" name="email" type="email" placeholder={data.smtp ? t('household.invite_email') : t('household.invite_email_nosmtp')} />
-						<select name="role">
-							{#each ['member', 'packer', 'owner'] as r}<option value={r}>{t(`role.${r}`)}</option>{/each}
-						</select>
 						<button class="btn primary">{t('household.create_invite')}</button>
 					</form>
 					{#if form?.inviteLink}

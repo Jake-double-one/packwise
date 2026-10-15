@@ -87,7 +87,7 @@ export function claimAccount(userId: string, email: string, passwordHash: string
 	});
 }
 
-const RANK: Record<Role, number> = { packer: 0, member: 1, owner: 2 };
+const RANK: Record<Role, number> = { guest: 0, member: 1, owner: 2 };
 
 /**
  * Move everything of one profile/account into another and delete the source:

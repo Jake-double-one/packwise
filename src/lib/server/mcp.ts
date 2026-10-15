@@ -10,8 +10,8 @@ import { authenticateToken, type TokenScope } from './apitokens';
 import { householdsFor, rateLimit, type AppHousehold, type SessionUser } from './auth';
 import { config } from './config';
 import { messagesFor } from './i18n';
-import { getTrip, listPersons, listTripItems, listTrips } from './repo';
-import { applyTripOp, broadcastTripOp, createTrip, type TripOp } from './trips';
+import { getTrip, listPersons, listSharedTrips, listTripItems, listTrips } from './repo';
+import { applyTripOp, broadcastTripOp, createTrip, tripAccessFor, type TripOp } from './trips';
 import { geocode, weatherFor } from './weather';
 
 /**
@@ -48,11 +48,11 @@ const tripIdProp = { trip_id: { type: 'string', description: 'Trip id from list_
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
+/** Same access rules as the app: household members and invited trip guests. */
 function tripFor(ctx: Ctx, id: unknown): { trip: Trip; hh: AppHousehold } {
-	const trip = typeof id === 'string' ? getTrip(id) : null;
-	const hh = trip ? ctx.households.find((h) => h.id === trip.household_id) : undefined;
-	if (!trip || !hh) throw new ToolError(`Trip "${id}" not found. Use list_trips to get trip ids.`);
-	return { trip, hh };
+	const access = typeof id === 'string' ? tripAccessFor(ctx.user, id) : null;
+	if (!access) throw new ToolError(`Trip "${id}" not found. Use list_trips to get trip ids.`);
+	return access;
 }
 
 function householdFor(ctx: Ctx, name: unknown): AppHousehold {
@@ -97,6 +97,13 @@ const TOOLS: Tool[] = [
 					lines.push(
 						`- ${tr.name} — id: ${tr.id} — ${tr.destination || (tr.country ? countryName(tr.country, ctx.locale) : '?')}, ${tr.start_date} to ${tr.end_date}, packed ${tr.done}/${tr.total}${tr.phase === 'return' ? ', return trip in progress' : ''}`
 					);
+				}
+			}
+			if (!args.household) {
+				const shared = listSharedTrips(ctx.user.id).filter((tr) => args.include_past || tr.end_date >= today());
+				if (shared.length) {
+					lines.push('# Shared with me');
+					for (const tr of shared) lines.push(`- ${tr.name} — id: ${tr.id} — from ${tr.household_name}, ${tr.start_date} to ${tr.end_date}, packed ${tr.done}/${tr.total}`);
 				}
 			}
 			return lines.join('\n');
@@ -308,7 +315,6 @@ const TOOLS: Tool[] = [
 		},
 		run: async (args, ctx) => {
 			const hh = householdFor(ctx, args.household);
-			if (hh.role === 'packer') throw new ToolError('Packers cannot create trips.');
 			const start = String(args.start ?? '');
 			const end = String(args.end ?? '');
 			if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || end < start) throw new ToolError('start and end must be dates (YYYY-MM-DD), end not before start.');

@@ -209,6 +209,19 @@ const MIGRATIONS: string[] = [
 	`,
 	/* 6 – an emoji per traveller (people, kids, pets) */ `
 	ALTER TABLE persons ADD COLUMN emoji TEXT;
+	`,
+	/* 7 – no more roles inside a household (everyone may edit, the creator stays "owner");
+	       accounts can be invited to a single trip as guests */ `
+	UPDATE memberships SET role = 'member' WHERE role = 'packer';
+	ALTER TABLE tokens ADD COLUMN trip_id TEXT REFERENCES trips(id) ON DELETE CASCADE;
+	CREATE TABLE trip_guests (
+		trip_id TEXT NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+		user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		added_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+		created_at INTEGER NOT NULL,
+		PRIMARY KEY (trip_id, user_id)
+	);
+	CREATE INDEX idx_trip_guests_user ON trip_guests(user_id);
 	`
 ];
 

@@ -15,7 +15,6 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 	const body = (await request.json()) as (TripOp | ({ op: 'editTrip' } & EditTripInput)) & { client?: string };
 	let result;
 	if (body.op === 'editTrip') {
-		if (hh.role === 'packer') error(403, 'error.forbidden');
 		result = await editTrip(trip.id, hh, locals.user, body, locals.locale);
 	} else result = applyTripOp(trip.id, hh, locals.user, body);
 	broadcastTripOp(trip.id, hh.id, result, body.client ?? null);
@@ -24,7 +23,8 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 
 export const DELETE: RequestHandler = async ({ locals, params }) => {
 	const { trip, hh } = tripAccess(locals, params.id);
-	if (hh.role === 'packer') error(403, 'error.forbidden');
+	// a trip belongs to its household – guests can't delete it
+	if (hh.role === 'guest') error(403, 'error.forbidden');
 	run('DELETE FROM trips WHERE id = ?', trip.id);
 	publish(`trip:${trip.id}`, 'deleted', {});
 	return json({ ok: true });

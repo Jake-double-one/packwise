@@ -14,7 +14,6 @@ import { str } from '$lib/server/util';
 import type { Role } from '$lib/types';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
-const ROLES: Role[] = ['owner', 'member', 'packer'];
 const EMAIL = /^\S+@\S+\.\S+$/;
 
 function guard(locals: App.Locals) {
@@ -58,12 +57,11 @@ export const actions: Actions = {
 		const email = str(form, 'email').toLowerCase();
 		const password = String(form.get('password') ?? '');
 		const household = str(form, 'household') || 'new';
-		const role = str(form, 'role') as Role;
 		if (!name) return fail(400, { error: 'admin.err.name' });
 		if (!EMAIL.test(email)) return fail(400, { error: 'auth.err.email' });
 		if (password && password.length < 8) return fail(400, { error: 'auth.err.password_short' });
 		if (emailTaken(email)) return fail(400, { error: 'auth.err.email_taken' });
-		if (household !== 'new' && (!householdExists(household) || !ROLES.includes(role))) return fail(400, { error: 'admin.err.household' });
+		if (household !== 'new' && !householdExists(household)) return fail(400, { error: 'admin.err.household' });
 		const hash = password ? await hashPassword(password) : null;
 		const locale = event.locals.locale;
 		const uid = tx(() => {
@@ -76,7 +74,7 @@ export const actions: Actions = {
 				seedTemplate(hh, starterTemplate(locale), bags);
 				seedTodos(hh, starterTodos(locale));
 			} else {
-				addMember(household, uid, role);
+				addMember(household, uid, ownerCount(household) ? 'member' : 'owner');
 			}
 			return uid;
 		});
@@ -147,18 +145,27 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const userId = str(form, 'user_id');
 		const householdId = str(form, 'household_id');
-		const role = str(form, 'role');
+		const remove = str(form, 'role') === 'remove';
 		if (!userExists(userId) || !householdExists(householdId)) return fail(404, { error: 'admin.err.not_found' });
 		const current = get<{ role: Role }>('SELECT role FROM memberships WHERE household_id = ? AND user_id = ?', householdId, userId);
-		if (current?.role === 'owner' && role !== 'owner' && ownerCount(householdId) < 2) {
-			return fail(400, { error: 'household.err.last_owner', for: userId });
+		if (!remove) {
+			// no roles any more – only the household's creator is marked as owner
+			if (!current) addMember(householdId, userId, ownerCount(householdId) ? 'member' : 'owner');
+			return { done: 'saved', for: userId };
 		}
-		if (role === 'remove') {
+		if (!current) return { done: 'saved', for: userId };
+		const next = get<{ user_id: string }>(
+			'SELECT user_id FROM memberships WHERE household_id = ? AND user_id != ? ORDER BY rowid LIMIT 1',
+			householdId,
+			userId
+		);
+		// the creator leaves: the longest-standing member takes over deleting rights; the last one can't leave
+		if (current.role === 'owner' && !next) return fail(400, { error: 'household.err.last_owner', for: userId });
+		tx(() => {
 			run('DELETE FROM memberships WHERE household_id = ? AND user_id = ?', householdId, userId);
 			run('UPDATE persons SET user_id = NULL WHERE household_id = ? AND user_id = ?', householdId, userId);
-		} else if (ROLES.includes(role as Role)) {
-			addMember(householdId, userId, role as Role);
-		} else return fail(400, { error: 'admin.err.household', for: userId });
+			if (current.role === 'owner') run("UPDATE memberships SET role = 'owner' WHERE household_id = ? AND user_id = ?", householdId, next!.user_id);
+		});
 		return { done: 'saved', for: userId };
 	},
 

@@ -11,7 +11,6 @@
 	const f = $derived(form as Result | null);
 	const i18n = useI18n();
 	const { t } = i18n;
-	const ROLES = ['owner', 'member', 'packer'] as const;
 
 	let open = $state<string | null>(null);
 	let query = $state('');
@@ -34,7 +33,6 @@
 			return async ({ update }) => update({ reset: false });
 		};
 	const keep: SubmitFunction = () => async ({ update }) => update({ reset: false });
-	const autoSubmit = (e: Event) => (e.currentTarget as HTMLSelectElement).form?.requestSubmit();
 	const status = (u: (typeof data.users)[number]) => (!u.email ? 'no_login' : u.has_password ? 'active' : 'pending');
 </script>
 
@@ -136,13 +134,7 @@
 									{#each u.memberships as m (m.household_id)}
 										<li class="row">
 											<span class="grow">🏠 {m.name}</span>
-											<form method="POST" action="?/member" use:enhance={keep}>
-												<input type="hidden" name="user_id" value={u.id} />
-												<input type="hidden" name="household_id" value={m.household_id} />
-												<select name="role" value={m.role} onchange={autoSubmit} aria-label={t('admin.role')}>
-													{#each ROLES as r}<option value={r}>{t(`role.${r}`)}</option>{/each}
-												</select>
-											</form>
+											{#if m.role === 'owner'}<span class="badge">{t('household.creator')}</span>{/if}
 											<form method="POST" action="?/member" use:enhance={confirmSubmit(t('admin.confirm_remove', { name: u.name, household: m.name }))}>
 												<input type="hidden" name="user_id" value={u.id} />
 												<input type="hidden" name="household_id" value={m.household_id} />
@@ -160,9 +152,6 @@
 									<input type="hidden" name="user_id" value={u.id} />
 									<select name="household_id" class="grow" aria-label={t('admin.households')}>
 										{#each missing as h (h.id)}<option value={h.id}>{h.name}</option>{/each}
-									</select>
-									<select name="role" aria-label={t('admin.role')}>
-										{#each ROLES as r}<option value={r} selected={r === 'member'}>{t(`role.${r}`)}</option>{/each}
 									</select>
 									<button class="btn small">+ {t('admin.add_to')}</button>
 								</form>
@@ -231,11 +220,6 @@
 						<option value="new">{t('admin.own_household')}</option>
 						{#each data.households as h (h.id)}<option value={h.id}>{t('admin.join_household', { name: h.name })}</option>{/each}
 					</select>
-					{#if newHousehold !== 'new'}
-						<select name="role" aria-label={t('admin.role')} class="role-select">
-							{#each ROLES as r}<option value={r} selected={r === 'member'}>{t(`role.${r}`)}</option>{/each}
-						</select>
-					{/if}
 				</div>
 			</div>
 			{#if data.smtp}<label class="check small"><input type="checkbox" name="mail" checked /> {t('admin.send_mail')}</label>{/if}
@@ -353,14 +337,8 @@
 		padding: 0.3rem 0;
 		align-items: center;
 	}
-	.memberships select {
-		width: auto;
-	}
 	.full {
 		grid-column: 1 / -1;
-	}
-	.panel select[name='role'] {
-		width: auto;
 	}
 	.merge {
 		margin-top: 0.6rem;
@@ -368,9 +346,6 @@
 	}
 	.merge select {
 		min-width: 10rem;
-	}
-	.role-select {
-		margin-top: 0.4rem;
 	}
 	.households li {
 		border-bottom: 1px solid var(--border);

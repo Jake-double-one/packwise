@@ -210,8 +210,9 @@ export function householdsFor(user: SessionUser | null): AppHousehold[] {
 	);
 }
 
+/** Template, travellers and bags belong to the household: every member may edit them, trip guests may not. */
 export function canEditTemplate(hh: AppHousehold | null) {
-	return !!hh && (hh.role === 'owner' || hh.role === 'member');
+	return !!hh && hh.role !== 'guest';
 }
 
 // ── Brute force protection ──────────────────────────────────────────────────

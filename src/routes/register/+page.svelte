@@ -17,7 +17,8 @@
 		</div>
 	{:else}
 		<form method="POST" class="card" use:enhance>
-			{#if data.household}<div class="alert success">{t('auth.invited_to', { household: data.household })}</div>{/if}
+			{#if data.trip}<div class="alert success">{t('auth.invited_to_trip', { trip: data.trip })}</div>
+			{:else if data.household}<div class="alert success">{t('auth.invited_to', { household: data.household })}</div>{/if}
 			{#if form?.error}<div class="alert danger">{t(form.error)}</div>{/if}
 			<div class="field">
 				<label for="name">{t('setup.your_name')}</label>

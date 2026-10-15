@@ -289,6 +289,43 @@ export function listTrips(householdId: string) {
 	return rows.map((r) => ({ ...toTrip(r), total: r.total, done: r.done }));
 }
 
+// ── Trip guests (accounts invited to a single trip) ─────────────────────────
+
+export function isTripGuest(tripId: string, userId: string): boolean {
+	return !!get('SELECT 1 FROM trip_guests WHERE trip_id = ? AND user_id = ?', tripId, userId);
+}
+
+export function addTripGuest(tripId: string, userId: string, addedBy: string | null) {
+	run('INSERT OR IGNORE INTO trip_guests (trip_id, user_id, added_by, created_at) VALUES (?, ?, ?, ?)', tripId, userId, addedBy, now());
+}
+
+export function removeTripGuest(tripId: string, userId: string) {
+	run('DELETE FROM trip_guests WHERE trip_id = ? AND user_id = ?', tripId, userId);
+}
+
+export function listTripGuests(tripId: string) {
+	return all<{ user_id: string; name: string; email: string | null; color: string; avatar: string | null }>(
+		`SELECT g.user_id, u.name, u.email, u.color, u.avatar FROM trip_guests g JOIN users u ON u.id = g.user_id
+		 WHERE g.trip_id = ? ORDER BY g.created_at`,
+		tripId
+	).map((g) => ({ ...g, avatar: avatarUrl(g.user_id, g.avatar) }));
+}
+
+/** Trips of other households that this account was invited to. */
+export function listSharedTrips(userId: string) {
+	const rows = all<TripRow & { total: number; done: number; household_name: string }>(
+		`SELECT t.*, h.name AS household_name,
+			(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item') AS total,
+			(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item' AND i.checked = 1) AS done
+		 FROM trip_guests g JOIN trips t ON t.id = g.trip_id JOIN households h ON h.id = t.household_id
+		 WHERE g.user_id = ?
+		   AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.household_id = t.household_id AND m.user_id = g.user_id)
+		 ORDER BY t.start_date`,
+		userId
+	);
+	return rows.map((r) => ({ ...toTrip(r), total: r.total, done: r.done, household_name: r.household_name }));
+}
+
 interface TripItemRow extends Omit<TripItem, 'needs_power' | 'consumable' | 'checked' | 'returned' | 'not_needed'> {
 	needs_power: number;
 	consumable: number;

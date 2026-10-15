@@ -15,7 +15,6 @@ import type { Actions, PageServerLoad } from './$types';
 import type { PersonKind, Role } from '$lib/types';
 
 const KINDS: PersonKind[] = ['adult', 'child', 'baby', 'pet'];
-const ROLES: Role[] = ['owner', 'member', 'packer'];
 const color = (v: string, fallback: string) => (/^#[0-9a-f]{6}$/i.test(v) ? v : fallback);
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -30,15 +29,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 	};
 };
 
+/** No roles inside a household: every member may change everything – only deleting it is left to its creator. */
 function requireRole(locals: App.Locals, roles: Role[]) {
 	const hh = locals.household;
 	if (!hh || !roles.includes(hh.role)) error(403, 'error.forbidden');
 	return hh;
 }
+const MEMBERS: Role[] = ['owner', 'member'];
 
 export const actions: Actions = {
 	update: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner']);
+		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
 		const name = str(form, 'name');
 		const country = str(form, 'country').toUpperCase();
@@ -47,7 +48,7 @@ export const actions: Actions = {
 		return { saved: 'household' };
 	},
 	addPerson: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
 		const name = str(form, 'name');
 		const kind = str(form, 'kind') as PersonKind;
@@ -57,7 +58,7 @@ export const actions: Actions = {
 		return { saved: 'person' };
 	},
 	updatePerson: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
 		const kind = str(form, 'kind') as PersonKind;
 		const id = str(form, 'id');
@@ -74,7 +75,7 @@ export const actions: Actions = {
 		return { saved: 'person' };
 	},
 	personEmoji: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
 		const emoji = str(form, 'emoji');
 		const valid = !emoji || ([...emoji].length <= 4 && emoji.length <= 16 && !/[\w\s<>"'&]/.test(emoji));
@@ -83,29 +84,29 @@ export const actions: Actions = {
 		return { saved: 'person' };
 	},
 	createBags: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		createPersonBags(hh.id, str(await request.formData(), 'id'), locals.locale);
 		return { saved: 'bag' };
 	},
 	movePerson: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
 		moveInList('persons', hh.id, str(form, 'id'), str(form, 'dir') === 'up' ? -1 : 1);
 		return { saved: 'person' };
 	},
 	moveBag: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
 		moveInList('bags', hh.id, str(form, 'id'), str(form, 'dir') === 'up' ? -1 : 1);
 		return { saved: 'bag' };
 	},
 	deletePerson: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		run('DELETE FROM persons WHERE id = ? AND household_id = ?', str(await request.formData(), 'id'), hh.id);
 		return { saved: 'person' };
 	},
 	addBag: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
 		const name = str(form, 'name');
 		if (!name) return fail(400, { error: 'household.err.bag_name' });
@@ -113,7 +114,7 @@ export const actions: Actions = {
 		return { saved: 'bag' };
 	},
 	updateBag: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
 		run(
 			'UPDATE bags SET name = ?, color = ?, icon = ? WHERE id = ? AND household_id = ?',
@@ -126,7 +127,7 @@ export const actions: Actions = {
 		return { saved: 'bag' };
 	},
 	deleteBag: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner', 'member']);
+		const hh = requireRole(locals, MEMBERS);
 		run('DELETE FROM bags WHERE id = ? AND household_id = ?', str(await request.formData(), 'id'), hh.id);
 		return { saved: 'bag' };
 	},
@@ -159,11 +160,10 @@ export const actions: Actions = {
 		redirect(303, '/');
 	},
 	invite: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner']);
+		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
-		const role = (ROLES.includes(str(form, 'role') as Role) ? str(form, 'role') : 'member') as Role;
 		const email = str(form, 'email').toLowerCase();
-		const token = createToken('invite', { household_id: hh.id, role, email: email || null }, 7 * 86_400_000);
+		const token = createToken('invite', { household_id: hh.id, role: 'member', email: email || null }, 7 * 86_400_000);
 		const link = `${publicOrigin(request)}/invite/${token}`;
 		let mailed = false;
 		if (email && config.smtp.enabled) {
@@ -176,25 +176,18 @@ export const actions: Actions = {
 		}
 		return { inviteLink: link, mailed };
 	},
-	role: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner']);
-		const form = await request.formData();
-		const role = str(form, 'role') as Role;
-		const userId = str(form, 'user_id');
-		if (!ROLES.includes(role)) return fail(400);
-		if (userId === locals.user?.id && role !== 'owner') {
-			const owners = get<{ n: number }>("SELECT COUNT(*) AS n FROM memberships WHERE household_id = ? AND role = 'owner'", hh.id)!.n;
-			if (owners < 2) return fail(400, { error: 'household.err.last_owner' });
-		}
-		addMember(hh.id, userId, role);
-		return { saved: 'member' };
-	},
+	/** Remove someone (or leave yourself). The creator stays; nobody is left without a household. */
 	removeMember: async ({ request, locals }) => {
-		const hh = requireRole(locals, ['owner']);
+		const hh = requireRole(locals, MEMBERS);
 		const userId = str(await request.formData(), 'user_id');
-		if (userId === locals.user?.id) return fail(400, { error: 'household.err.last_owner' });
+		const target = get<{ role: Role }>('SELECT role FROM memberships WHERE household_id = ? AND user_id = ?', hh.id, userId);
+		if (!target) return fail(404);
+		if (target.role === 'owner') return fail(400, { error: 'household.err.owner_stays' });
+		const others = get<{ n: number }>('SELECT COUNT(*) AS n FROM memberships WHERE user_id = ? AND household_id != ?', userId, hh.id)!.n;
+		if (!others) return fail(400, { error: userId === locals.user?.id ? 'household.err.last' : 'household.err.member_last' });
 		run('DELETE FROM memberships WHERE household_id = ? AND user_id = ?', hh.id, userId);
 		run('UPDATE persons SET user_id = NULL WHERE household_id = ? AND user_id = ?', hh.id, userId);
+		if (userId === locals.user?.id) redirect(303, '/');
 		return { saved: 'member' };
 	}
 };

@@ -2,16 +2,17 @@ import { fail, redirect } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { clientIp, createSession, createUser, hashPassword, PALETTE, rateLimit } from '$lib/server/auth';
 import { get, tx } from '$lib/server/db';
-import { addMember, createBag, createHousehold, seedTemplate, seedTodos } from '$lib/server/repo';
+import { addMember, addTripGuest, createBag, createHousehold, seedTemplate, seedTodos } from '$lib/server/repo';
 import { addPersonWithBags } from '$lib/server/persons';
 import { consumeToken, readToken } from '$lib/server/tokens';
 import { starterSharedBag, starterTemplate, starterTodos } from '$lib/data/starter';
 import { str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
 
+/** Invitations (to a household or to a single trip) also open registration when it is closed. */
 function allowed(invite: string | null) {
 	if (config.authMode !== 'accounts') return { ok: false as const };
-	const token = readToken(invite, 'invite');
+	const token = readToken(invite, 'invite') ?? readToken(invite, 'trip_invite');
 	if (token) return { ok: true as const, token };
 	return { ok: config.registration === 'open', token: null };
 }
@@ -24,7 +25,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const household = res.token?.household_id
 		? get<{ name: string }>('SELECT name FROM households WHERE id = ?', res.token.household_id)?.name
 		: null;
-	return { allowed: res.ok, invite, household, email: res.token?.email ?? '' };
+	const trip = res.token?.trip_id ? (get<{ name: string }>('SELECT name FROM trips WHERE id = ?', res.token.trip_id)?.name ?? null) : null;
+	return { allowed: res.ok, invite, household, trip, email: res.token?.email ?? '' };
 };
 
 export const actions: Actions = {
@@ -48,9 +50,10 @@ export const actions: Actions = {
 		const userId = tx(() => {
 			const uid = createUser({ name, email, passwordHash: hash, locale: lang });
 			if (res.token?.household_id) {
-				addMember(res.token.household_id, uid, res.token.role ?? 'member');
+				addMember(res.token.household_id, uid, 'member');
 				addPersonWithBags(res.token.household_id, name, 'adult', PALETTE[Math.floor(Math.random() * PALETTE.length)], uid, lang);
 			} else {
+				// own account and own household – a trip invitation adds the trip on top
 				const hh = createHousehold(name, null, uid);
 				const own = addPersonWithBags(hh, name, 'adult', '#6366f1', uid, lang).bags;
 				const shared = starterSharedBag(lang);
@@ -58,10 +61,11 @@ export const actions: Actions = {
 				seedTemplate(hh, starterTemplate(lang), bags);
 				seedTodos(hh, starterTodos(lang));
 			}
+			if (res.token?.trip_id) addTripGuest(res.token.trip_id, uid, null);
 			return uid;
 		});
 		if (invite && res.token) consumeToken(invite);
 		createSession(event, userId);
-		redirect(303, '/');
+		redirect(303, res.token?.trip_id ? `/t/${res.token.trip_id}` : '/');
 	}
 };

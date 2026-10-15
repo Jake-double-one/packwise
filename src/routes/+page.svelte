@@ -8,9 +8,10 @@
 	const i18n = useI18n();
 	const { t } = i18n;
 	const today = new Date().toISOString().slice(0, 10);
+	const sharedNow = $derived(data.shared.filter((tr) => tr.end_date >= today));
 	const upcoming = $derived(data.trips.filter((tr) => tr.end_date >= today).sort((a, b) => a.start_date.localeCompare(b.start_date)));
 	/** finished trips move into the (collapsed) archive, newest first, by year */
-	const past = $derived(data.trips.filter((tr) => tr.end_date < today).sort((a, b) => b.start_date.localeCompare(a.start_date)));
+	const past = $derived([...data.trips, ...data.shared].filter((tr) => tr.end_date < today).sort((a, b) => b.start_date.localeCompare(a.start_date)));
 	const pastByYear = $derived(
 		past.reduce<[string, typeof past][]>((acc, tr) => {
 			const year = tr.start_date.slice(0, 4);
@@ -40,7 +41,7 @@
 		<a class="btn primary" href="/trips/new">✨ {t('trips.new')}</a>
 	</div>
 
-	{#if data.trips.length === 0}
+	{#if data.trips.length === 0 && data.shared.length === 0}
 		<div class="card empty">
 			<div class="big">🧳</div>
 			<h2>{t('trips.empty_title')}</h2>
@@ -67,6 +68,18 @@
 			<Ring value={tr.done} total={tr.total} />
 		</a>
 	{/snippet}
+
+	{#if sharedNow.length}
+		<h2 class="section">🤝 {t('guests.shared_with_me')}</h2>
+		<div class="stack">
+			{#each sharedNow as tr (tr.id)}
+				<div class="shared-wrap">
+					{@render tripCard(tr)}
+					<span class="from tiny">{t('guests.from', { household: tr.household_name })}</span>
+				</div>
+			{/each}
+		</div>
+	{/if}
 
 	{#if upcoming.length}
 		<h2 class="section">{t('trips.upcoming')}</h2>
@@ -136,6 +149,16 @@
 		color: var(--text-3);
 		font-weight: 800;
 		letter-spacing: 0.05em;
+	}
+	.shared-wrap {
+		position: relative;
+	}
+	.from {
+		position: absolute;
+		top: 0.5rem;
+		right: 0.8rem;
+		color: var(--accent);
+		font-weight: 700;
 	}
 	.past .trip {
 		opacity: 0.75;

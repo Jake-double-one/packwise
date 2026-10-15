@@ -77,14 +77,15 @@ Without Portainer: `docker compose up -d` with the [`docker-compose.yml`](docker
 |---|---|---|
 | `none` | No login at all. Open the page and you're in. With several profiles, you pick yours once per device. | LAN only, or behind Authentik / Authelia / a VPN |
 | `local` *(default)* | One shared password (`APP_PASSWORD`, or set in the setup wizard), then straight in. | Families, small setups |
-| `accounts` | Users with e-mail and password. Households with roles (owner / member / packer), invite links, password reset by e-mail or by admin link. | Open on the internet, friends and other families |
+| `accounts` | Users with e-mail and password. Private households, invitations to a household or to a single trip, password reset by e-mail or by admin link. | Open on the internet, friends and other families |
 
 In every mode, **profiles / users ≠ people**. People are who you pack for; profiles are who is clicking.
 
 ### Accounts mode: privacy and the admin area
 
-- Every account (e-mail + password) only sees the **households it is a member of**, with a role per household (owner / member / packer). Grandparents or friends get their own login and their own household and never see your trips – trip links included.
-- The first account is **admin**. Under **Settings → Administration** the admin sees all accounts and households and can change names and e-mail addresses, set a new password, create a link for setting a password (also by e-mail with SMTP), log an account out everywhere, add accounts to households or remove them, change roles, make admins, **merge** two accounts and delete accounts or households.
+- Every account (e-mail + password) only sees the **households it is a member of**. There are no roles: everybody in a household may edit everything; only its creator can delete it. Grandparents or friends get their own login and their own household and never see your trips – trip links included.
+- **Invite to a single trip**: in a trip, *Share → Fellow travellers with an account* creates an invitation link (7 days, single use, optionally by e-mail). Guests can edit that trip completely – tick, add, edit notes, change dates – but see nothing else of your household (no template, no other trips). Without an account they create one when opening the link and get their own household for their own lists. The trip then shows up under *Shared with me*; guests can leave it, household members can remove them.
+- The first account is **admin**. Under **Settings → Administration** the admin sees all accounts and households and can change names and e-mail addresses, set a new password, create a link for setting a password (also by e-mail with SMTP), log an account out everywhere, add accounts to households or remove them, make admins, **merge** two accounts and delete accounts or households.
 - **Switching an existing install** from `none`/`local` to `accounts`: nothing is lost. On the next visit Packwise asks you to **claim your profile** (pick it, set e-mail and password; you become admin). All other profiles stay and keep access to the households they could see before. In the admin area you then give each of them an e-mail address and send them a link to choose their own password – or merge profiles that belong to the same person.
 
 ## Configuration

@@ -15,12 +15,15 @@
 		notes,
 		homeCountry,
 		canEdit,
+		canDuplicate = canEdit,
 		send
 	}: {
 		trip: Trip;
 		notes: TripNote[];
 		homeCountry: string | null;
 		canEdit: boolean;
+		/** guests may edit the trip, but a copy would land in someone else's household */
+		canDuplicate?: boolean;
 		send: (op: { op: string; [k: string]: unknown }) => Promise<unknown>;
 	} = $props();
 	let editing = $state(false);
@@ -94,7 +97,7 @@
 			<h2>🗺️ {trip.destination || (trip.country ? countryName(trip.country, i18n.locale) : trip.name)}</h2>
 			{#if canEdit}
 				<div class="row">
-					<button class="btn small" onclick={() => (duplicating = true)} title={t('trip.duplicate_intro')}>⧉ <span class="hide-sm">{t('trip.duplicate')}</span></button>
+					{#if canDuplicate}<button class="btn small" onclick={() => (duplicating = true)} title={t('trip.duplicate_intro')}>⧉ <span class="hide-sm">{t('trip.duplicate')}</span></button>{/if}
 					<button class="btn small" onclick={() => (editing = true)}>✏️ {t('trip.edit_trip')}</button>
 				</div>
 			{/if}

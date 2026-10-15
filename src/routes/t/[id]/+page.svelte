@@ -660,6 +660,7 @@
 					<span class="flag">{countryFlag(data.trip.country)}</span>
 					<button class="title-btn" onclick={rename} title={t('trip.rename')}>{tripName}</button>
 				</h1>
+				{#if data.isGuest}<p class="guest-badge tiny">🤝 {t('guests.banner', { household: data.hostHousehold })}</p>{/if}
 				<p class="muted small meta">
 					{#if data.trip.destination}{data.trip.destination}{' · '}{/if}{formatRange(data.trip.start_date, data.trip.end_date, i18n.locale)}
 					{#if daysUntil > 0} · <strong>{t('trips.in_days', { count: daysUntil })}</strong>{/if}
@@ -671,7 +672,7 @@
 					<span class="dot" class:off={!online} title={online ? t('trip.live') : t('trip.offline')}></span>
 				</div>
 				{#if queue.length}<span class="badge pending" title={t('offline.pending_hint')}>⏳ {queue.length}</span>{/if}
-				<button class="btn" onclick={() => (showShare = true)}>🔗 <span class="hide-sm">{t('trip.share')}</span></button>
+				<button class="btn" onclick={() => (showShare = true)} aria-label={t('trip.share')}>🔗 <span class="hide-sm">{t('trip.share')}</span></button>
 			</div>
 		</div>
 
@@ -705,7 +706,7 @@
 	</header>
 
 	{#if tab === 'info'}
-		<TripInfo trip={data.trip} {notes} homeCountry={data.homeCountry} canEdit={data.canDelete} {send} />
+		<TripInfo trip={data.trip} {notes} homeCountry={data.homeCountry} canEdit={true} canDuplicate={data.canDelete} {send} />
 	{:else}
 	{#if data.trip.weather || data.trip.warnings.length}
 		<div class="info-grid no-print pk-hide">
@@ -785,7 +786,7 @@
 			{/each}
 		</div>
 		{#if view === 'category'}
-			<button class="btn ghost small" class:on={compact} aria-pressed={compact} onclick={() => (compact = !compact)} title={compact ? t('trip.compact_off') : t('trip.compact_on')}>
+			<button class="btn ghost small" class:on={compact} aria-pressed={compact} aria-label={t('trip.compact')} onclick={() => (compact = !compact)} title={compact ? t('trip.compact_off') : t('trip.compact_on')}>
 				{compact ? '▦' : '☰'} <span class="hide-sm">{compact ? t('trip.compact') : t('trip.single')}</span>
 			</button>
 		{/if}
@@ -797,12 +798,12 @@
 		{#if !packing}<label class="check small"><input type="checkbox" bind:checked={hideChecked} /> {returning ? t('trip.hide_returned') : t('trip.hide_checked')}</label>{/if}
 		<input class="search" type="search" bind:this={searchEl} bind:value={query} placeholder="🔍 {t('trip.search')}" aria-label={t('trip.search')} title={t('trip.search_hint')} />
 		<div class="grow"></div>
-		<button class="btn small" class:primary={packing} onclick={() => (packing = !packing)} title={t('trip.pack_mode_hint')}>🎒 <span class="hide-sm">{packing ? t('trip.pack_mode_end') : t('trip.pack_mode')}</span></button>
+		<button class="btn small" class:primary={packing} onclick={() => (packing = !packing)} title={t('trip.pack_mode_hint')} aria-label={packing ? t('trip.pack_mode_end') : t('trip.pack_mode')}>🎒 <span class="hide-sm">{packing ? t('trip.pack_mode_end') : t('trip.pack_mode')}</span></button>
 		{#if !todosEnabled}
-			<button class="btn ghost small" onclick={() => send({ op: 'todos', enabled: true })}>✅ <span class="hide-sm">{t('todo.enable')}</span></button>
+			<button class="btn ghost small" onclick={() => send({ op: 'todos', enabled: true })} aria-label={t('todo.enable')}>✅ <span class="hide-sm">{t('todo.enable')}</span></button>
 		{/if}
-		<button class="btn ghost small" onclick={() => (showActivity = true)}>🕘 <span class="hide-sm">{t('trip.activity')}</span></button>
-		<button class="btn ghost small" onclick={() => window.print()}>🖨 <span class="hide-sm">{t('trip.print')}</span></button>
+		<button class="btn ghost small" onclick={() => (showActivity = true)} aria-label={t('trip.activity')}>🕘 <span class="hide-sm">{t('trip.activity')}</span></button>
+		<button class="btn ghost small" onclick={() => window.print()} aria-label={t('trip.print')}>🖨 <span class="hide-sm">{t('trip.print')}</span></button>
 	</div>
 
 	{#if errorMsg}<div class="alert danger">{errorMsg}</div>{/if}
@@ -1046,7 +1047,16 @@
 {/if}
 
 {#if showShare}
-	<ShareDialog url={`${page.url.origin}/t/${data.trip.id}`} name={tripName} onclose={() => (showShare = false)} />
+	<ShareDialog
+		url={`${page.url.origin}/t/${data.trip.id}`}
+		name={tripName}
+		onclose={() => (showShare = false)}
+		tripId={data.trip.id}
+		guests={data.guests}
+		canInvite={data.canDelete}
+		isGuest={data.isGuest}
+		me={data.user?.id ?? ''}
+	/>
 {/if}
 
 {#if showActivity}
@@ -1280,6 +1290,15 @@
 	}
 	.trip-page {
 		max-width: 1320px;
+	}
+	.guest-badge {
+		display: inline-block;
+		margin: 0 0 0.2rem;
+		padding: 0.1rem 0.55rem;
+		border-radius: 999px;
+		background: var(--accent-soft);
+		color: var(--accent);
+		font-weight: 700;
 	}
 	.search {
 		width: 11rem;

@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { canEditTemplate, householdsFor, type AppHousehold, type SessionUser } from './auth';
-import { newId, now, run, tx } from './db';
+import { config } from './config';
+import { get, newId, now, run, tx } from './db';
 import { publish } from './realtime';
 import {
 	deleteTodoTemplate,
@@ -20,6 +21,7 @@ import {
 	getTripItem,
 	insertTemplateNode,
 	insertTripItem,
+	isTripGuest,
 	listBags,
 	listPersons,
 	listTemplate,
@@ -38,16 +40,31 @@ import { weatherFor } from './weather';
 import { translate } from '$lib/i18n';
 import { messagesFor } from './i18n';
 import { MAX_GROUP_DEPTH, ancestors } from '$lib/tree';
-import { NOTE_KINDS, type NoteKind, type TemplateNode, type TodoTemplate, type TripItem, type TripNote, type TripPhase, type TripSettings, type TripTodo, type WeatherSummary } from '$lib/types';
+import { NOTE_KINDS, type NoteKind, type TemplateNode, type Trip, type TodoTemplate, type TripItem, type TripNote, type TripPhase, type TripSettings, type TripTodo, type WeatherSummary } from '$lib/types';
 import { DIMENSION_MAP } from '$lib/context';
 import { COUNTRIES } from '$lib/data/countries';
 
-export function tripAccess(locals: App.Locals, id: string) {
+/**
+ * Who may open a trip: members of its household – and, with accounts, guests
+ * invited to just this trip (role 'guest': full access to the trip, but not to
+ * the household's template, travellers or bags).
+ */
+export function tripAccessFor(user: SessionUser | null, id: string): { trip: Trip; hh: AppHousehold } | null {
 	const trip = getTrip(id);
-	if (!trip) error(404, 'trip.not_found');
-	const hh = householdsFor(locals.user).find((h) => h.id === trip.household_id);
-	if (!hh) error(404, 'trip.not_found');
-	return { trip, hh };
+	if (!trip) return null;
+	const hh = householdsFor(user).find((h) => h.id === trip.household_id);
+	if (hh) return { trip, hh };
+	if (config.authMode === 'accounts' && user && isTripGuest(trip.id, user.id)) {
+		const host = get<{ id: string; name: string; home_country: string | null }>('SELECT id, name, home_country FROM households WHERE id = ?', trip.household_id);
+		if (host) return { trip, hh: { ...host, role: 'guest' } };
+	}
+	return null;
+}
+
+export function tripAccess(locals: App.Locals, id: string) {
+	const access = tripAccessFor(locals.user, id);
+	if (!access) error(404, 'trip.not_found');
+	return access;
 }
 
 // ── Creation ─────────────────────────────────────────────────────────────────

@@ -43,7 +43,6 @@ describe('locales', () => {
 			...ROAD_RULES.flatMap((r) => [`road.${r.key}.name`, `road.${r.key}.note`]),
 			...DRIVING_NOTES.map((k) => `drive.note.${k}`),
 			...['adult', 'child', 'baby', 'pet'].map((k) => `kind.${k}`),
-			...['owner', 'member', 'packer'].map((k) => `role.${k}`),
 			...['system', 'light', 'dark', 'amoled'].map((k) => `settings.theme_${k}`)
 		];
 		expect(needed.filter((k) => !enKeys.has(k) || !deKeys.has(k))).toEqual([]);

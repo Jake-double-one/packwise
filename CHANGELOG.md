@@ -22,6 +22,12 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 - **AI assistants via MCP** (`MCP_ENABLED=true`): an MCP server at `/mcp` lets Claude, ChatGPT or Grok read packing lists and – with write access – tick items, add items and create trips. Each user can create up to 5 named personal API tokens (read only or read & change) under *Settings*; they are stored encrypted, can be shown again with 👁 and deleted at any time. Changes show up live and are logged as "Name (AI)".
 
+- **Invite accounts to a single trip** (`accounts` mode): *Share → Fellow travellers with an account* creates an invitation link (7 days, single use, optionally by e-mail). Guests can edit the trip completely but see nothing else of the household; new people create an account (with their own household) when opening the link. Shared trips appear under *Shared with me*; guests can leave, household members can remove them. MCP tokens of guests see their shared trips too.
+
+### Changed
+
+- **No more roles inside a household** (`accounts` mode): everybody in a household may edit everything and invite others; only the creator can delete the household. Former *packers* become members. Members can leave a household as long as they keep one of their own.
+
 ### Fixed
 
 - Groups (categories) of a trip can be renamed again: tap the group name to edit it. A renamed group can be taken over into the template with ⟳, and the editor now says *group* instead of *item*.

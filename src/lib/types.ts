@@ -1,7 +1,9 @@
 /** Shared domain types used on both server and client. */
 
 export type PersonKind = 'adult' | 'child' | 'baby' | 'pet';
-export type Role = 'owner' | 'member' | 'packer';
+/** owner = created the household (only they can delete it); member = everybody else in it;
+ *  guest = invited to a single trip of that household (never stored as a membership) */
+export type Role = 'owner' | 'member' | 'guest';
 export type QtyMode = 'fixed' | 'per_day' | 'per_night';
 
 /** Tri-state chip rules: dimension → value → 1 (only with) | -1 (never with). */

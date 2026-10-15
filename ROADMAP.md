@@ -10,8 +10,8 @@ What's done and what's planned for Packwise. Ideas and feedback are welcome as G
 - Weather from Open-Meteo (forecast or 10-year climate) with plausibility warnings
 - Plug adapters, voltage check, currency and road-trip hints (vignettes, Crit'Air, …)
 - Live collaboration (presence, activity log) and template sync (↑ Template, remove from template)
-- Login modes `none` / `local` / `accounts`, households and roles, invitations, SMTP
-- Admin area for accounts mode (accounts, passwords, households, roles, merging) and claiming profiles when switching an existing install to `accounts`
+- Login modes `none` / `local` / `accounts`, households, invitations to a household or a single trip, SMTP
+- Admin area for accounts mode (accounts, passwords, households, merging) and claiming profiles when switching an existing install to `accounts`
 - Import with review step (text, Markdown, OneNote / Word, JSON) and JSON export
 - Light / dark / AMOLED themes, English and German, extra languages via `/data/locales`
 - To-dos before departure (optional per trip, due dates, chips, own template)
