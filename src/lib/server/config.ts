@@ -39,6 +39,14 @@ export const config = {
 	get origin() {
 		return (env.ORIGIN || '').replace(/\/+$/, '');
 	},
+	/** MCP endpoint (/mcp) for AI assistants, authenticated with personal API tokens. */
+	get mcpEnabled() {
+		return bool(env.MCP_ENABLED ?? env.MCP_API, false);
+	},
+	/** Optional key for encrypting API tokens; otherwise a random key is kept in DATA_DIR/secret.key. */
+	get secretKey() {
+		return env.SECRET_KEY ?? '';
+	},
 	get weatherEnabled() {
 		return bool(env.WEATHER_ENABLED, true);
 	},

@@ -57,6 +57,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const { request, url, cookies, locals } = event;
 	const isApi = url.pathname.startsWith('/api/');
 
+	// MCP: token auth instead of cookies, called by AI services – no session, no CSRF check
+	if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
+		locals.user = null;
+		locals.unlocked = false;
+		locals.household = null;
+		locals.locale = config.defaultLang;
+		locals.theme = 'system';
+		return resolve(event);
+	}
+
 	if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method) && !sameOrigin(request)) {
 		return isApi
 			? json({ error: 'cross-origin request blocked' }, { status: 403 })

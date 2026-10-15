@@ -4,6 +4,7 @@
 	import { useI18n } from '$lib/i18n';
 	import LanguageSwitch from '$lib/components/LanguageSwitch.svelte';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import ApiTokens from '$lib/components/ApiTokens.svelte';
 	import { tick } from 'svelte';
 
 	const AVATAR_EMOJIS = ['😀', '😎', '🤠', '🥳', '😴', '🤓', '🧔', '👩', '👨', '👧', '👦', '👵', '👴', '🐶', '🐱', '🦊', '🐻', '🐼', '🐨', '🦁', '🐸', '🐵', '🦄', '🐢', '🐙', '🌴', '🏔️', '✈️', '🚐', '⛵', '🌍', '🎒'];
@@ -124,6 +125,10 @@
 			<button class="btn primary">{t('common.save')}</button>
 		</form>
 	</section>
+
+	{#if data.mcp}
+		<ApiTokens tokens={data.mcp.tokens} max={data.mcp.max} url={data.mcp.url} created={form?.createdToken ?? null} error={form?.tokenError ?? null} />
+	{/if}
 
 	{#if data.authMode === 'accounts'}
 		<section class="card">

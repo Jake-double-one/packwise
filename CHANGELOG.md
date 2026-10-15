@@ -19,6 +19,8 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 - **Duplicate a trip** (Trip info → ⧉ Duplicate): same list incl. your changes, destination, travellers and notes with new dates; checkmarks reset, quantities per day/night, weather and hints recalculated.
 - **Archive**: past trips are collected in a collapsed archive on the start page, newest first, grouped by year.
 
+- **AI assistants via MCP** (`MCP_ENABLED=true`): an MCP server at `/mcp` lets Claude, ChatGPT or Grok read packing lists and – with write access – tick items, add items and create trips. Each user can create up to 5 named personal API tokens (read only or read & change) under *Settings*; they are stored encrypted, can be shown again with 👁 and deleted at any time. Changes show up live and are logged as "Name (AI)".
+
 ### Fixed
 
 - Groups (categories) of a trip can be renamed again: tap the group name to edit it. A renamed group can be taken over into the template with ⟳, and the editor now says *group* instead of *item*.

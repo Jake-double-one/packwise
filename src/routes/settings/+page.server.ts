@@ -3,10 +3,15 @@ import { config } from '$lib/server/config';
 import { hashPassword, verifyPassword } from '$lib/server/auth';
 import { get, run } from '$lib/server/db';
 import { AVATAR_DATA_URL, MAX_AVATAR_CHARS } from '$lib/server/avatar';
+import { createApiToken, deleteToken, listTokens, MAX_TOKENS, renameToken } from '$lib/server/apitokens';
+import { publicOrigin } from '$lib/server/auth';
 import { str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => ({ smtp: config.smtp.enabled });
+export const load: PageServerLoad = async ({ locals, request }) => ({
+	smtp: config.smtp.enabled,
+	mcp: config.mcpEnabled && locals.user ? { tokens: listTokens(locals.user.id), max: MAX_TOKENS, url: `${publicOrigin(request)}/mcp` } : null
+});
 
 export const actions: Actions = {
 	profile: async ({ request, locals }) => {
@@ -33,6 +38,24 @@ export const actions: Actions = {
 			run('UPDATE users SET avatar = ?, avatar_img = NULL WHERE id = ?', emoji, locals.user.id);
 		} else return fail(400, { avatarError: 'settings.avatar_invalid' });
 		return { saved: 'avatar' };
+	},
+	tokenCreate: async ({ request, locals }) => {
+		if (!locals.user || !config.mcpEnabled) return fail(403);
+		const form = await request.formData();
+		const created = createApiToken(locals.user.id, str(form, 'name'), str(form, 'scope') === 'write' ? 'write' : 'read');
+		if (!created) return fail(400, { tokenError: 'tokens.err.max' });
+		return { createdToken: created };
+	},
+	tokenRename: async ({ request, locals }) => {
+		if (!locals.user) return fail(401);
+		const form = await request.formData();
+		renameToken(locals.user.id, str(form, 'id'), str(form, 'name'));
+		return { saved: 'token' };
+	},
+	tokenDelete: async ({ request, locals }) => {
+		if (!locals.user) return fail(401);
+		deleteToken(locals.user.id, str(await request.formData(), 'id'));
+		return { saved: 'token' };
 	},
 	password: async ({ request, locals }) => {
 		if (!locals.user || config.authMode !== 'accounts') return fail(403);

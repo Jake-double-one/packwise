@@ -40,6 +40,7 @@ Packwise replaces the packing list in your notes app. You maintain **one templat
 - **Share**: link, QR code and the native share sheet. Print view in two columns.
 - **Themes**: light, dark, **AMOLED (true black)** and system.
 - **Languages**: English and German built in. Drop more into `/data/locales` (see below).
+- **AI assistants (MCP)**: optional MCP server with personal API tokens – ask Claude, ChatGPT or Grok what's still open, tick items or create trips.
 - **Tiny footprint**: one container, SQLite, about 25 MB RAM at idle. Images for amd64 and arm64.
 
 ## Quick start (Docker Compose / Portainer)
@@ -101,6 +102,8 @@ In every mode, **profiles / users ≠ people**. People are who you pack for; pro
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | – | Optional e-mail for invitations and password resets |
 | `ADDRESS_HEADER` | – | e.g. `X-Forwarded-For` behind a proxy, so login rate limiting sees real client IPs |
 | `BODY_SIZE_LIMIT` | `512K` | Raise it if you import very large lists |
+| `MCP_ENABLED` | `false` | `true` turns on the MCP endpoint `/mcp` for AI assistants and the *API tokens* section in the settings (`MCP_API` works too) |
+| `SECRET_KEY` | – | Optional key for encrypting API tokens. Without it, a random key is created in `/data/secret.key` (keep it with your backup, or tokens can no longer be shown – they keep working) |
 
 ### Reverse proxy notes
 
@@ -111,6 +114,18 @@ Packwise works behind Traefik, Nginx Proxy Manager, Caddy and Authentik without 
 **Brave browser: some functions don't work.** With Brave Shields active, some requests can be blocked (Brave's filter lists also apply to self-hosted apps). Open Packwise, tap the Brave lion icon in the address bar and turn **Shields off for this site**. The setting is remembered per domain. Packwise loads no ads, trackers or third-party scripts, so nothing is lost.
 
 **Live updates don't arrive behind a reverse proxy.** Disable response buffering for `/api/*/live` (Server-Sent Events).
+
+## AI assistants (MCP)
+
+With `MCP_ENABLED=true`, Packwise offers an [MCP](https://modelcontextprotocol.io) server at `/mcp`, so assistants such as **Claude**, **ChatGPT** or **Grok** can work with your lists: *"What isn't packed for Mallorca yet?"*, *"Tick off the chargers"*, *"Add a snorkel for Dennis"*, *"Create a trip to Rome from 10 to 15 April, by plane, hotel, city trip"*.
+
+- Every user creates up to **5 personal API tokens** under **Settings → API tokens**, each with a name and *read only* or *read & change*. Tokens are stored encrypted, can be shown again with 👁 and deleted at any time.
+- A token sees exactly what its user sees (in `accounts` mode only their own households). Changes appear live in open lists and are logged as "Name (AI)".
+- Tools: `list_trips`, `get_packing_list`, `get_trip_info` and – with write access – `check_items`, `add_items`, `create_trip`.
+- **Claude app / claude.ai** (Settings → Connectors → add custom connector) and **ChatGPT** (developer mode → create connector, no authentication): use `https://<your-packwise>/mcp/<token>`.
+- **Claude Code**: `claude mcp add --transport http packwise https://<your-packwise>/mcp --header "Authorization: Bearer <token>"`.
+- **Grok / xAI API** (remote MCP tools): server URL `https://<your-packwise>/mcp` with authorization `Bearer <token>`.
+- The apps connect over the internet, so Packwise has to be reachable via HTTPS from outside. Treat the URL with the token like a password.
 
 ## Adding a language
 

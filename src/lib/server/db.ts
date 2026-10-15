@@ -193,6 +193,19 @@ const MIGRATIONS: string[] = [
 	/* 4 – profile pictures: an emoji or a small uploaded image (data URL, resized in the browser) */ `
 	ALTER TABLE users ADD COLUMN avatar TEXT;
 	ALTER TABLE users ADD COLUMN avatar_img TEXT;
+	`,
+	/* 5 – personal API tokens (MCP): looked up by hash, stored encrypted so the owner can show them again */ `
+	CREATE TABLE api_tokens (
+		id TEXT PRIMARY KEY,
+		user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		name TEXT NOT NULL,
+		token_hash TEXT NOT NULL UNIQUE,
+		token_enc TEXT NOT NULL,
+		scope TEXT NOT NULL DEFAULT 'read', -- read | write
+		created_at INTEGER NOT NULL,
+		last_used_at INTEGER
+	);
+	CREATE INDEX idx_api_tokens_user ON api_tokens(user_id);
 	`
 ];
 

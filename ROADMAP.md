@@ -21,6 +21,8 @@ What's done and what's planned for Packwise. Ideas and feedback are welcome as G
 - Two-column trip view with drag & drop between categories, bags and travellers
 - Trip info tab: OpenStreetMap map, day-by-day weather (forecast or 10-year average), country facts, "By car" rules (speed limits, alcohol, child seats, specialities)
 - Trip notes (address, rental car, phone, link, code, text, secret fields) shared live and offline; editing destination and dates
+- Compact checklist, undo, packing mode, search, duplicating trips, archive, profile pictures
+- MCP server for AI assistants (Claude, ChatGPT, Grok) with personal API tokens
 
 ## 🔜 Next
 
@@ -34,4 +36,5 @@ What's done and what's planned for Packwise. Ideas and feedback are welcome as G
 - **Calendar export** (`.ics`) for trips and to-dos
 - **Optional 2FA (TOTP)** per user and **OIDC login** (e.g. Authentik)
 - **Template gallery and community templates** (`COMMUNITY_CATALOG_URL`)
-- **REST API with tokens, webhooks** and a share target (e.g. to connect a shopping-list app)
+- **REST API and webhooks** (personal tokens already exist for MCP) and a share target (e.g. to connect a shopping-list app)
+- **More MCP tools**: edit the template, import text lists, to-dos
