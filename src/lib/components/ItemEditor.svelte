@@ -85,10 +85,10 @@
 		{#if templateState === 'auto'}
 			<p class="small muted">{t('trip.tpl_auto')}</p>
 		{:else if templateState === 'new'}
-			<p class="small muted">{t('trip.tpl_new')}</p>
+			<p class="small muted">{t(isItem ? 'trip.tpl_new' : 'trip.tpl_new_group')}</p>
 			{#if canEditTemplate}<button class="btn primary small" onclick={onpromote}>↑ {t('trip.promote')}</button>{/if}
 		{:else if templateState === 'differs'}
-			<p class="small muted">{t('trip.tpl_differs')}</p>
+			<p class="small muted">{t(isItem ? 'trip.tpl_differs' : 'trip.tpl_differs_group')}</p>
 			{#if canEditTemplate}<button class="btn primary small" onclick={onsync}>⟳ {t('trip.sync')}</button>{/if}
 		{:else}
 			<p class="small muted">✓ {t('trip.tpl_linked')}</p>

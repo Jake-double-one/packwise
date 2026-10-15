@@ -78,7 +78,7 @@
 				{@const missing = data.households.filter((h) => !u.memberships.some((m) => m.household_id === h.id))}
 				<li class="user" class:open={open === u.id}>
 					<button class="head" aria-expanded={open === u.id} onclick={() => (open = open === u.id ? null : u.id)}>
-						<Avatar name={u.name} color={u.color} size={34} />
+						<Avatar name={u.name} color={u.color} avatar={u.avatar} size={34} />
 						<div class="grow who">
 							<div>
 								<strong>{u.name}</strong>

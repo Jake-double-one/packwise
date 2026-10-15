@@ -10,9 +10,12 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 - **Compact checklist (default).** In the category view, the same item of several travellers (e.g. three ID cards) is one row with a box per traveller and an *All* box that is ticked automatically once everybody is done – tapping it ticks or unticks everybody. The card header with the travellers' avatars stays visible while scrolling, also with nested categories. Switch between *Compact* and *Single* in the toolbar at any time (saved per device); checkmarks are kept. Editing a compact row changes the item for all travellers.
 
+- **Profile pictures.** Under *Settings → Profile* pick one of 32 symbols or upload your own picture (resized to 160 × 160 px in the browser). It is shown in the header, in the admin area, next to who is online and for your traveller in the packing lists.
+- **Activity "Work & Travel"** as a new chip.
+
 ### Fixed
 
-- Groups (categories) of a trip can be renamed again: tap the group name to edit it. A renamed group can be taken over into the template with ⟳.
+- Groups (categories) of a trip can be renamed again: tap the group name to edit it. A renamed group can be taken over into the template with ⟳, and the editor now says *group* instead of *item*.
 - Printing: no more empty last page; progress rings, counters and other screen-only elements are left out; large categories continue in the next column instead of leaving half-empty pages.
 
 ## v0.2.0 – Initial release

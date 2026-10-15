@@ -189,6 +189,10 @@ const MIGRATIONS: string[] = [
 	/* 3 – personal bags: a bag can belong to a person (deleted with them) */ `
 	ALTER TABLE bags ADD COLUMN person_id TEXT REFERENCES persons(id) ON DELETE CASCADE;
 	ALTER TABLE bags ADD COLUMN kind TEXT NOT NULL DEFAULT 'other'; -- suitcase | carryon | other
+	`,
+	/* 4 – profile pictures: an emoji or a small uploaded image (data URL, resized in the browser) */ `
+	ALTER TABLE users ADD COLUMN avatar TEXT;
+	ALTER TABLE users ADD COLUMN avatar_img TEXT;
 	`
 ];
 

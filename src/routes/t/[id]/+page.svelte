@@ -36,7 +36,7 @@
 	let template = $derived<Record<string, TemplateInfo>>(data.template);
 	let todoTemplateIds = $derived(new Set<string>(data.todoTemplateIds));
 	let activity = $derived(data.activity);
-	let presence = $state<{ id: string; name: string; color: string }[]>([]);
+	let presence = $state<{ id: string; name: string; color: string; avatar?: string | null }[]>([]);
 	let online = $state(true);
 	let queue = $state<Op[]>([]);
 	let view = $state<View>('category');
@@ -540,7 +540,7 @@
 			</div>
 			<div class="row no-print actions">
 				<div class="presence row" title={t('trip.online_now')}>
-					{#each presence as p (p.id)}<Avatar name={p.name} color={p.color} size={26} />{/each}
+					{#each presence as p (p.id)}<Avatar name={p.name} color={p.color} avatar={p.avatar} size={26} />{/each}
 					<span class="dot" class:off={!online} title={online ? t('trip.live') : t('trip.offline')}></span>
 				</div>
 				{#if queue.length}<span class="badge pending" title={t('offline.pending_hint')}>⏳ {queue.length}</span>{/if}
@@ -633,7 +633,7 @@
 						{#if data.canEditTemplate && (!td.template_id || !todoTemplateIds.has(td.template_id))}
 							<button class="tpl-btn new no-print" onclick={() => send({ op: 'todoPromote', id: td.id })} title={t('trip.promote')}>↑ {t('trip.to_template')}</button>
 						{/if}
-						{#if person}<Avatar name={person.name} color={person.color} size={24} />{/if}
+						{#if person}<Avatar name={person.name} color={person.color} avatar={person.avatar} size={24} />{/if}
 						<button class="btn ghost icon no-print del" title={t('common.delete')} onclick={() => requestTodoDelete(td)}>✕</button>
 					</div>
 				{/each}
@@ -713,14 +713,14 @@
 				<span class="auto tiny no-print" title={it.reason}>✨</span>
 			{/if}
 			{#if bag && view !== 'bag'}<span class="bag-ico" title={bag.name}>{bag.icon}</span>{/if}
-			{#if person && view !== 'person'}<Avatar name={person.name} color={person.color} size={24} />{/if}
+			{#if person && view !== 'person'}<Avatar name={person.name} color={person.color} avatar={person.avatar} size={24} />{/if}
 		</div>
 	{/snippet}
 
 	{#snippet colHead(cols: typeof data.persons)}
 		<div class="cells head" class:many={cols.length >= 5} aria-hidden="true">
 			<span class="cell all-label">{t('trip.all')}</span>
-			{#each cols as p (p.id)}<span class="cell" title={p.name}><Avatar name={p.name} color={p.color} size={22} /></span>{/each}
+			{#each cols as p (p.id)}<span class="cell" title={p.name}><Avatar name={p.name} color={p.color} avatar={p.avatar} size={22} /></span>{/each}
 		</div>
 	{/snippet}
 

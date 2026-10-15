@@ -4,6 +4,7 @@ import type { Cookies, RequestEvent } from '@sveltejs/kit';
 import { all, get, getMeta, newId, now, run, setMeta } from './db';
 import { config } from './config';
 import type { Role } from '$lib/types';
+import { avatarUrl } from './avatar';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number, opts: object) => Promise<Buffer>;
 
@@ -17,6 +18,8 @@ export interface SessionUser {
 	email: string | null;
 	is_admin: boolean;
 	color: string;
+	/** emoji, URL of the uploaded picture (/api/avatar/…) or null for initials */
+	avatar: string | null;
 	locale: string | null;
 	theme: string | null;
 }
@@ -148,20 +151,21 @@ interface UserRow {
 	email: string | null;
 	is_admin: number;
 	color: string;
+	avatar: string | null;
 	locale: string | null;
 	theme: string | null;
 }
 
-const toUser = (r: UserRow): SessionUser => ({ ...r, is_admin: !!r.is_admin });
+const toUser = (r: UserRow): SessionUser => ({ ...r, is_admin: !!r.is_admin, avatar: avatarUrl(r.id, r.avatar) });
 
 export function getUser(id: string | null | undefined): SessionUser | null {
 	if (!id) return null;
-	const row = get<UserRow>('SELECT id, name, email, is_admin, color, locale, theme FROM users WHERE id = ?', id);
+	const row = get<UserRow>('SELECT id, name, email, is_admin, color, avatar, locale, theme FROM users WHERE id = ?', id);
 	return row ? toUser(row) : null;
 }
 
 export function listUsers(): SessionUser[] {
-	return all<UserRow>('SELECT id, name, email, is_admin, color, locale, theme FROM users ORDER BY created_at').map(toUser);
+	return all<UserRow>('SELECT id, name, email, is_admin, color, avatar, locale, theme FROM users ORDER BY created_at').map(toUser);
 }
 
 export function userCount(): number {

@@ -18,7 +18,7 @@ export const DIMENSIONS: Dimension[] = [
 		key: 'activity',
 		icon: '🎯',
 		auto: false,
-		values: ['beach', 'swim', 'hiking', 'ski', 'city', 'business', 'formal', 'sport', 'nightlife']
+		values: ['beach', 'swim', 'hiking', 'ski', 'city', 'business', 'work_travel', 'formal', 'sport', 'nightlife']
 	},
 	{ key: 'climate', icon: '🌡️', auto: true, values: ['hot', 'warm', 'mild', 'cold', 'snow', 'rain'] },
 	{ key: 'season', icon: '🍂', auto: true, values: ['spring', 'summer', 'autumn', 'winter'] },

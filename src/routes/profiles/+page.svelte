@@ -20,7 +20,7 @@
 			<form method="POST" action="?/choose{nextQ}" use:enhance>
 				<input type="hidden" name="id" value={p.id} />
 				<button class="tile">
-					<Avatar name={p.name} color={p.color} size={72} />
+					<Avatar name={p.name} color={p.color} avatar={p.avatar} size={72} />
 					<span>{p.name}</span>
 				</button>
 			</form>

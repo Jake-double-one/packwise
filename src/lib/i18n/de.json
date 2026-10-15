@@ -694,5 +694,13 @@
 	"trip.compact_on": "Kompakte Strichliste: ein Eintrag pro Artikel, ein Kästchen pro Person",
 	"trip.compact_off": "Jede Person einzeln auflisten",
 	"trip.confirm_delete_all": "„{name}“ für alle {count} von dieser Reise entfernen?",
-	"trip.group_edit_hint": "Änderungen gelten für alle: {names}. Koffer und Person stellst du in der Einzelansicht pro Person um."
+	"trip.group_edit_hint": "Änderungen gelten für alle: {names}. Koffer und Person stellst du in der Einzelansicht pro Person um.",
+	"ctx.activity.work_travel": "Work & Travel",
+	"settings.avatar": "Profilbild",
+	"settings.avatar_upload": "Eigenes Bild hochladen",
+	"settings.avatar_clear": "Initialen verwenden",
+	"settings.avatar_hint": "Wähle ein Symbol oder lade ein Foto hoch – es wird auf 160 × 160 Pixel verkleinert. Das Bild erscheint auch bei deinem Reisenden in den Packlisten.",
+	"settings.avatar_invalid": "Dieses Bild konnte nicht verwendet werden.",
+	"trip.tpl_new_group": "Diese Gruppe ist noch nicht in deinem Template.",
+	"trip.tpl_differs_group": "Diese Gruppe wurde hier geändert und weicht vom Template ab."
 }

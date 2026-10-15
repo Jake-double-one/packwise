@@ -7,7 +7,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
 	if (config.authMode === 'accounts') redirect(303, '/');
-	return { profiles: listUsers().map(({ id, name, color }) => ({ id, name, color })) };
+	return { profiles: listUsers().map(({ id, name, color, avatar }) => ({ id, name, color, avatar })) };
 };
 
 export const actions: Actions = {

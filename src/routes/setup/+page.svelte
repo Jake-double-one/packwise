@@ -44,7 +44,7 @@
 				{#each data.profiles as p, i (p.id)}
 					<label class="profile">
 						<input type="radio" name="profile" value={p.id} checked={p.is_admin ? true : i === 0 && !data.profiles.some((x) => x.is_admin)} />
-						<Avatar name={p.name} color={p.color} />
+						<Avatar name={p.name} color={p.color} avatar={p.avatar} />
 						<span>{p.name}</span>
 					</label>
 				{/each}

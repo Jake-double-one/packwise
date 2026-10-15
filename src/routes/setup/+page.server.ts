@@ -20,11 +20,11 @@ import { COUNTRIES } from '$lib/data/countries';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	if (needsClaim()) return { mode: config.authMode, claim: true, profiles: listUsers().map(({ id, name, color, is_admin }) => ({ id, name, color, is_admin })), needsAppPassword: false, defaultCountry: '' };
+	if (needsClaim()) return { mode: config.authMode, claim: true, profiles: listUsers().map(({ id, name, color, is_admin, avatar }) => ({ id, name, color, is_admin, avatar })), needsAppPassword: false, defaultCountry: '' };
 	if (userCount() > 0) redirect(303, '/');
 	return {
 		claim: false,
-		profiles: [],
+		profiles: [] as { id: string; name: string; color: string; is_admin: boolean; avatar: string | null }[],
 		mode: config.authMode,
 		needsAppPassword: config.authMode === 'local' && !config.appPassword,
 		defaultCountry: config.defaultCountry || (locals.locale === 'de' ? 'DE' : '')

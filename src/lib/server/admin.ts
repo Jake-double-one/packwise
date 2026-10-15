@@ -1,3 +1,4 @@
+import { avatarUrl } from './avatar';
 import { config } from './config';
 import { all, get, run, tx } from './db';
 import type { Role } from '$lib/types';
@@ -8,6 +9,7 @@ export interface AdminUser {
 	email: string | null;
 	is_admin: number;
 	color: string;
+	avatar: string | null;
 	has_password: number;
 	created_at: number;
 	last_login: number | null;
@@ -25,7 +27,7 @@ export interface AdminHousehold {
 
 export function adminUsers(): AdminUser[] {
 	const users = all<Omit<AdminUser, 'memberships'>>(
-		`SELECT u.id, u.name, u.email, u.is_admin, u.color, u.created_at,
+		`SELECT u.id, u.name, u.email, u.is_admin, u.color, u.avatar, u.created_at,
 		        (u.password_hash IS NOT NULL) AS has_password,
 		        (SELECT MAX(s.created_at) FROM sessions s WHERE s.user_id = u.id) AS last_login
 		 FROM users u ORDER BY u.created_at`
@@ -35,6 +37,7 @@ export function adminUsers(): AdminUser[] {
 	);
 	return users.map((u) => ({
 		...u,
+		avatar: avatarUrl(u.id, u.avatar),
 		memberships: members.filter((m) => m.user_id === u.id).map(({ household_id, name, role }) => ({ household_id, name, role }))
 	}));
 }

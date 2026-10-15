@@ -259,7 +259,7 @@
 						<RuleSummary rules={n.rules} />
 					</button>
 					{#if bag}<span class="bag-tag" title={bag.name}>{bag.icon}</span>{/if}
-					{#if person}<Avatar name={person.name} color={person.color} size={22} />{/if}
+					{#if person}<Avatar name={person.name} color={person.color} avatar={person.avatar} size={22} />{/if}
 					{#if data.canEdit}
 						<div class="actions">
 							<button class="btn ghost icon" title={t('common.move_up')} onclick={() => move(n, -1)}>↑</button>

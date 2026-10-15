@@ -1,3 +1,4 @@
+import { avatarUrl } from './avatar';
 import { all, get, newId, now, run, tx } from './db';
 import type { Bag, BagKind, Person, PersonKind, Role, Rules, TemplateNode, TodoTemplate, Trip, TripItem, TripPhase, TripTodo } from '$lib/types';
 
@@ -21,11 +22,11 @@ export function addMember(householdId: string, userId: string, role: Role) {
 }
 
 export function listMembers(householdId: string) {
-	return all<{ user_id: string; role: Role; name: string; email: string | null; color: string }>(
-		`SELECT m.user_id, m.role, u.name, u.email, u.color FROM memberships m JOIN users u ON u.id = m.user_id
+	return all<{ user_id: string; role: Role; name: string; email: string | null; color: string; avatar: string | null }>(
+		`SELECT m.user_id, m.role, u.name, u.email, u.color, u.avatar FROM memberships m JOIN users u ON u.id = m.user_id
 		 WHERE m.household_id = ? ORDER BY u.name`,
 		householdId
-	);
+	).map((m) => ({ ...m, avatar: avatarUrl(m.user_id, m.avatar) }));
 }
 
 // ── Persons & bags ───────────────────────────────────────────────────────────
@@ -43,7 +44,11 @@ export function moveInList(table: 'persons' | 'bags', householdId: string, id: s
 }
 
 export function listPersons(householdId: string): Person[] {
-	return all<Person>('SELECT id, name, kind, color, user_id, sort FROM persons WHERE household_id = ? ORDER BY sort, name', householdId);
+	return all<Person>(
+		`SELECT p.id, p.name, p.kind, p.color, p.user_id, p.sort, u.avatar FROM persons p LEFT JOIN users u ON u.id = p.user_id
+		 WHERE p.household_id = ? ORDER BY p.sort, p.name`,
+		householdId
+	).map((p) => ({ ...p, avatar: p.user_id ? avatarUrl(p.user_id, p.avatar) : null }));
 }
 
 export function createPerson(householdId: string, name: string, kind: PersonKind, color: string, userId: string | null = null) {

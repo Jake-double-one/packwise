@@ -3,6 +3,37 @@
 	import { invalidateAll } from '$app/navigation';
 	import { useI18n } from '$lib/i18n';
 	import LanguageSwitch from '$lib/components/LanguageSwitch.svelte';
+	import Avatar from '$lib/components/Avatar.svelte';
+	import { tick } from 'svelte';
+
+	const AVATAR_EMOJIS = ['😀', '😎', '🤠', '🥳', '😴', '🤓', '🧔', '👩', '👨', '👧', '👦', '👵', '👴', '🐶', '🐱', '🦊', '🐻', '🐼', '🐨', '🦁', '🐸', '🐵', '🦄', '🐢', '🐙', '🌴', '🏔️', '✈️', '🚐', '⛵', '🌍', '🎒'];
+	let avatarForm = $state<HTMLFormElement | null>(null);
+	let avatarImage = $state('');
+	let uploading = $state(false);
+
+	/** Center-crop and shrink the picture to 160 px in the browser, so only a few KB are uploaded. */
+	async function pickImage(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file) return;
+		uploading = true;
+		try {
+			const bitmap = await createImageBitmap(file);
+			const side = Math.min(bitmap.width, bitmap.height);
+			const canvas = document.createElement('canvas');
+			canvas.width = canvas.height = 160;
+			canvas.getContext('2d')!.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 160, 160);
+			let url = canvas.toDataURL('image/webp', 0.85);
+			if (!url.startsWith('data:image/webp')) url = canvas.toDataURL('image/jpeg', 0.85);
+			avatarImage = url;
+			await tick();
+			avatarForm?.requestSubmit();
+		} catch {
+			uploading = false;
+			alert(t('settings.avatar_invalid'));
+		}
+	}
 
 	let { data, form } = $props();
 	const { t } = useI18n();
@@ -54,6 +85,29 @@
 
 	<section class="card">
 		<h2>{t('settings.profile')}</h2>
+		<div class="avatar-row">
+			<Avatar name={data.user?.name ?? '?'} color={data.user?.color ?? '#888'} avatar={data.user?.avatar} size={72} />
+			<div class="grow">
+				<span class="lbl">{t('settings.avatar')}</span>
+				<form method="POST" action="?/avatar" bind:this={avatarForm} use:enhance={() => async ({ update }) => { uploading = false; await update({ reset: false }); }}>
+					<input type="hidden" name="image" value={avatarImage} />
+					<div class="emojis">
+						{#each AVATAR_EMOJIS as e}
+							<button class="emoji" class:on={data.user?.avatar === e} name="emoji" value={e} aria-label={e}>{e}</button>
+						{/each}
+					</div>
+					<div class="row wrap upload-row">
+						<label class="btn small">
+							📷 {uploading ? t('common.saving') : t('settings.avatar_upload')}
+							<input type="file" accept="image/*" class="sr-only" onchange={pickImage} />
+						</label>
+						{#if data.user?.avatar}<button class="btn small ghost" name="clear" value="1">{t('settings.avatar_clear')}</button>{/if}
+					</div>
+				</form>
+				{#if form?.avatarError}<div class="alert danger small">{t(form.avatarError)}</div>{/if}
+				<p class="tiny muted">{t('settings.avatar_hint')}</p>
+			</div>
+		</div>
 		<form method="POST" action="?/profile" use:enhance={() => async ({ update }) => update({ reset: false })}>
 			{#if form?.error}<div class="alert danger">{t(form.error)}</div>{/if}
 			{#if form?.saved === 'profile'}<div class="alert success">{t('common.saved')}</div>{/if}
@@ -110,6 +164,38 @@
 </div>
 
 <style>
+	.avatar-row {
+		display: flex;
+		gap: 1rem;
+		align-items: flex-start;
+		margin-bottom: 1rem;
+	}
+	.emojis {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		margin: 0.3rem 0 0.5rem;
+	}
+	.emoji {
+		width: 2.2rem;
+		height: 2.2rem;
+		font-size: 1.25rem;
+		line-height: 1;
+		border-radius: 50%;
+		border: 2px solid transparent;
+		background: var(--surface-2);
+		cursor: pointer;
+		padding: 0;
+	}
+	.emoji.on {
+		border-color: var(--accent);
+	}
+	.upload-row {
+		gap: 0.5rem;
+	}
+	.upload-row label.btn {
+		cursor: pointer;
+	}
 	.lbl {
 		display: block;
 		font-weight: 600;

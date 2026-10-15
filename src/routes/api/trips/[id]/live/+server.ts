@@ -6,6 +6,6 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async ({ locals, params }) => {
 	const { trip } = tripAccess(locals, params.id);
 	if (!locals.user) error(401);
-	const { id, name, color } = locals.user;
-	return sseResponse(`trip:${trip.id}`, { id, name, color });
+	const { id, name, color, avatar } = locals.user;
+	return sseResponse(`trip:${trip.id}`, { id, name, color, avatar });
 };

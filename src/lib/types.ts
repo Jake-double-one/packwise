@@ -14,6 +14,8 @@ export interface Person {
 	color: string;
 	user_id: string | null;
 	sort: number;
+	/** profile picture of the linked account (emoji or URL) */
+	avatar?: string | null;
 }
 
 export type BagKind = 'suitcase' | 'carryon' | 'other';

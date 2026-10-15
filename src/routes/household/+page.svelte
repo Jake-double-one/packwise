@@ -68,7 +68,7 @@
 									<button class="btn ghost icon" formaction="?/movePerson" name="dir" value="down" disabled={i === data.persons.length - 1} title={t('common.move_down')}>↓</button>
 								</div>
 							{/if}
-							<Avatar name={p.name} color={p.color} size={32} />
+							<Avatar name={p.name} color={p.color} avatar={p.avatar} size={32} />
 							<input class="grow name" name="name" value={p.name} aria-label={t('settings.name')} disabled={!canEdit} />
 							<select name="kind" value={p.kind} aria-label={t('household.kind')} disabled={!canEdit}>
 								{#each kinds as k}<option value={k}>{kindIcon[k]} {t(`kind.${k}`)}</option>{/each}
@@ -118,7 +118,7 @@
 							<input class="grow name" name="name" value={b.name} aria-label={t('settings.name')} disabled={!canEdit} />
 							{#if b.person_id}
 								{@const owner = data.persons.find((p) => p.id === b.person_id)}
-								{#if owner}<span title={t('household.bag_owner', { name: owner.name })}><Avatar name={owner.name} color={owner.color} size={26} /></span>{/if}
+								{#if owner}<span title={t('household.bag_owner', { name: owner.name })}><Avatar name={owner.name} color={owner.color} avatar={owner.avatar} size={26} /></span>{/if}
 							{/if}
 							<input type="color" name="color" value={b.color} aria-label={t('settings.color')} disabled={!canEdit} />
 							{#if canEdit}
@@ -145,7 +145,7 @@
 				<ul class="list">
 					{#each data.members as m (m.user_id)}
 						<li class="row wrap">
-							<Avatar name={m.name} color={m.color} />
+							<Avatar name={m.name} color={m.color} avatar={m.avatar} />
 							<div class="grow"><strong>{m.name}</strong><div class="tiny muted">{m.email}</div></div>
 							{#if isOwner}
 								<form method="POST" action="?/role" class="row" use:enhance={keep}>

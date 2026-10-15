@@ -6,6 +6,7 @@ export interface Presence {
 	id: string;
 	name: string;
 	color: string;
+	avatar?: string | null;
 }
 
 interface Subscriber {

@@ -37,7 +37,7 @@
 				{/each}
 			</nav>
 			<a class="me" href="/settings" title={t('nav.settings')} class:active={page.url.pathname.startsWith('/settings')}>
-				<Avatar name={data.user?.name ?? '?'} color={data.user?.color ?? '#888'} size={30} />
+				<Avatar name={data.user?.name ?? '?'} color={data.user?.color ?? '#888'} avatar={data.user?.avatar} size={30} />
 			</a>
 		</div>
 	</header>

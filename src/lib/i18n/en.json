@@ -694,5 +694,13 @@
 	"trip.compact_on": "Compact checklist: one row per item, one box per traveller",
 	"trip.compact_off": "List every traveller separately",
 	"trip.confirm_delete_all": "Remove \"{name}\" for all {count} from this trip?",
-	"trip.group_edit_hint": "Changes apply to everybody: {names}. Bag and person can be changed per traveller in the single view."
+	"trip.group_edit_hint": "Changes apply to everybody: {names}. Bag and person can be changed per traveller in the single view.",
+	"ctx.activity.work_travel": "Work & Travel",
+	"settings.avatar": "Profile picture",
+	"settings.avatar_upload": "Upload a picture",
+	"settings.avatar_clear": "Use initials",
+	"settings.avatar_hint": "Pick a symbol or upload a photo – it is shrunk to 160 × 160 pixels. It is also shown for your traveller in the packing lists.",
+	"settings.avatar_invalid": "This picture could not be used.",
+	"trip.tpl_new_group": "This group is not in your template yet.",
+	"trip.tpl_differs_group": "This group was changed here and differs from the template."
 }

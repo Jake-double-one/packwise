@@ -217,7 +217,7 @@
 				<div class="chips">
 					{#each data.persons as p}
 						<button type="button" class="chip person" class:on={persons.has(p.id)} onclick={() => (persons.has(p.id) ? persons.delete(p.id) : persons.add(p.id))}>
-							<Avatar name={p.name} color={p.color} size={20} />
+							<Avatar name={p.name} color={p.color} avatar={p.avatar} size={20} />
 							{p.name}
 						</button>
 					{/each}
