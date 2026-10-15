@@ -2,6 +2,12 @@
 
 All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwise:<version>`.
 
+## Unreleased
+
+### Changed
+
+- **Compact checklist**: a category with only one traveller (e.g. only the baby or the dog) shows just that traveller's column – no *All* label and no round *All* box; shared items of that category get their box in the same column.
+
 ## v0.3.0 – Notifications, sharing and privacy
 
 Reminders by e-mail, ntfy, Gotify and Web Push, SMTP settings in the app, inviting accounts to a single trip, an admin area without access to household contents, AI assistants via MCP, a compact checklist and a lot of polish.

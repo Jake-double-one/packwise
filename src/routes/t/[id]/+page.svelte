@@ -863,7 +863,8 @@
 
 	{#snippet colHead(cols: typeof data.persons)}
 		<div class="cells head" class:many={cols.length >= 5} aria-hidden="true">
-			<span class="cell all-label">{t('trip.all')}</span>
+			<!-- with a single traveller there is nothing to tick "for all" -->
+			{#if cols.length > 1}<span class="cell all-label">{t('trip.all')}</span>{/if}
 			{#each cols as p (p.id)}<span class="cell" title={p.name}><Avatar name={p.name} color={p.color} avatar={p.avatar} size={22} /></span>{/each}
 		</div>
 	{/snippet}
@@ -905,6 +906,21 @@
 			{/if}
 			{#if bag}<span class="bag-ico" title={bag.name}>{bag.icon}</span>{/if}
 			<div class="cells" class:many={cols.length >= 5}>
+				{#if cols.length <= 1}
+					<!-- one traveller (or none) in this category: just one box per row, also for shared items -->
+					{@const pi = cols[0] ? list.find((i) => i.person_id === cols[0].id) : undefined}
+					{#if pi}
+						<button class="box" class:on={isDone(pi)} onclick={() => toggle(pi)} aria-pressed={isDone(pi)} aria-label={`${it.name}: ${cols[0].name}`} title={cols[0].name} disabled={used}>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+						</button>
+					{:else if !personal}
+						<button class="box" class:on={isDone(it)} onclick={() => toggle(it)} aria-pressed={isDone(it)} aria-label={it.name} disabled={used}>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+						</button>
+					{:else}
+						<span class="cell none">–</span>
+					{/if}
+				{:else}
 				<button class="box all" class:on={allDone} onclick={() => (personal ? toggleAll(list) : toggle(it))} aria-pressed={allDone} aria-label={personal ? `${it.name}: ${t('trip.all')}` : it.name} disabled={used}>
 					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
 				</button>
@@ -918,6 +934,7 @@
 						<span class="cell none">{personal ? '–' : ''}</span>
 					{/if}
 				{/each}
+				{/if}
 			</div>
 		</div>
 	{/snippet}
