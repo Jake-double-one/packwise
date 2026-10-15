@@ -5,6 +5,7 @@
 	import { countryFlag } from '$lib/data/countries';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import CopyField from '$lib/components/CopyField.svelte';
+	import SmtpSettings from '$lib/components/SmtpSettings.svelte';
 
 	let { data, form } = $props();
 	type Result = { error?: string; household?: string; for?: string; done?: string; link?: string; linkFor?: string; mailed?: boolean };
@@ -197,6 +198,8 @@
 			{/each}
 		</ul>
 	</section>
+
+	<SmtpSettings view={data.smtpSettings} result={form} />
 
 	<section class="card">
 		<h2>➕ {t('admin.create_user')}</h2>

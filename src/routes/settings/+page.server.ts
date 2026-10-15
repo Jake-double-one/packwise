@@ -1,6 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import { adminResetAt } from '$lib/server/admin';
 import { config } from '$lib/server/config';
+import { smtpEnabled, smtpView } from '$lib/server/mail';
+import { smtpAction } from '$lib/server/smtp-actions';
 import { hashPassword, verifyPassword } from '$lib/server/auth';
 import { get, run } from '$lib/server/db';
 import { AVATAR_DATA_URL, MAX_AVATAR_CHARS } from '$lib/server/avatar';
@@ -10,12 +12,20 @@ import { str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, request }) => ({
-	smtp: config.smtp.enabled,
+	smtp: smtpEnabled(),
 	adminReset: adminResetAt(locals.user?.id),
+	/** none/local: e-mail settings live here (with accounts in the admin area) */
+	smtpSettings: config.authMode !== 'accounts' ? smtpView() : null,
 	mcp: config.mcpEnabled && locals.user ? { tokens: listTokens(locals.user.id), max: MAX_TOKENS, url: `${publicOrigin(request)}/mcp` } : null
 });
 
+/** SMTP can be set up here only without accounts – with accounts it's the admin's job. */
+const smtpGuard = (locals: App.Locals) => config.authMode !== 'accounts' && locals.unlocked;
+
 export const actions: Actions = {
+	smtpSave: async ({ request, locals }) => (smtpGuard(locals) ? smtpAction('save', request, locals.locale) : fail(403)),
+	smtpTest: async ({ request, locals }) => (smtpGuard(locals) ? smtpAction('test', request, locals.locale) : fail(403)),
+	smtpClear: async ({ request, locals }) => (smtpGuard(locals) ? smtpAction('clear', request, locals.locale) : fail(403)),
 	profile: async ({ request, locals }) => {
 		if (!locals.user) return fail(401);
 		const form = await request.formData();

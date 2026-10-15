@@ -6,6 +6,7 @@
 	import Avatar from '$lib/components/Avatar.svelte';
 	import { AVATAR_EMOJIS } from '$lib/avatars';
 	import ApiTokens from '$lib/components/ApiTokens.svelte';
+	import SmtpSettings from '$lib/components/SmtpSettings.svelte';
 	import { tick } from 'svelte';
 
 	let avatarForm = $state<HTMLFormElement | null>(null);
@@ -128,6 +129,10 @@
 			<button class="btn primary">{t('common.save')}</button>
 		</form>
 	</section>
+
+	{#if data.smtpSettings}
+		<SmtpSettings view={data.smtpSettings} result={form} />
+	{/if}
 
 	{#if data.mcp}
 		<ApiTokens tokens={data.mcp.tokens} max={data.mcp.max} url={data.mcp.url} created={form?.createdToken ?? null} error={form?.tokenError ?? null} />

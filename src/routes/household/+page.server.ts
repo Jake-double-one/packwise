@@ -2,7 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { cookieOptions, HOUSEHOLD_COOKIE, householdsFor, PALETTE, publicOrigin } from '$lib/server/auth';
 import { get, run, tx } from '$lib/server/db';
-import { sendMail } from '$lib/server/mail';
+import { sendMail, smtpEnabled } from '$lib/server/mail';
 import { messagesFor } from '$lib/server/i18n';
 import { translate } from '$lib/i18n';
 import { addMember, createBag, listBags, listMembers, listPersons, moveInList } from '$lib/server/repo';
@@ -19,13 +19,13 @@ const color = (v: string, fallback: string) => (/^#[0-9a-f]{6}$/i.test(v) ? v : 
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const hh = locals.household;
-	if (!hh) return { hh: null, persons: [], bags: [], members: [], smtp: config.smtp.enabled };
+	if (!hh) return { hh: null, persons: [], bags: [], members: [], smtp: smtpEnabled() };
 	return {
 		hh,
 		persons: listPersons(hh.id),
 		bags: listBags(hh.id),
 		members: config.authMode === 'accounts' ? listMembers(hh.id) : [],
-		smtp: config.smtp.enabled
+		smtp: smtpEnabled()
 	};
 };
 
@@ -165,7 +165,7 @@ export const actions: Actions = {
 		const token = createToken('invite', { household_id: hh.id, role: 'member', email: email || null }, 7 * 86_400_000);
 		const link = `${publicOrigin(request)}/invite/${token}`;
 		let mailed = false;
-		if (email && config.smtp.enabled) {
+		if (email && smtpEnabled()) {
 			const m = messagesFor(locals.locale);
 			mailed = await sendMail(
 				email,

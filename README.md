@@ -102,7 +102,7 @@ In every mode, **profiles / users ≠ people**. People are who you pack for; pro
 | `PUID` / `PGID` | `1000` | User / group the app runs as. `/data` is chowned automatically. |
 | `WEATHER_ENABLED` | `true` | Set to `false` to never contact Open-Meteo |
 | `SESSION_DAYS` | `90` | Login lifetime |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | – | Optional e-mail for invitations and password resets |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | – | Optional e-mail for invitations and password resets. Can also be set up in the app: *Settings → Sending e-mail* (`none` / `local`) or *Administration* (`accounts`), with a test mail; the password is stored encrypted. Environment variables take precedence. |
 | `ADDRESS_HEADER` | – | e.g. `X-Forwarded-For` behind a proxy, so login rate limiting sees real client IPs |
 | `BODY_SIZE_LIMIT` | `512K` | Raise it if you import very large lists |
 | `MCP_ENABLED` | `false` | `true` turns on the MCP endpoint `/mcp` for AI assistants and the *API tokens* section in the settings (`MCP_API` works too) |

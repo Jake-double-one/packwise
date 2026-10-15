@@ -24,6 +24,8 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 - **Invite accounts to a single trip** (`accounts` mode): *Share → Fellow travellers with an account* creates an invitation link (7 days, single use, optionally by e-mail). Guests can edit the trip completely but see nothing else of the household; new people create an account when opening the link and land right in the trip – no household needed. Shared trips appear under *Shared with me*; guests can leave, household members can remove them. MCP tokens of guests see their shared trips too.
 
+- **E-mail settings in the app**: SMTP server, port, encryption (STARTTLS, SSL/TLS, none), user, password and sender under *Settings* (`none` / `local`) or in the *Administration* (`accounts`), with a test mail before saving. The password is stored encrypted and never shown again. `SMTP_*` environment variables still work and take precedence.
+
 ### Changed
 
 - **No more roles inside a household** (`accounts` mode): everybody in a household may edit everything and invite others; only the creator can delete the household. Former *packers* become members.

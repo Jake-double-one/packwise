@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
+import { smtpEnabled } from '$lib/server/mail';
 import { checkAppPassword, clientIp, createSession, rateLimit, userCount, verifyPassword } from '$lib/server/auth';
 import { needsClaim } from '$lib/server/admin';
 import { get } from '$lib/server/db';
@@ -12,7 +13,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		mode: config.authMode,
 		registration: config.registration,
-		smtp: config.smtp.enabled
+		smtp: smtpEnabled()
 	};
 };
 

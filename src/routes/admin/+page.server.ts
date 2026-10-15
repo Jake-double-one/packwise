@@ -4,7 +4,8 @@ import { createUser, hashPassword, publicOrigin } from '$lib/server/auth';
 import { adminCount, adminHouseholds, adminUsers, mergeUsers } from '$lib/server/admin';
 import { all, get, now, run, tx } from '$lib/server/db';
 import { messagesFor } from '$lib/server/i18n';
-import { sendMail } from '$lib/server/mail';
+import { sendMail, smtpEnabled, smtpView } from '$lib/server/mail';
+import { smtpAction } from '$lib/server/smtp-actions';
 import { createOwnHousehold } from '$lib/server/households';
 import { createToken } from '$lib/server/tokens';
 import { translate } from '$lib/i18n';
@@ -35,7 +36,7 @@ async function passwordLink(event: RequestEvent, userId: string, mail: boolean) 
 	const token = createToken('reset', { user_id: userId, by_admin: 1 }, 72 * 3_600_000);
 	const link = `${publicOrigin(event.request)}/reset/${token}`;
 	let mailed = false;
-	if (mail && config.smtp.enabled) {
+	if (mail && smtpEnabled()) {
 		const m = messagesFor(event.locals.locale);
 		mailed = await sendMail(user.email, translate(m, 'mail.access.subject'), translate(m, 'mail.access.body', { name: user.name, admin: event.locals.user?.name ?? '', link }));
 	}
@@ -48,11 +49,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		users: adminUsers(),
 		households: adminHouseholds(),
 		registration: config.registration,
-		smtp: config.smtp.enabled
+		smtp: smtpEnabled(),
+		smtpSettings: smtpView()
 	};
 };
 
 export const actions: Actions = {
+	smtpSave: async ({ request, locals }) => (guard(locals), smtpAction('save', request, locals.locale)),
+	smtpTest: async ({ request, locals }) => (guard(locals), smtpAction('test', request, locals.locale)),
+	smtpClear: async ({ request, locals }) => (guard(locals), smtpAction('clear', request, locals.locale)),
 	create: async (event) => {
 		guard(event.locals);
 		const form = await event.request.formData();

@@ -25,6 +25,7 @@ services:
       # WEATHER_ENABLED: "true"            # Open-Meteo forecast / climate (no API key)
       # MCP_ENABLED: "true"                # AI assistants (Claude, ChatGPT, Grok) via /mcp + personal API tokens
       # SECRET_KEY: some-long-random-text  # optional key for encrypting API tokens (default: /data/secret.key)
+      # SMTP – or set it up in the app under Settings (none/local) or Administration (accounts)
       # SMTP_HOST: smtp.example.com
       # SMTP_PORT: 587
       # SMTP_USER: packwise@example.com

@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { publicOrigin } from '$lib/server/auth';
 import { messagesFor } from '$lib/server/i18n';
-import { sendMail } from '$lib/server/mail';
+import { sendMail, smtpEnabled } from '$lib/server/mail';
 import { listTripGuests, removeTripGuest } from '$lib/server/repo';
 import { createToken } from '$lib/server/tokens';
 import { tripAccess } from '$lib/server/trips';
@@ -33,7 +33,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 	const token = createToken('trip_invite', { trip_id: trip.id, email: email || null }, 7 * 86_400_000);
 	const link = `${publicOrigin(request)}/invite/${token}`;
 	let mailed = false;
-	if (email && config.smtp.enabled) {
+	if (email && smtpEnabled()) {
 		const m = messagesFor(locals.locale);
 		mailed = await sendMail(
 			email,
@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 			translate(m, 'mail.trip_invite.body', { name: locals.user!.name, trip: trip.name, link })
 		);
 	}
-	return json({ link, mailed, smtp: config.smtp.enabled });
+	return json({ link, mailed, smtp: smtpEnabled() });
 };
 
 /** Remove a guest – or leave the trip yourself as a guest. */
