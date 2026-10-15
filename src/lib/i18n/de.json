@@ -879,5 +879,6 @@
 	"admin.created_on": "angelegt am {date}",
 	"admin.confirm_delete_household_one": "Haushalt „{name}“ mit {count} Reise endgültig löschen?",
 	"admin.confirm_delete_household_other": "Haushalt „{name}“ mit {count} Reisen endgültig löschen?",
-	"error.brave": "Brave blockiert womöglich die Verbindung: Tippe in der Adressleiste auf das Löwen-Symbol und schalte die Shields für diese Seite aus."
+	"error.brave": "Brave blockiert womöglich die Verbindung: Tippe in der Adressleiste auf das Löwen-Symbol und schalte die Shields für diese Seite aus.",
+	"settings.licenses": "Lizenzen der verwendeten Software und Schriften"
 }

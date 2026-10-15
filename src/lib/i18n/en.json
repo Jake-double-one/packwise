@@ -879,5 +879,6 @@
 	"admin.created_on": "created on {date}",
 	"admin.confirm_delete_household_one": "Permanently delete household \"{name}\" with {count} trip?",
 	"admin.confirm_delete_household_other": "Permanently delete household \"{name}\" with {count} trips?",
-	"error.brave": "Brave may be blocking the connection: tap the lion icon in the address bar and turn Shields off for this site."
+	"error.brave": "Brave may be blocking the connection: tap the lion icon in the address bar and turn Shields off for this site.",
+	"settings.licenses": "Licenses of the software and fonts used"
 }

@@ -2,7 +2,9 @@
 
 All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwise:<version>`.
 
-## Unreleased
+## v0.3.0 – Notifications, sharing and privacy
+
+Reminders by e-mail, ntfy, Gotify and Web Push, SMTP settings in the app, inviting accounts to a single trip, an admin area without access to household contents, AI assistants via MCP, a compact checklist and a lot of polish.
 
 ### Added
 
@@ -27,6 +29,8 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 - **E-mail settings in the app**: SMTP server, port, encryption (STARTTLS, SSL/TLS, none), user, password and sender under *Settings* (`none` / `local`) or in the *Administration* (`accounts`), with a test mail before saving. The password is stored encrypted and never shown again. `SMTP_*` environment variables still work and take precedence.
 - **Notifications** (*Settings → Notifications*, per person): a reminder X days before departure with packing progress and open to-dos, optionally again the day before, and to-dos that are due – from a chosen hour (`TZ`). Channels: e-mail, **ntfy**, **Gotify** and **Web Push** on the device (needs HTTPS), each with a test button. Only trips you travel on or were invited to, at most one message per trip and day. Channel details are stored encrypted.
 - **Security e-mail** (`accounts` mode) when the password of an account changes, by the person or by the admin.
+
+- **Third-party licenses**: `/licenses.txt` (linked under *Settings*) lists every package Packwise ships – browser, server and Docker image – with its full license text, plus the data services (Open-Meteo, OpenStreetMap). Generated at build time, so it can't fall behind.
 
 ### Changed
 

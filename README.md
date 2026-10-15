@@ -170,9 +170,21 @@ Stack: SvelteKit 2 / Svelte 5, Node's built-in `node:sqlite` (no native dependen
 
 See [ROADMAP.md](ROADMAP.md) for what's done and what's planned next. Release notes: [CHANGELOG.md](CHANGELOG.md).
 
-## Credits
+## Third-party licenses
 
-Country flags on Windows (which has no flag emojis) come from the "Twemoji Country Flags" font of [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT), with flag graphics from [Twemoji](https://github.com/twitter/twemoji) by Twitter, Inc. and other contributors, licensed [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/). The font is served by Packwise itself and only loaded where needed.
+Packwise is built on these projects – thank you:
+
+| Part | Project | License |
+|---|---|---|
+| App framework | [SvelteKit](https://svelte.dev/docs/kit), [Svelte](https://svelte.dev) with adapter-node (incl. polka, sirv), clsx, cookie, devalue, esm-env, set-cookie-parser | MIT |
+| E-mail | [Nodemailer](https://nodemailer.com) | MIT-0 |
+| QR codes | [qrcode](https://github.com/soldair/node-qrcode) (with pngjs, yargs, dijkstrajs …) | MIT / ISC |
+| Web Push | [web-push](https://github.com/web-push-libs/web-push) (with http_ece, jws, asn1.js …) | MPL-2.0 (web-push), MIT / BSD-3-Clause / Apache-2.0 |
+| Country flags on Windows | [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) with the "Twemoji Country Flags" font – graphics from [Twemoji](https://github.com/twitter/twemoji) | MIT, graphics CC-BY 4.0 |
+| Weather, place search | [Open-Meteo](https://open-meteo.com) (geocoding based on GeoNames) | Data CC BY 4.0 |
+| Maps | [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors | Data ODbL |
+
+The full license texts of everything Packwise ships – browser and server code, the packages in the Docker image and the flag font – are in **`/licenses.txt`** (*Settings → Licenses of the software and fonts used*). The file is generated at build time from the packages themselves (`scripts/licenses.js`), so it stays complete when dependencies change. The flag font is served by Packwise itself and only loaded where needed.
 
 ---
 

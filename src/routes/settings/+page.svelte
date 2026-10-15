@@ -178,7 +178,10 @@
 				<form method="POST" action="/logout" onsubmit={clearOfflineCache}><button class="btn danger">{t('auth.logout')}</button></form>
 			{/if}
 		</div>
-		<p class="tiny muted">{t('settings.mode', { mode: data.authMode })} · Packwise v{__APP_VERSION__}</p>
+		<p class="tiny muted">
+			{t('settings.mode', { mode: data.authMode })} · Packwise v{__APP_VERSION__} ·
+			<a href="/licenses.txt" target="_blank" rel="noopener">{t('settings.licenses')}</a>
+		</p>
 	</section>
 </div>
 
