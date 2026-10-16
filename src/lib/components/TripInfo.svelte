@@ -177,7 +177,7 @@
 		</dl>
 	</section>
 
-	<DrivingCard {trip} {notes} />
+	<DrivingCard {trip} />
 
 	{#if trip.warnings.length}
 		<section class="card">
@@ -221,8 +221,20 @@
 	h2 {
 		font-size: 1.05rem;
 	}
+	/* desktop: the map grows with the notes card next to it, so no empty space below */
+	@media (min-width: 1000px) {
+		.map-card {
+			align-self: stretch;
+			display: flex;
+			flex-direction: column;
+		}
+		.map-card .map {
+			flex: 1 1 auto;
+		}
+	}
 	.map {
 		height: 320px;
+		min-height: 320px;
 		border-radius: var(--radius-sm);
 		overflow: hidden;
 		border: 1px solid var(--border);

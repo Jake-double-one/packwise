@@ -541,7 +541,6 @@
 	"notes.car.same_place": "Wie Abholung",
 	"notes.placeholder.car": "",
 	"drive.title": "Mit dem Auto",
-	"drive.collapsed": "Verkehrsregeln für Mietwagen und Autofahrten anzeigen",
 	"drive.speed": "Tempolimits für Pkw",
 	"drive.urban": "Innerorts",
 	"drive.rural": "Landstraße",
@@ -880,5 +879,6 @@
 	"admin.confirm_delete_household_one": "Haushalt „{name}“ mit {count} Reise endgültig löschen?",
 	"admin.confirm_delete_household_other": "Haushalt „{name}“ mit {count} Reisen endgültig löschen?",
 	"error.brave": "Brave blockiert womöglich die Verbindung: Tippe in der Adressleiste auf das Löwen-Symbol und schalte die Shields für diese Seite aus.",
-	"settings.licenses": "Lizenzen der verwendeten Software und Schriften"
+	"settings.licenses": "Lizenzen der verwendeten Software und Schriften",
+	"drive.more": "Kindersitz & Besonderheiten"
 }

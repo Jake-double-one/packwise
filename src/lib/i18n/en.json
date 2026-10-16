@@ -541,7 +541,6 @@
 	"notes.car.same_place": "Same place as pick-up",
 	"notes.placeholder.car": "",
 	"drive.title": "By car",
-	"drive.collapsed": "Show road rules for rental cars and road trips",
 	"drive.speed": "Speed limits for cars",
 	"drive.urban": "Towns",
 	"drive.rural": "Country roads",
@@ -880,5 +879,6 @@
 	"admin.confirm_delete_household_one": "Permanently delete household \"{name}\" with {count} trip?",
 	"admin.confirm_delete_household_other": "Permanently delete household \"{name}\" with {count} trips?",
 	"error.brave": "Brave may be blocking the connection: tap the lion icon in the address bar and turn Shields off for this site.",
-	"settings.licenses": "Licenses of the software and fonts used"
+	"settings.licenses": "Licenses of the software and fonts used",
+	"drive.more": "Child seats & good to know"
 }

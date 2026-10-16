@@ -1,19 +1,14 @@
 <script lang="ts">
-	import { ROAD_TRANSPORT } from '$lib/context';
 	import { countryFlag, countryName } from '$lib/data/countries';
 	import { DRIVING } from '$lib/data/driving';
 	import { useI18n } from '$lib/i18n';
-	import type { Trip, TripNote } from '$lib/types';
+	import type { Trip } from '$lib/types';
 
-	let { trip, notes }: { trip: Trip; notes: TripNote[] } = $props();
+	let { trip }: { trip: Trip } = $props();
 	const i18n = useI18n();
 	const { t } = i18n;
 
 	const rules = $derived(trip.country ? DRIVING[trip.country] : undefined);
-	// open by default when the trip goes by car/camper or has a rental car note
-	const byCar = $derived(
-		(trip.settings.context.transport ?? []).some((v) => ROAD_TRANSPORT.includes(v)) || notes.some((n) => n.kind === 'car')
-	);
 	const unit = $derived(rules?.unit === 'mph' ? 'mph' : 'km/h');
 	const signs = $derived(
 		rules
@@ -34,8 +29,10 @@
 	});
 </script>
 
-{#snippet body()}
-	{#if rules}
+{#if rules && trip.country}
+	<section class="card driving">
+		<h2>🚗 {t('drive.title')} · {countryFlag(trip.country)} {countryName(trip.country, i18n.locale)}</h2>
+		<!-- at a glance: speed limits and alcohol; child seats and the rest fold out -->
 		<h3 class="tiny label">{t('drive.speed')} <span class="muted">({unit})</span></h3>
 		<div class="signs">
 			{#each signs as s (s.key)}
@@ -54,35 +51,25 @@
 				{t('drive.bac', { value: permille(rules.bac) })}
 				{#if rules.bacNovice != null && rules.bacNovice !== rules.bac}<span class="muted small"> · {t('drive.bac_novice', { value: permille(rules.bacNovice) })}</span>{/if}
 			</dd>
-			{#if child}
-				<dt>🧒 {t('drive.child_seat')}</dt>
-				<dd>{child}</dd>
-			{/if}
 		</dl>
-		{#if rules.notes.length}
-			<h3 class="tiny label">{t('drive.special')}</h3>
-			<ul class="notes">
-				{#each rules.notes as key (key)}<li>{t(`drive.note.${key}`)}</li>{/each}
-			</ul>
-		{/if}
-		<p class="tiny muted">{t('drive.disclaimer')}</p>
-	{/if}
-{/snippet}
-
-{#if rules && trip.country}
-	<section class="card driving">
-		{#if byCar}
-			<h2>🚗 {t('drive.title')} · {countryFlag(trip.country)} {countryName(trip.country, i18n.locale)}</h2>
-			{@render body()}
-		{:else}
-			<details>
-				<summary>
-					<h2>🚗 {t('drive.title')} · {countryFlag(trip.country)} {countryName(trip.country, i18n.locale)}</h2>
-					<span class="small muted">{t('drive.collapsed')}</span>
-				</summary>
-				{@render body()}
+		{#if child || rules.notes.length}
+			<details class="more">
+				<summary class="small">{t('drive.more')}</summary>
+				{#if child}
+					<dl class="facts">
+						<dt>🧒 {t('drive.child_seat')}</dt>
+						<dd>{child}</dd>
+					</dl>
+				{/if}
+				{#if rules.notes.length}
+					<h3 class="tiny label">{t('drive.special')}</h3>
+					<ul class="notes">
+						{#each rules.notes as key (key)}<li>{t(`drive.note.${key}`)}</li>{/each}
+					</ul>
+				{/if}
 			</details>
 		{/if}
+		<p class="tiny muted">{t('drive.disclaimer')}</p>
 	</section>
 {/if}
 
@@ -90,25 +77,29 @@
 	h2 {
 		font-size: 1.05rem;
 	}
+	.more {
+		margin-top: 0.6rem;
+		border-top: 1px solid var(--border);
+		padding-top: 0.5rem;
+	}
 	summary {
 		cursor: pointer;
 		list-style: none;
+		font-weight: 600;
+		color: var(--text-2);
 	}
 	summary::-webkit-details-marker {
 		display: none;
 	}
-	summary h2 {
-		margin-bottom: 0.15rem;
-	}
-	summary h2::after {
-		content: ' ▾';
+	summary::before {
+		content: '▸ ';
 		color: var(--text-3);
 	}
-	details[open] summary h2::after {
-		content: ' ▴';
+	details[open] summary::before {
+		content: '▾ ';
 	}
-	details[open] summary span {
-		display: none;
+	details[open] summary {
+		margin-bottom: 0.4rem;
 	}
 	.label {
 		font-weight: 700;

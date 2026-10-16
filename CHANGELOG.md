@@ -6,6 +6,8 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 ### Changed
 
+- **Trip info**: on the desktop the map grows with the notes next to it, so there is no empty space below it.
+- **By car**: speed limits and the alcohol limit are always shown at a glance; child seats and the country's specialities fold out below.
 - **Compact checklist**: a category with only one traveller (e.g. only the baby or the dog) shows just that traveller's column – no *All* label and no round *All* box; shared items of that category get their box in the same column.
 
 ## v0.3.0 – Notifications, sharing and privacy
