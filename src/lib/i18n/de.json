@@ -880,5 +880,15 @@
 	"admin.confirm_delete_household_other": "Haushalt „{name}“ mit {count} Reisen endgültig löschen?",
 	"error.brave": "Brave blockiert womöglich die Verbindung: Tippe in der Adressleiste auf das Löwen-Symbol und schalte die Shields für diese Seite aus.",
 	"settings.licenses": "Lizenzen der verwendeten Software und Schriften",
-	"drive.more": "Kindersitz & Besonderheiten"
+	"drive.more": "Kindersitz & Besonderheiten",
+	"drive.cannabis": "Cannabis",
+	"drive.cannabis_forbidden": "verboten",
+	"drive.cannabis_legal": "erlaubt · am Steuer max. {value} ng/ml THC",
+	"drive.cannabis_tolerated": "geduldet · am Steuer max. {value} ng/ml THC",
+	"drive.cannabis_state": "je nach Bundesstaat – am Steuer überall strafbar, wenn man beeinträchtigt ist",
+	"drive.thc_novice": "Fahranfänger: {value} ng/ml",
+	"drive.thc_alcohol": "mit Alkohol {value} ng/ml",
+	"drive.note.de_cannabis": "Cannabis: 3,5 ng/ml THC im Blutserum. Fahranfänger in der Probezeit und unter 21 gar nicht, Cannabis zusammen mit Alkohol ist verboten.",
+	"drive.note.lu_cannabis": "Cannabis: Anbau und Konsum nur privat zu Hause erlaubt – in der Öffentlichkeit und im Auto verboten.",
+	"drive.thc_novice_none": "Fahranfänger: gar nicht"
 }

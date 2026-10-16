@@ -21,6 +21,18 @@
 			: []
 	);
 	const permille = (v: number) => v.toLocaleString(i18n.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+	const ng = (v: number) => v.toLocaleString(i18n.locale, { maximumFractionDigits: 1 });
+	/** Cannabis at a glance: forbidden, or the THC limit for drivers where it is legal or tolerated. */
+	const cannabis = $derived.by(() => {
+		const c = rules?.cannabis;
+		if (!c) return { text: t('drive.cannabis_forbidden'), extra: '' };
+		if (c.status === 'state') return { text: t('drive.cannabis_state'), extra: '' };
+		const extra = [
+			c.thcNovice != null ? (c.thcNovice === 0 ? t('drive.thc_novice_none') : t('drive.thc_novice', { value: ng(c.thcNovice) })) : '',
+			c.thcWithAlcohol != null ? t('drive.thc_alcohol', { value: ng(c.thcWithAlcohol) }) : ''
+		].filter(Boolean);
+		return { text: t(`drive.cannabis_${c.status}`, { value: ng(c.thc ?? 0) }), extra: extra.join(' · ') };
+	});
 	const child = $derived.by(() => {
 		const c = rules?.childSeat;
 		if (!c) return null;
@@ -50,6 +62,11 @@
 			<dd>
 				{t('drive.bac', { value: permille(rules.bac) })}
 				{#if rules.bacNovice != null && rules.bacNovice !== rules.bac}<span class="muted small"> · {t('drive.bac_novice', { value: permille(rules.bacNovice) })}</span>{/if}
+			</dd>
+			<dt>🌿 {t('drive.cannabis')}</dt>
+			<dd>
+				{cannabis.text}
+				{#if cannabis.extra}<span class="muted small"> · {cannabis.extra}</span>{/if}
 			</dd>
 		</dl>
 		{#if child || rules.notes.length}

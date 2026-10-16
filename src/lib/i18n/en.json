@@ -880,5 +880,15 @@
 	"admin.confirm_delete_household_other": "Permanently delete household \"{name}\" with {count} trips?",
 	"error.brave": "Brave may be blocking the connection: tap the lion icon in the address bar and turn Shields off for this site.",
 	"settings.licenses": "Licenses of the software and fonts used",
-	"drive.more": "Child seats & good to know"
+	"drive.more": "Child seats & good to know",
+	"drive.cannabis": "Cannabis",
+	"drive.cannabis_forbidden": "forbidden",
+	"drive.cannabis_legal": "legal · max. {value} ng/ml THC when driving",
+	"drive.cannabis_tolerated": "tolerated · max. {value} ng/ml THC when driving",
+	"drive.cannabis_state": "depends on the state – driving while impaired is an offence everywhere",
+	"drive.thc_novice": "novice drivers: {value} ng/ml",
+	"drive.thc_alcohol": "with alcohol {value} ng/ml",
+	"drive.note.de_cannabis": "Cannabis: 3.5 ng/ml THC in blood serum. None at all for novice drivers on probation and under 21; cannabis combined with alcohol is forbidden.",
+	"drive.note.lu_cannabis": "Cannabis: growing and use only privately at home – forbidden in public and in the car.",
+	"drive.thc_novice_none": "novice drivers: none at all"
 }
