@@ -890,5 +890,6 @@
 	"drive.thc_alcohol": "mit Alkohol {value} ng/ml",
 	"drive.note.de_cannabis": "Cannabis: 3,5 ng/ml THC im Blutserum. Fahranfänger in der Probezeit und unter 21 gar nicht, Cannabis zusammen mit Alkohol ist verboten.",
 	"drive.note.lu_cannabis": "Cannabis: Anbau und Konsum nur privat zu Hause erlaubt – in der Öffentlichkeit und im Auto verboten.",
-	"drive.thc_novice_none": "Fahranfänger: gar nicht"
+	"drive.thc_novice_none": "Fahranfänger: gar nicht",
+	"drive.note.cz_cannabis": "Cannabis: seit 2026 ab 21 Eigenanbau (3 Pflanzen) und Besitz (25 g unterwegs, 100 g zu Hause) erlaubt – kein legaler Verkauf. Am Steuer gilt 2 ng/ml THC im Blut; die Ausfuhr über die Grenze bleibt strafbar."
 }

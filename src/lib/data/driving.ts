@@ -42,7 +42,7 @@ export const DRIVING: Record<string, DrivingInfo> = {
 	NO: { urban: '50', rural: '80', motorway: '90–110', bac: 0.2, childSeat: { height: 135 }, notes: ['lights_day', 'no_fines', 'no_toll', 'nordic_winter'] },
 	FI: { urban: '50', rural: '80', motorway: '120', bac: 0.5, childSeat: { height: 135 }, notes: ['lights_day', 'fi_winter', 'nordic_winter'] },
 	PL: { urban: '50', rural: '90', expressway: '120', motorway: '140', bac: 0.2, childSeat: { height: 150 }, notes: ['lights_day', 'pl_toll'] },
-	CZ: { urban: '50', rural: '90', expressway: '110', motorway: '130', bac: 0, childSeat: { height: 150 }, notes: ['zero_alcohol', 'lights_day', 'rescue_lane', 'cz_winter'] },
+	CZ: { urban: '50', rural: '90', expressway: '110', motorway: '130', bac: 0, childSeat: { height: 150 }, cannabis: { status: 'legal', thc: 2 }, notes: ['zero_alcohol', 'lights_day', 'rescue_lane', 'cz_winter', 'cz_cannabis'] },
 	SK: { urban: '50', rural: '90', motorway: '130', bac: 0, childSeat: { height: 150, age: 12 }, notes: ['zero_alcohol', 'lights_day'] },
 	HU: { urban: '50', rural: '90', expressway: '110', motorway: '130', bac: 0, notes: ['zero_alcohol', 'hu_lights'] },
 	SI: { urban: '50', rural: '90', expressway: '110', motorway: '130', bac: 0.5, bacNovice: 0, childSeat: { height: 150 }, notes: ['lights_day', 'rescue_lane', 'si_winter'] },

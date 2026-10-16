@@ -890,5 +890,6 @@
 	"drive.thc_alcohol": "with alcohol {value} ng/ml",
 	"drive.note.de_cannabis": "Cannabis: 3.5 ng/ml THC in blood serum. None at all for novice drivers on probation and under 21; cannabis combined with alcohol is forbidden.",
 	"drive.note.lu_cannabis": "Cannabis: growing and use only privately at home – forbidden in public and in the car.",
-	"drive.thc_novice_none": "novice drivers: none at all"
+	"drive.thc_novice_none": "novice drivers: none at all",
+	"drive.note.cz_cannabis": "Cannabis: since 2026 home growing (3 plants) and possession (25 g in public, 100 g at home) are legal from 21 – no legal sale. 2 ng/ml THC in blood when driving; taking it across the border remains an offence."
 }
