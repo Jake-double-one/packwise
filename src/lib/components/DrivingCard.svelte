@@ -22,11 +22,11 @@
 	);
 	const permille = (v: number) => v.toLocaleString(i18n.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 	const ng = (v: number) => v.toLocaleString(i18n.locale, { maximumFractionDigits: 1 });
-	/** Cannabis at the wheel: the THC limit, or zero tolerance where there is none. */
+	/** Cannabis at the wheel: the THC limit, or "forbidden" where any THC is an offence. */
 	const cannabis = $derived.by(() => {
 		const c = rules?.cannabis;
 		if (c?.byState) return { text: t('drive.thc_state'), extra: '' };
-		if (c?.thc == null) return { text: t('drive.thc_zero'), extra: '' };
+		if (c?.thc == null) return { text: t('drive.thc_forbidden'), extra: '' };
 		const extra = [
 			c.thcNovice != null ? (c.thcNovice === 0 ? t('drive.thc_novice_none') : t('drive.thc_novice', { value: ng(c.thcNovice) })) : '',
 			c.thcWithAlcohol != null ? t('drive.thc_alcohol', { value: ng(c.thcWithAlcohol) }) : ''

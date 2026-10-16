@@ -887,6 +887,6 @@
 	"drive.note.de_cannabis": "Cannabis at the wheel: 3.5 ng/ml THC in blood serum. None at all for novice drivers on probation and under 21; cannabis combined with alcohol is forbidden.",
 	"drive.thc_novice_none": "novice drivers: none at all",
 	"drive.thc_limit": "max. {value} ng/ml THC",
-	"drive.thc_zero": "zero tolerance",
+	"drive.thc_forbidden": "forbidden",
 	"drive.thc_state": "depends on the state – driving while impaired is an offence everywhere"
 }

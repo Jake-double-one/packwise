@@ -8,7 +8,7 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 - **Trip info**: on the desktop the map grows with the notes next to it, so there is no empty space below it.
 - **By car**: speed limits and the alcohol limit are always shown at a glance; child seats and the country's specialities fold out below.
-- **By car – cannabis at the wheel**: next to the alcohol limit, the THC limit for drivers (Germany 3.5 ng/ml, none for novice drivers; Netherlands 3 ng/ml, 1 ng/ml with alcohol; Czechia 2 ng/ml; Luxembourg 1 ng/ml; USA depending on the state), elsewhere *zero tolerance*.
+- **By car – cannabis at the wheel**: next to the alcohol limit, the legal THC limit for drivers where there is one (e.g. Germany 3.5 ng/ml and none for novice drivers, Netherlands 3 ng/ml or 1 ng/ml with alcohol, Czechia 2, UK 2, Switzerland 1.5, Norway 1.3, Belgium, Denmark, Ireland and Luxembourg 1; USA depending on the state), otherwise *forbidden*.
 - **Compact checklist**: a category with only one traveller (e.g. only the baby or the dog) shows just that traveller's column – no *All* label and no round *All* box; shared items of that category get their box in the same column.
 
 ## v0.3.0 – Notifications, sharing and privacy

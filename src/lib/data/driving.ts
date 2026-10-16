@@ -18,7 +18,7 @@ export interface DrivingInfo {
 	childSeat?: { height?: number; age?: number };
 	/**
 	 * Cannabis at the wheel: the THC limit in ng/ml blood (Germany: serum), `thcNovice` for novice
-	 * drivers, `thcWithAlcohol` when combined with alcohol. Without an entry: zero tolerance.
+	 * drivers, `thcWithAlcohol` when combined with alcohol. Without an entry any THC at the wheel is forbidden.
 	 * `byState`: depends on the (US) state. Whether buying or using is allowed is not shown.
 	 */
 	cannabis?: { thc?: number; thcNovice?: number; thcWithAlcohol?: number; byState?: boolean };
@@ -28,18 +28,18 @@ export interface DrivingInfo {
 export const DRIVING: Record<string, DrivingInfo> = {
 	DE: { urban: '50', rural: '100', motorway: 'none', bac: 0.5, bacNovice: 0, childSeat: { height: 150, age: 12 }, cannabis: { thc: 3.5, thcNovice: 0 }, notes: ['de_advisory', 'rescue_lane', 'radar_apps', 'de_cannabis'] },
 	AT: { urban: '50', rural: '100', expressway: '100', motorway: '130', bac: 0.5, bacNovice: 0.1, childSeat: { height: 135, age: 14 }, notes: ['at_vest', 'rescue_lane', 'at_igl', 'at_winter'] },
-	CH: { urban: '50', rural: '80', expressway: '100', motorway: '120', bac: 0.5, bacNovice: 0.1, childSeat: { height: 150, age: 12 }, notes: ['ch_radar', 'ch_fines', 'lights_day', 'rescue_lane'] },
+	CH: { urban: '50', rural: '80', expressway: '100', motorway: '120', bac: 0.5, bacNovice: 0.1, childSeat: { height: 150, age: 12 }, cannabis: { thc: 1.5 }, notes: ['ch_radar', 'ch_fines', 'lights_day', 'rescue_lane'] },
 	LI: { urban: '50', rural: '80', motorway: '–', bac: 0.8, notes: ['ch_radar'] },
 	IT: { urban: '50', rural: '90', expressway: '110', motorway: '130', bac: 0.5, bacNovice: 0, childSeat: { height: 150 }, notes: ['it_vest', 'it_child_alarm', 'it_ztl', 'it_bike_rack', 'it_lights', 'it_rain', 'it_novice'] },
 	FR: { urban: '50', rural: '80', expressway: '110', motorway: '130', bac: 0.5, bacNovice: 0.2, childSeat: { age: 10 }, notes: ['fr_rain', 'fr_rural90', 'fr_vest', 'fr_radar', 'fr_headphones', 'fr_novice'] },
 	ES: { urban: '50', rural: '90', motorway: '120', bac: 0.5, bacNovice: 0.3, childSeat: { height: 135 }, notes: ['es_urban30', 'es_v16', 'es_rear_seat', 'es_bike_rack'] },
 	PT: { urban: '50', rural: '90', expressway: '100', motorway: '120', bac: 0.5, bacNovice: 0.2, childSeat: { height: 135, age: 12 }, notes: ['pt_toll', 'es_bike_rack'] },
 	NL: { urban: '50', rural: '80', expressway: '100', motorway: '100 / 130', bac: 0.5, bacNovice: 0.2, childSeat: { height: 135 }, cannabis: { thc: 3, thcWithAlcohol: 1 }, notes: ['nl_motorway', 'nl_bikes', 'nl_milieu'] },
-	BE: { urban: '50', rural: '70 / 90', motorway: '120', bac: 0.5, childSeat: { height: 135 }, notes: ['be_rural', 'be_lez', 'be_right', 'be_brussels'] },
+	BE: { urban: '50', rural: '70 / 90', motorway: '120', bac: 0.5, childSeat: { height: 135 }, cannabis: { thc: 1 }, notes: ['be_rural', 'be_lez', 'be_right', 'be_brussels'] },
 	LU: { urban: '50', rural: '90', motorway: '130', bac: 0.5, bacNovice: 0.2, cannabis: { thc: 1 }, notes: ['lu_rain'] },
-	DK: { urban: '50', rural: '80', motorway: '130', bac: 0.5, childSeat: { height: 135 }, notes: ['lights_day', 'dk_signs'] },
+	DK: { urban: '50', rural: '80', motorway: '130', bac: 0.5, childSeat: { height: 135 }, cannabis: { thc: 1 }, notes: ['lights_day', 'dk_signs'] },
 	SE: { urban: '50', rural: '70', motorway: '110–120', bac: 0.2, childSeat: { height: 135 }, notes: ['lights_day', 'nordic_signs', 'nordic_winter'] },
-	NO: { urban: '50', rural: '80', motorway: '90–110', bac: 0.2, childSeat: { height: 135 }, notes: ['lights_day', 'no_fines', 'no_toll', 'nordic_winter'] },
+	NO: { urban: '50', rural: '80', motorway: '90–110', bac: 0.2, childSeat: { height: 135 }, cannabis: { thc: 1.3 }, notes: ['lights_day', 'no_fines', 'no_toll', 'nordic_winter'] },
 	FI: { urban: '50', rural: '80', motorway: '120', bac: 0.5, childSeat: { height: 135 }, notes: ['lights_day', 'fi_winter', 'nordic_winter'] },
 	PL: { urban: '50', rural: '90', expressway: '120', motorway: '140', bac: 0.2, childSeat: { height: 150 }, notes: ['lights_day', 'pl_toll'] },
 	CZ: { urban: '50', rural: '90', expressway: '110', motorway: '130', bac: 0, childSeat: { height: 150 }, cannabis: { thc: 2 }, notes: ['zero_alcohol', 'lights_day', 'rescue_lane', 'cz_winter'] },
@@ -50,8 +50,8 @@ export const DRIVING: Record<string, DrivingInfo> = {
 	RO: { urban: '50', rural: '90', expressway: '100', motorway: '130', bac: 0, notes: ['zero_alcohol'] },
 	BG: { urban: '50', rural: '90', expressway: '120', motorway: '140', bac: 0.5, notes: [] },
 	GR: { urban: '50', rural: '90', expressway: '110', motorway: '130', bac: 0.5, bacNovice: 0.2, notes: [] },
-	GB: { unit: 'mph', urban: '30', rural: '60', expressway: '70', motorway: '70', bac: 0.8, childSeat: { height: 135, age: 12 }, notes: ['gb_scotland', 'gb_london'] },
-	IE: { urban: '50', rural: '80', expressway: '100', motorway: '120', bac: 0.5, bacNovice: 0.2, childSeat: { height: 150 }, notes: ['ie_local', 'ie_toll'] },
+	GB: { unit: 'mph', urban: '30', rural: '60', expressway: '70', motorway: '70', bac: 0.8, childSeat: { height: 135, age: 12 }, cannabis: { thc: 2 }, notes: ['gb_scotland', 'gb_london'] },
+	IE: { urban: '50', rural: '80', expressway: '100', motorway: '120', bac: 0.5, bacNovice: 0.2, childSeat: { height: 150 }, cannabis: { thc: 1 }, notes: ['ie_local', 'ie_toll'] },
 	US: { unit: 'mph', urban: '25–35', rural: '55', motorway: '65–75', bac: 0.8, cannabis: { byState: true }, notes: ['us_state', 'us_schoolbus', 'us_right_on_red'] }
 };
 
