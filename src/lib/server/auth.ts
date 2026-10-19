@@ -222,6 +222,7 @@ const attempts = new Map<string, { count: number; reset: number }>();
 export function rateLimit(key: string, max = 10, windowMs = 15 * 60_000): boolean {
 	const t = now();
 	if (attempts.size > 5000) for (const [k, v] of attempts) if (v.reset < t) attempts.delete(k);
+	if (attempts.size > 50_000) attempts.clear(); // flood of distinct keys – better to forget than to grow
 	const entry = attempts.get(key);
 	if (!entry || entry.reset < t) {
 		attempts.set(key, { count: 1, reset: t + windowMs });

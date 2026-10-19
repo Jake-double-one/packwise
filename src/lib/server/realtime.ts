@@ -17,6 +17,9 @@ interface Subscriber {
 
 const channels = new Map<string, Set<Subscriber>>();
 let counter = 0;
+let open = 0;
+/** one process, one household or a few – far more open streams than this means something is wrong */
+const MAX_OPEN = 1000;
 
 export function publish(channel: string, event: string, data: unknown) {
 	for (const sub of channels.get(channel) ?? []) {
@@ -36,6 +39,7 @@ function presenceList(channel: string): Presence[] {
 
 /** Returns an SSE response that streams events of `channel` until the client disconnects. */
 export function sseResponse(channel: string, presence: Presence, onOpen?: (send: Subscriber['send']) => void): Response {
+	if (open >= MAX_OPEN) return new Response('too many open connections', { status: 503, headers: { 'retry-after': '30' } });
 	const encoder = new TextEncoder();
 	let sub: Subscriber;
 	let heartbeat: ReturnType<typeof setInterval>;
@@ -48,6 +52,7 @@ export function sseResponse(channel: string, presence: Presence, onOpen?: (send:
 			let set = channels.get(channel);
 			if (!set) channels.set(channel, (set = new Set()));
 			set.add(sub);
+			open++;
 			controller.enqueue(encoder.encode('retry: 3000\n\n'));
 			onOpen?.(send);
 			publish(channel, 'presence', presenceList(channel));
@@ -61,6 +66,7 @@ export function sseResponse(channel: string, presence: Presence, onOpen?: (send:
 		},
 		cancel() {
 			clearInterval(heartbeat);
+			open--;
 			const set = channels.get(channel);
 			set?.delete(sub);
 			if (set && set.size === 0) channels.delete(channel);

@@ -888,5 +888,6 @@
 	"drive.thc_novice_none": "Fahranfänger: gar nicht",
 	"drive.thc_limit": "max. {value} ng/ml THC",
 	"drive.thc_forbidden": "verboten",
-	"drive.thc_state": "je nach Bundesstaat – beeinträchtigt fahren ist überall strafbar"
+	"drive.thc_state": "je nach Bundesstaat – beeinträchtigt fahren ist überall strafbar",
+	"admin.origin_hint": "ORIGIN ist nicht gesetzt. Links in E-Mails (Passwort, Einladungen) werden dann aus dem Host-Header der Anfrage gebildet – wer den Port erreicht, könnte sie auf eine fremde Adresse umbiegen. Setze in Portainer ORIGIN=https://deine.adresse."
 }

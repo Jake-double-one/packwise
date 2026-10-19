@@ -45,6 +45,7 @@
 	<h1>🛡️ {t('admin.title')}</h1>
 	<p class="muted small">{t('admin.registration', { mode: data.registration })} · SMTP: {data.smtp ? '✅' : '—'}</p>
 	<p class="alert small">🛡️ {t('admin.role_hint')}</p>
+	{#if !data.originSet}<p class="alert warning small">⚠️ {t('admin.origin_hint')}</p>{/if}
 
 	<div class="stats">
 		<div class="stat"><strong>{stats.users}</strong><span class="tiny muted">{t('admin.stat_users')}</span></div>

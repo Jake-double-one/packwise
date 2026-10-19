@@ -51,7 +51,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		households: adminHouseholds(),
 		registration: config.registration,
 		smtp: smtpEnabled(),
-		smtpSettings: smtpView()
+		smtpSettings: smtpView(),
+		originSet: !!config.origin
 	};
 };
 

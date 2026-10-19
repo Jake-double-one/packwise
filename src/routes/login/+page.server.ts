@@ -1,11 +1,14 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { config } from '$lib/server/config';
 import { smtpEnabled } from '$lib/server/mail';
-import { checkAppPassword, clientIp, createSession, rateLimit, userCount, verifyPassword } from '$lib/server/auth';
+import { checkAppPassword, clientIp, createSession, hashPassword, rateLimit, userCount, verifyPassword } from '$lib/server/auth';
 import { needsClaim } from '$lib/server/admin';
 import { get } from '$lib/server/db';
 import { safeNext, str } from '$lib/server/util';
 import type { Actions, PageServerLoad } from './$types';
+
+/** Unknown e-mail addresses cost the same time as wrong passwords, so timing tells nothing. */
+const DUMMY_HASH = hashPassword('packwise-no-such-account');
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	if (userCount() === 0 || needsClaim()) redirect(303, '/setup');
@@ -37,6 +40,7 @@ export const actions: Actions = {
 				return fail(429, { email, error: 'auth.err.rate_limited' });
 			}
 			const user = get<{ id: string; password_hash: string | null }>('SELECT id, password_hash FROM users WHERE email = ?', email);
+			if (!user) await verifyPassword(password, await DUMMY_HASH);
 			if (!user || !(await verifyPassword(password, user.password_hash))) {
 				return fail(400, { email, error: 'auth.err.wrong_credentials' });
 			}

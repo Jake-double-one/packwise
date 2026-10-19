@@ -99,7 +99,7 @@ In every mode, **profiles / users ≠ people**. People are who you pack for; pro
 | `REGISTRATION` | `invite` | `accounts` only: `closed` (admin creates users), `invite` (invite links) or `open` |
 | `DEFAULT_LANG` | `en` | Fallback language when the browser's language is not available |
 | `DEFAULT_COUNTRY` | – | Home country pre-selected in setup (ISO code, e.g. `DE`) |
-| `ORIGIN` | – | Public URL, e.g. `https://packwise.example.com`. Used for links in e-mails and to decide about secure cookies. Recommended behind a reverse proxy. |
+| `ORIGIN` | – | Public URL, e.g. `https://packwise.example.com`. Used for links in e-mails and to decide about secure cookies. **Set it whenever Packwise is reachable from the internet, always with `accounts`**: without it, links are built from the request's `Host` header. |
 | `PUID` / `PGID` | `1000` | User / group the app runs as. `/data` is chowned automatically. |
 | `WEATHER_ENABLED` | `true` | Set to `false` to never contact Open-Meteo |
 | `SESSION_DAYS` | `90` | Login lifetime |
@@ -113,6 +113,16 @@ In every mode, **profiles / users ≠ people**. People are who you pack for; pro
 ### Reverse proxy notes
 
 Packwise works behind Traefik, Nginx Proxy Manager, Caddy and Authentik without extra settings. Live updates use Server-Sent Events. If your proxy buffers responses, disable buffering for `/api/*/live` (Packwise already sends `X-Accel-Buffering: no` for Nginx).
+
+## Security notes
+
+- **Set `ORIGIN`** when Packwise is reachable from the internet. Without it, password-reset and invitation links are built from the request's `Host` / `X-Forwarded-Host` headers, and the session cookie is only marked *Secure* when the proxy sends `X-Forwarded-Proto: https`. The admin area shows a warning while `ORIGIN` is missing.
+- **Headers**: every response carries a Content-Security-Policy (only own scripts and assets, the OpenStreetMap iframe, inline styles for colours), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, a referrer policy and a permissions policy. If you embed Packwise in another page, you'll have to relax `frame-ancestors` in `svelte.config.js`.
+- **Servers you enter yourself** (ntfy, Gotify, SMTP, push subscriptions) are checked before Packwise talks to them: the container itself (`localhost`, `127.0.0.1`, `::1`), link-local addresses (`169.254.*`, cloud metadata) and names that resolve to them are refused. Private LAN addresses such as `192.168.*` are allowed on purpose – that's where a home server lives.
+- **Passwords** are stored as scrypt hashes; sessions, invitation and reset links as SHA-256 hashes. Changing your own password logs out your other devices. Login, registration, password reset and the MCP endpoint are rate-limited (set `ADDRESS_HEADER` behind a proxy so limits apply per client, not per proxy).
+- **Secrets at rest**: API tokens, the SMTP password, notification channels and the Web Push keys are AES-256-GCM encrypted with `SECRET_KEY` or `/data/secret.key`. Trip notes marked 🔒 are hidden in the UI but stored in plain text in the database, like everything else – protect `/data` accordingly.
+- **MCP tokens in the URL** (`/mcp/<token>`, for clients that can't send headers) end up in the access logs of reverse proxies. Prefer the `Authorization: Bearer` header where the client supports it, and treat proxy logs as confidential.
+- **Modes without accounts** (`none`, `local`) trust everybody on the network or with the shared password: they can read and change everything, including SMTP settings. Use them in your LAN or behind an authenticating proxy only.
 
 ## Troubleshooting
 

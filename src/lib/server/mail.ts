@@ -2,6 +2,7 @@ import nodemailer, { type Transporter } from 'nodemailer';
 import { config } from './config';
 import { decrypt, encrypt } from './crypto';
 import { getMeta, setMeta, run } from './db';
+import { hostnameAllowed } from './netguard';
 
 /**
  * Outgoing e-mail. SMTP comes from the environment (SMTP_HOST …) if set – that always
@@ -77,13 +78,13 @@ export function smtpView(): SmtpView {
  * Read and check the form of the settings page. An empty password keeps the stored one.
  * Returns the config to use, or an i18n error key.
  */
-export function parseSmtpForm(form: FormData): { cfg: SmtpConfig; keepPass: boolean } | { error: string } {
+export async function parseSmtpForm(form: FormData): Promise<{ cfg: SmtpConfig; keepPass: boolean } | { error: string }> {
 	const text = (k: string) => String(form.get(k) ?? '').trim();
 	const host = text('host');
 	const port = Number(text('port')) || 0;
 	const security = SECURITIES.includes(text('security') as SmtpSecurity) ? (text('security') as SmtpSecurity) : 'starttls';
 	const from = text('from');
-	if (!/^[a-z0-9.-]+$/i.test(host)) return { error: 'smtp.err.host' };
+	if (!/^[a-z0-9.-]+$/i.test(host) || !(await hostnameAllowed(host))) return { error: 'smtp.err.host' };
 	if (port < 1 || port > 65535) return { error: 'smtp.err.port' };
 	if (from && !/^(.+<\S+@\S+\.\S+>|\S+@\S+\.\S+)$/.test(from)) return { error: 'smtp.err.from' };
 	const pass = String(form.get('pass') ?? '');

@@ -21,6 +21,11 @@ purgeExpiredSessions();
 // profile pictures only exist with real accounts – drop leftovers from none/local
 if (config.authMode !== 'accounts') db().exec('UPDATE users SET avatar = NULL, avatar_img = NULL WHERE avatar IS NOT NULL OR avatar_img IS NOT NULL');
 startScheduler();
+// Links in e-mails and the cookie's Secure flag come from the request's Host / X-Forwarded-*
+// headers unless ORIGIN is set – anybody who can reach the port could forge them.
+if (config.authMode === 'accounts' && !config.origin) {
+	console.warn('[packwise] ORIGIN is not set. With AUTH_MODE=accounts set ORIGIN=https://your.host so that password links in e-mails can\'t be redirected via a forged Host header.');
+}
 
 /** Paths reachable without passing the gate. */
 const PUBLIC = [/^\/login/, /^\/register/, /^\/invite\//, /^\/forgot/, /^\/reset\//, /^\/setup/, /^\/api\/health/, /^\/api\/prefs/, /^\/manifest\.webmanifest/];
@@ -104,8 +109,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (!locals.user && path !== '/profiles') return deny(`/profiles?next=${encodeURIComponent(path + url.search)}`);
 	}
 
-	return resolve(event, {
+	const response = await resolve(event, {
 		transformPageChunk: ({ html }) =>
 			html.replace('%pw.lang%', locals.locale).replace('%pw.theme%', locals.theme)
 	});
+	// the Content-Security-Policy comes from svelte.config.js (kit.csp)
+	response.headers.set('x-content-type-options', 'nosniff');
+	response.headers.set('x-frame-options', 'DENY');
+	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+	response.headers.set('permissions-policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+	response.headers.set('cross-origin-opener-policy', 'same-origin');
+	return response;
 };

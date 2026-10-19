@@ -4,6 +4,7 @@ import { config } from './config';
 import { decrypt, encrypt } from './crypto';
 import { all, get, getMeta, newId, now, run, setMeta } from './db';
 import { sendMail, smtpEnabled } from './mail';
+import { hostAllowed } from './netguard';
 
 /**
  * Notifications go to the channels a person set up under Settings:
@@ -94,8 +95,11 @@ const httpUrl = (value: string) => {
 	}
 };
 
-/** Check the form of a new e-mail, ntfy or Gotify channel. Returns the config or an i18n error key. */
-export function parseChannel(form: FormData): ChannelConfig | { error: string } {
+/**
+ * Check the form of a new e-mail, ntfy or Gotify channel. Returns the config or an i18n error key.
+ * Servers must be reachable and must not point at the container itself (see netguard).
+ */
+export async function parseChannel(form: FormData): Promise<ChannelConfig | { error: string }> {
 	const text = (k: string) => String(form.get(k) ?? '').trim();
 	const kind = text('kind');
 	if (kind === 'email') {
@@ -106,14 +110,14 @@ export function parseChannel(form: FormData): ChannelConfig | { error: string } 
 	if (kind === 'ntfy') {
 		const server = httpUrl(text('server') || 'https://ntfy.sh');
 		const topic = text('topic');
-		if (!server) return { error: 'notify.err.server' };
+		if (!server || !(await hostAllowed(server))) return { error: 'notify.err.server' };
 		if (!/^[\w-]{1,64}$/.test(topic)) return { error: 'notify.err.topic' };
 		return { kind, server, topic, token: text('token') };
 	}
 	if (kind === 'gotify') {
 		const server = httpUrl(text('server'));
 		const token = text('token');
-		if (!server) return { error: 'notify.err.server' };
+		if (!server || !(await hostAllowed(server))) return { error: 'notify.err.server' };
 		if (!token) return { error: 'notify.err.token' };
 		return { kind, server, token };
 	}
@@ -189,6 +193,8 @@ const vapidSubject = () => (config.origin.startsWith('https://') ? config.origin
 const TIMEOUT = 15_000;
 
 async function post(url: string, init: RequestInit): Promise<string | null> {
+	// checked again on every send – a name could point somewhere else by now
+	if (!(await hostAllowed(url))) return 'blocked host';
 	try {
 		const res = await fetch(url, { ...init, method: 'POST', redirect: 'error', signal: AbortSignal.timeout(TIMEOUT) });
 		return res.ok ? null : `HTTP ${res.status}`;

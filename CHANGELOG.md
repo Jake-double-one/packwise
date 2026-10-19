@@ -4,6 +4,13 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 ## Unreleased
 
+### Security
+
+- **Security headers and a Content-Security-Policy** on every page (own scripts and assets only, OpenStreetMap iframe, `X-Frame-Options: DENY`, `nosniff`, referrer and permissions policy).
+- **Servers entered by users** (ntfy, Gotify, SMTP, push subscriptions) may no longer point at the container itself or at link-local / cloud-metadata addresses; names are resolved and checked on every send. LAN addresses stay allowed.
+- **`ORIGIN` warning**: with `accounts` and no `ORIGIN`, the log and the admin area warn that links in e-mails are built from the request's Host header.
+- Changing your own password logs out your other devices. Login takes the same time for unknown e-mail addresses as for wrong passwords. API tokens use unbiased random characters. Caps for the rate-limit table and open live connections.
+
 ### Changed
 
 - **Trip info**: on the desktop the map grows with the notes next to it, so there is no empty space below it.

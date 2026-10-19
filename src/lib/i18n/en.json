@@ -888,5 +888,6 @@
 	"drive.thc_novice_none": "novice drivers: none at all",
 	"drive.thc_limit": "max. {value} ng/ml THC",
 	"drive.thc_forbidden": "forbidden",
-	"drive.thc_state": "depends on the state – driving while impaired is an offence everywhere"
+	"drive.thc_state": "depends on the state – driving while impaired is an offence everywhere",
+	"admin.origin_hint": "ORIGIN is not set. Links in e-mails (password, invitations) are then built from the request’s Host header – anybody who can reach the port could point them at a foreign address. Set ORIGIN=https://your.host in the container settings."
 }

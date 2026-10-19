@@ -9,19 +9,22 @@ const form = (fields: Record<string, string>) => {
 };
 
 describe('notification channels', () => {
-	it('accepts valid channels', () => {
-		expect(parseChannel(form({ kind: 'email', address: 'Anna@Example.com ' }))).toEqual({ kind: 'email', address: 'anna@example.com' });
-		expect(parseChannel(form({ kind: 'ntfy', server: '', topic: 'packwise-x1' }))).toEqual({ kind: 'ntfy', server: 'https://ntfy.sh', topic: 'packwise-x1', token: '' });
-		expect(parseChannel(form({ kind: 'gotify', server: 'http://192.168.1.5:8080/', token: 'abc' }))).toEqual({ kind: 'gotify', server: 'http://192.168.1.5:8080', token: 'abc' });
+	// servers are given as LAN addresses: names would need DNS, which the test box may not have
+	it('accepts valid channels', async () => {
+		expect(await parseChannel(form({ kind: 'email', address: 'Anna@Example.com ' }))).toEqual({ kind: 'email', address: 'anna@example.com' });
+		expect(await parseChannel(form({ kind: 'ntfy', server: 'http://10.0.0.5', topic: 'packwise-x1' }))).toEqual({ kind: 'ntfy', server: 'http://10.0.0.5', topic: 'packwise-x1', token: '' });
+		expect(await parseChannel(form({ kind: 'gotify', server: 'http://192.168.1.5:8080/', token: 'abc' }))).toEqual({ kind: 'gotify', server: 'http://192.168.1.5:8080', token: 'abc' });
 	});
 
-	it('rejects broken input', () => {
-		expect(parseChannel(form({ kind: 'email', address: 'nope' }))).toEqual({ error: 'notify.err.address' });
-		expect(parseChannel(form({ kind: 'ntfy', server: 'ftp://x', topic: 'a' }))).toEqual({ error: 'notify.err.server' });
-		expect(parseChannel(form({ kind: 'ntfy', server: 'https://user:pw@ntfy.sh', topic: 'a' }))).toEqual({ error: 'notify.err.server' });
-		expect(parseChannel(form({ kind: 'ntfy', topic: 'with space' }))).toEqual({ error: 'notify.err.topic' });
-		expect(parseChannel(form({ kind: 'gotify', server: 'https://g.example.com', token: '' }))).toEqual({ error: 'notify.err.token' });
-		expect(parseChannel(form({ kind: 'webpush' }))).toEqual({ error: 'notify.err.kind' });
+	it('rejects broken input and servers that point at the container itself', async () => {
+		expect(await parseChannel(form({ kind: 'email', address: 'nope' }))).toEqual({ error: 'notify.err.address' });
+		expect(await parseChannel(form({ kind: 'ntfy', server: 'ftp://x', topic: 'a' }))).toEqual({ error: 'notify.err.server' });
+		expect(await parseChannel(form({ kind: 'ntfy', server: 'https://user:pw@10.0.0.5', topic: 'a' }))).toEqual({ error: 'notify.err.server' });
+		expect(await parseChannel(form({ kind: 'ntfy', server: 'http://127.0.0.1:2586', topic: 'a' }))).toEqual({ error: 'notify.err.server' });
+		expect(await parseChannel(form({ kind: 'gotify', server: 'http://169.254.169.254', token: 'x' }))).toEqual({ error: 'notify.err.server' });
+		expect(await parseChannel(form({ kind: 'ntfy', server: 'http://10.0.0.5', topic: 'with space' }))).toEqual({ error: 'notify.err.topic' });
+		expect(await parseChannel(form({ kind: 'gotify', server: 'http://10.0.0.5', token: '' }))).toEqual({ error: 'notify.err.token' });
+		expect(await parseChannel(form({ kind: 'webpush' }))).toEqual({ error: 'notify.err.kind' });
 	});
 
 	it('formats the local date', () => {

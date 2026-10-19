@@ -6,7 +6,7 @@ import { smtpAction } from '$lib/server/smtp-actions';
 import { addChannel, deleteChannel, getPrefs, listChannels, MAX_CHANNELS, parseChannel, rememberOrigin, sendToChannel, setPrefs } from '$lib/server/notify';
 import { messagesFor } from '$lib/server/i18n';
 import { translate } from '$lib/i18n';
-import { hashPassword, verifyPassword } from '$lib/server/auth';
+import { hashPassword, SESSION_COOKIE, sha256, verifyPassword } from '$lib/server/auth';
 import { get, run } from '$lib/server/db';
 import { AVATAR_DATA_URL, MAX_AVATAR_CHARS } from '$lib/server/avatar';
 import { createApiToken, deleteToken, listTokens, MAX_TOKENS, renameToken } from '$lib/server/apitokens';
@@ -33,7 +33,7 @@ export const actions: Actions = {
 	/** Notifications: add an e-mail, ntfy or Gotify channel (Web Push goes through /api/notify/webpush). */
 	notifyAdd: async ({ request, locals }) => {
 		if (!locals.user) return fail(401);
-		const cfg = parseChannel(await request.formData());
+		const cfg = await parseChannel(await request.formData());
 		if ('error' in cfg) return fail(400, { notifyError: cfg.error });
 		if (!addChannel(locals.user.id, cfg)) return fail(400, { notifyError: 'notify.err.max' });
 		rememberOrigin(publicOrigin(request));
@@ -117,7 +117,7 @@ export const actions: Actions = {
 		deleteToken(locals.user.id, str(await request.formData(), 'id'));
 		return { saved: 'token' };
 	},
-	password: async ({ request, locals }) => {
+	password: async ({ request, locals, cookies }) => {
 		if (!locals.user || config.authMode !== 'accounts') return fail(403);
 		const form = await request.formData();
 		const current = String(form.get('current') ?? '');
@@ -126,6 +126,8 @@ export const actions: Actions = {
 		if (!(await verifyPassword(current, row?.password_hash))) return fail(400, { pwError: 'auth.err.wrong_password' });
 		if (next.length < 8) return fail(400, { pwError: 'auth.err.password_short' });
 		run('UPDATE users SET password_hash = ? WHERE id = ?', await hashPassword(next), locals.user.id);
+		// everybody else who knew the old password is logged out; this device stays
+		run('DELETE FROM sessions WHERE user_id = ? AND id != ?', locals.user.id, sha256(cookies.get(SESSION_COOKIE) ?? ''));
 		passwordChangedMail(locals.user.id, false, publicOrigin(request));
 		return { saved: 'password' };
 	}

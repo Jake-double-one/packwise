@@ -14,7 +14,7 @@ export async function smtpAction(kind: 'save' | 'test' | 'clear', request: Reque
 		clearSmtp();
 		return { smtpSaved: 'cleared' };
 	}
-	const parsed = parseSmtpForm(form);
+	const parsed = await parseSmtpForm(form);
 	if ('error' in parsed) return fail(400, { smtpError: parsed.error });
 	if (kind === 'save') {
 		saveSmtp(parsed.cfg, parsed.keepPass);

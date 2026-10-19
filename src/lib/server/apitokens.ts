@@ -25,9 +25,9 @@ const hash = (token: string) => createHash('sha256').update(token).digest('hex')
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 
 function generate(): string {
-	const bytes = randomBytes(40);
 	let out = 'pw_';
-	for (const b of bytes) out += ALPHABET[b % ALPHABET.length];
+	// rejection sampling: 228 = 4 × 57, so every character is equally likely
+	while (out.length < 43) for (const b of randomBytes(48)) if (b < 228 && out.length < 43) out += ALPHABET[b % ALPHABET.length];
 	return out;
 }
 
