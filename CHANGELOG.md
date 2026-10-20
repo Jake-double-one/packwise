@@ -7,7 +7,7 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 ### Added
 
 - **Install as an app**: *Settings → Install as an app* offers Chrome's install prompt as a button, explains the home-screen steps on iPhone/iPad and says why installing is unavailable over `http://`. The manifest is fetched with cookies, so a login proxy in front of Packwise no longer breaks installation; a solid maskable icon for Android's icon shapes; app shortcuts *New trip* and *Trips* in the user's language.
-- **Status bar, navigation bar and app title bar follow the theme** (light, dark, AMOLED, system) – before, they were always indigo or white. The manifest's colours follow the chosen theme too, so an installed app's bottom bar and splash screen match (Chrome applies manifest changes to an installed app within about a day). Native form controls follow as well (`color-scheme`).
+- **Status bar and app title bar follow the theme** (light, dark, AMOLED, system) in a browser tab – before, they were always indigo. In the installed app the Android system bars follow the phone's light/dark mode (no fixed `theme_color` in the manifest any more, no `viewport-fit=cover`), so the bottom bar is no longer stuck white; a dark theme on a dark phone keeps its colour. The splash screen follows the theme. Native form controls follow as well (`color-scheme`).
 - **Push notifications show the Packwise bag in Android's status bar** instead of a white square (monochrome badge icon).
 
 ### Security

@@ -2,9 +2,12 @@
 <html lang="%pw.lang%" data-theme="%pw.theme%">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-		<meta name="theme-color" media="(prefers-color-scheme: light)" content="%pw.tc.light%" />
+		<!-- no viewport-fit=cover: with it Chrome paints the installed app's navigation bar with the manifest colour from install time -->
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- dark first: some browsers take the first tag for the bars regardless of its media query; the page keeps one tag up to date -->
 		<meta name="theme-color" media="(prefers-color-scheme: dark)" content="%pw.tc.dark%" />
+		<meta name="theme-color" media="(prefers-color-scheme: light)" content="%pw.tc.light%" />
+		<meta name="color-scheme" content="light dark" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
 		<!-- with cookies: a login proxy in front of Packwise would otherwise answer with its login page -->
 		<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
@@ -12,7 +15,6 @@
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-title" content="Packwise" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

@@ -4,21 +4,18 @@ import type { RequestHandler } from './$types';
 
 /**
  * Web app manifest, built per request so that the app shortcuts (long press on the icon)
- * carry the user's language and the colours match the chosen theme: Chrome paints an
- * installed app's navigation bar and splash screen from here, not from the live page.
- * "System" can't be known on the server and gets the light colours. Public: browsers
- * fetch it before anybody is logged in.
+ * carry the user's language and the splash screen matches the chosen theme ("system" can't
+ * be known on the server and gets the light one). No theme_color on purpose: with one, Chrome
+ * paints the installed app's Android navigation bar in that single colour for good – without,
+ * Android colours it after the phone's light/dark mode. Public: browsers fetch it before
+ * anybody is logged in.
  */
-const COLORS: Record<string, { theme: string; background: string }> = {
-	light: { theme: '#ffffff', background: '#f6f7fb' },
-	dark: { theme: '#171a23', background: '#0f1117' },
-	amoled: { theme: '#000000', background: '#000000' }
-};
+const BACKGROUND: Record<string, string> = { light: '#f6f7fb', dark: '#0f1117', amoled: '#000000' };
 
 export const GET: RequestHandler = ({ locals }) => {
 	const m = messagesFor(locals.locale);
 	const t = (k: string) => translate(m, k);
-	const colors = COLORS[locals.theme] ?? COLORS.light;
+	const background = BACKGROUND[locals.theme] ?? BACKGROUND.light;
 	const manifest = {
 		id: '/',
 		name: 'Packwise',
@@ -29,8 +26,7 @@ export const GET: RequestHandler = ({ locals }) => {
 		scope: '/',
 		display: 'standalone',
 		orientation: 'any',
-		background_color: colors.background,
-		theme_color: colors.theme,
+		background_color: background,
 		categories: ['travel', 'productivity', 'lifestyle'],
 		icons: [
 			{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
