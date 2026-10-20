@@ -138,7 +138,15 @@ Packwise is a progressive web app: installable on the home screen, offline-capab
 - **Android / desktop Chrome, Edge**: *Settings → Install as an app* offers a button; otherwise use the browser menu → *Install app*. Long-pressing the installed icon offers *New trip* and *Trips* shortcuts.
 - **iPhone / iPad**: in Safari tap *Share → Add to Home Screen* (push notifications work from the home screen only, iOS 16.4+).
 - The status bar and the app's title bar follow the chosen theme (light, dark, AMOLED or system).
-- **Behind a login proxy (Authentik, Authelia, …)**: browsers fetch the manifest and the icons *without* a session, so the proxy answers with its login page and Chrome says *"This app can't be installed"*. Packwise asks for the manifest with cookies, but to be safe let these paths through unauthenticated in the proxy: `/manifest.webmanifest`, `/icon-192.png`, `/icon-512.png`, `/icon-maskable-512.png`, `/favicon.svg`. Quick check: open `https://your.host/manifest.webmanifest` in a private window – you should see JSON, not a login page.
+- **Behind a login proxy (Authentik, Authelia, …)**: browsers fetch the manifest and the icons *without* a session, so the proxy answers with its login page and Chrome says *"This app can't be installed"*. Packwise asks for the manifest with cookies, but the icons are always fetched without, so let these paths through unauthenticated in the proxy: `/manifest.webmanifest`, `/icon-192.png`, `/icon-512.png`, `/icon-maskable-512.png`, `/favicon.svg`. In **Authentik** that is the proxy provider's *Advanced protocol settings → Unauthenticated Paths* (one regular expression per line):
+
+  ```
+  ^/manifest\.webmanifest$
+  ^/icon-.*\.png$
+  ^/favicon\.svg$
+  ```
+
+  Quick check: open `https://your.host/manifest.webmanifest` and an icon in a private window – you should see JSON and the picture, not a login page. Everything else (pages, API, service worker, push) keeps going through the login.
 
 ## Notifications
 
