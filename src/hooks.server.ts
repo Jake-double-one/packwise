@@ -15,6 +15,7 @@ import { needsClaim } from '$lib/server/admin';
 import { db } from '$lib/server/db';
 import { resolveLocale } from '$lib/server/i18n';
 import { startScheduler } from '$lib/server/scheduler';
+import { effectiveTheme, THEME_COLORS } from '$lib/theme';
 
 db();
 purgeExpiredSessions();
@@ -109,9 +110,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (!locals.user && path !== '/profiles') return deny(`/profiles?next=${encodeURIComponent(path + url.search)}`);
 	}
 
+	// browser chrome colours: a chosen theme applies to both schemes, "system" follows the device
+	const tcLight = THEME_COLORS[effectiveTheme(locals.theme, false)];
+	const tcDark = THEME_COLORS[effectiveTheme(locals.theme, true)];
 	const response = await resolve(event, {
 		transformPageChunk: ({ html }) =>
-			html.replace('%pw.lang%', locals.locale).replace('%pw.theme%', locals.theme)
+			html.replace('%pw.lang%', locals.locale).replace('%pw.theme%', locals.theme).replace('%pw.tc.light%', tcLight).replace('%pw.tc.dark%', tcDark)
 	});
 	// the Content-Security-Policy comes from svelte.config.js (kit.csp)
 	response.headers.set('x-content-type-options', 'nosniff');

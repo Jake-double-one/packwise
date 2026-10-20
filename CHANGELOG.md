@@ -4,6 +4,11 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 ## Unreleased
 
+### Added
+
+- **Install as an app**: *Settings → Install as an app* offers Chrome's install prompt as a button, explains the home-screen steps on iPhone/iPad and says why installing is unavailable over `http://`. The manifest is fetched with cookies, so a login proxy in front of Packwise no longer breaks installation; a solid maskable icon for Android's icon shapes; app shortcuts *New trip* and *Trips* in the user's language.
+- **Status bar and app title bar follow the theme** (light, dark, AMOLED, system) – before, they were always indigo. Native form controls follow too (`color-scheme`).
+
 ### Security
 
 - **Security headers and a Content-Security-Policy** on every page (own scripts and assets only, OpenStreetMap iframe, `X-Frame-Options: DENY`, `nosniff`, referrer and permissions policy).

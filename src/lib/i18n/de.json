@@ -889,5 +889,14 @@
 	"drive.thc_limit": "max. {value} ng/ml THC",
 	"drive.thc_forbidden": "verboten",
 	"drive.thc_state": "je nach Bundesstaat – beeinträchtigt fahren ist überall strafbar",
-	"admin.origin_hint": "ORIGIN ist nicht gesetzt. Links in E-Mails (Passwort, Einladungen) werden dann aus dem Host-Header der Anfrage gebildet – wer den Port erreicht, könnte sie auf eine fremde Adresse umbiegen. Setze in Portainer ORIGIN=https://deine.adresse."
+	"admin.origin_hint": "ORIGIN ist nicht gesetzt. Links in E-Mails (Passwort, Einladungen) werden dann aus dem Host-Header der Anfrage gebildet – wer den Port erreicht, könnte sie auf eine fremde Adresse umbiegen. Setze in Portainer ORIGIN=https://deine.adresse.",
+	"app.description": "Gemeinsame Packlisten für eure Reisen",
+	"install.title": "Als App installieren",
+	"install.hint": "Als App startet Packwise vom Home-Bildschirm, ohne Browserleiste, und die Packliste funktioniert auch offline.",
+	"install.installed": "Packwise läuft als installierte App.",
+	"install.button": "Installieren",
+	"install.ios": "iPhone/iPad: In Safari auf „Teilen“ tippen, dann „Zum Home-Bildschirm“.",
+	"install.manual": "Im Browser-Menü (⋮) auf „App installieren“ bzw. „Zum Startbildschirm“ tippen.",
+	"install.insecure": "Installieren, Offline und Push gehen nur über HTTPS – Packwise läuft hier über http:// oder eine IP-Adresse.",
+	"install.check": "Steht dort „Diese App kann nicht installiert werden“, prüfe im privaten Fenster, ob diese Datei ohne Login erreichbar ist:"
 }

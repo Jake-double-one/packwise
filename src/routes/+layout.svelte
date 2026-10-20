@@ -6,6 +6,9 @@
 	import Toasts from '$lib/components/Toasts.svelte';
 	import { browser } from '$app/environment';
 	import { polyfillCountryFlagEmojis } from 'country-flag-emoji-polyfill';
+	import { onMount } from 'svelte';
+	import { applyThemeColor } from '$lib/theme';
+	import { captureInstallPrompt } from '$lib/install.svelte';
 
 	let { data, children } = $props();
 	const { t } = provideI18n(() => ({ locale: data.locale, messages: data.messages }));
@@ -19,6 +22,13 @@
 	const showNav = $derived(!!data.user && !page.url.pathname.startsWith('/setup'));
 	// Windows has no flag emojis: then a small self-hosted flag font is loaded (only there)
 	if (browser) polyfillCountryFlagEmojis('Twemoji Country Flags', '/fonts/TwemojiCountryFlags.woff2');
+	if (browser) captureInstallPrompt();
+	onMount(() => {
+		applyThemeColor();
+		const mq = matchMedia('(prefers-color-scheme: dark)');
+		mq.addEventListener('change', applyThemeColor);
+		return () => mq.removeEventListener('change', applyThemeColor);
+	});
 </script>
 
 <svelte:head>
@@ -47,13 +57,17 @@
 	</header>
 {/if}
 
-<main>
+<main class:bare={!showNav}>
 	{@render children()}
 </main>
 
 <Toasts />
 
 <style>
+	/* pages without the top bar (login, setup) keep clear of the phone's status bar */
+	main.bare {
+		padding-top: env(safe-area-inset-top);
+	}
 	.topbar {
 		position: sticky;
 		top: 0;

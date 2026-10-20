@@ -130,6 +130,16 @@ Packwise works behind Traefik, Nginx Proxy Manager, Caddy and Authentik without 
 
 **Live updates don't arrive behind a reverse proxy.** Disable response buffering for `/api/*/live` (Server-Sent Events).
 
+## Install as an app (PWA)
+
+Packwise is a progressive web app: installable on the home screen, offline-capable, with push notifications (see *Notifications*). Requirements and how to install:
+
+- **HTTPS is required** for installing, offline use and push – browsers don't offer any of it over `http://` or a plain IP address. Put Packwise behind a reverse proxy with a certificate.
+- **Android / desktop Chrome, Edge**: *Settings → Install as an app* offers a button; otherwise use the browser menu → *Install app*. Long-pressing the installed icon offers *New trip* and *Trips* shortcuts.
+- **iPhone / iPad**: in Safari tap *Share → Add to Home Screen* (push notifications work from the home screen only, iOS 16.4+).
+- The status bar and the app's title bar follow the chosen theme (light, dark, AMOLED or system).
+- **Behind a login proxy (Authentik, Authelia, …)**: browsers fetch the manifest and the icons *without* a session, so the proxy answers with its login page and Chrome says *"This app can't be installed"*. Packwise asks for the manifest with cookies, but to be safe let these paths through unauthenticated in the proxy: `/manifest.webmanifest`, `/icon-192.png`, `/icon-512.png`, `/icon-maskable-512.png`, `/favicon.svg`. Quick check: open `https://your.host/manifest.webmanifest` in a private window – you should see JSON, not a login page.
+
 ## Notifications
 
 Under **Settings → Notifications** everybody sets up their own reminders:
@@ -206,7 +216,8 @@ The full license texts of everything Packwise ships – browser and server code,
 4. **Neue Reise**: Ziel, Datum, Mitreisende, Anreise und Unterkunft wählen. Die Vorschau zeigt, was warum eingepackt wird, und bezieht Wetter, Adapter und Vignetten mit ein.
 5. Den Link oder QR-Code teilen und gemeinsam abhaken. Mit **↑ Template** landen neue Artikel fürs nächste Mal im Template.
 6. Optional die **To-dos vor der Abfahrt** einschalten. Für die Heimreise auf **🏠 Rückreise** umschalten. Abhaken funktioniert auch **offline**.
-7. **Erinnerungen** unter **Einstellungen → Benachrichtigungen**: X Tage vor der Abreise und bei fälligen To-dos, per E-Mail (SMTP direkt in den Einstellungen eintragen), ntfy, Gotify oder als Push-Nachricht aufs Handy (braucht HTTPS). `TZ: Europe/Berlin` setzen, damit die Uhrzeit stimmt.
+7. **Als App installieren**: Über HTTPS bietet **Einstellungen → Als App installieren** einen Knopf (iPhone: Safari → Teilen → Zum Home-Bildschirm). Sitzt ein Login-Proxy wie Authentik davor, müssen `/manifest.webmanifest` und die Icons ohne Login erreichbar sein.
+8. **Erinnerungen** unter **Einstellungen → Benachrichtigungen**: X Tage vor der Abreise und bei fälligen To-dos, per E-Mail (SMTP direkt in den Einstellungen eintragen), ntfy, Gotify oder als Push-Nachricht aufs Handy (braucht HTTPS). `TZ: Europe/Berlin` setzen, damit die Uhrzeit stimmt.
 
 **Brave-Browser:** Falls Funktionen nicht gehen, für die Packwise-Adresse die Shields deaktivieren (Löwen-Symbol in der Adressleiste).
 

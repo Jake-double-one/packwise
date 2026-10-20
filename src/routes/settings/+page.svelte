@@ -8,6 +8,8 @@
 	import ApiTokens from '$lib/components/ApiTokens.svelte';
 	import SmtpSettings from '$lib/components/SmtpSettings.svelte';
 	import Notifications from '$lib/components/Notifications.svelte';
+	import InstallApp from '$lib/components/InstallApp.svelte';
+	import { applyThemeColor } from '$lib/theme';
 	import { tick } from 'svelte';
 
 	let avatarForm = $state<HTMLFormElement | null>(null);
@@ -57,6 +59,7 @@
 	async function setTheme(value: string) {
 		theme = value;
 		document.documentElement.dataset.theme = value;
+		applyThemeColor();
 		await fetch('/api/prefs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ theme: value }) });
 		await invalidateAll();
 	}
@@ -86,6 +89,8 @@
 			<p class="tiny muted">{t('settings.language_hint')}</p>
 		</div>
 	</section>
+
+	<InstallApp />
 
 	<section class="card">
 		<h2>{t('settings.profile')}</h2>

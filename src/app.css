@@ -1,5 +1,6 @@
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
+	color-scheme: light;
 	--bg: #f6f7fb;
 	--surface: #ffffff;
 	--surface-2: #f1f3f9;
@@ -28,6 +29,7 @@
 
 @media (prefers-color-scheme: dark) {
 	:root[data-theme='system'] {
+		color-scheme: dark;
 		--bg: #0f1117;
 		--surface: #171a23;
 		--surface-2: #1e222d;
@@ -54,6 +56,7 @@
 }
 
 :root[data-theme='dark'] {
+	color-scheme: dark;
 	--bg: #0f1117;
 	--surface: #171a23;
 	--surface-2: #1e222d;
@@ -80,6 +83,7 @@
 
 /* True black for OLED screens – saves battery and looks crisp. */
 :root[data-theme='amoled'] {
+	color-scheme: dark;
 	--bg: #000000;
 	--surface: #000000;
 	--surface-2: #0b0b0d;
