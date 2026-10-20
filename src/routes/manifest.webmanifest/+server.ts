@@ -4,11 +4,21 @@ import type { RequestHandler } from './$types';
 
 /**
  * Web app manifest, built per request so that the app shortcuts (long press on the icon)
- * carry the user's language. Public: browsers fetch it before anybody is logged in.
+ * carry the user's language and the colours match the chosen theme: Chrome paints an
+ * installed app's navigation bar and splash screen from here, not from the live page.
+ * "System" can't be known on the server and gets the light colours. Public: browsers
+ * fetch it before anybody is logged in.
  */
+const COLORS: Record<string, { theme: string; background: string }> = {
+	light: { theme: '#ffffff', background: '#f6f7fb' },
+	dark: { theme: '#171a23', background: '#0f1117' },
+	amoled: { theme: '#000000', background: '#000000' }
+};
+
 export const GET: RequestHandler = ({ locals }) => {
 	const m = messagesFor(locals.locale);
 	const t = (k: string) => translate(m, k);
+	const colors = COLORS[locals.theme] ?? COLORS.light;
 	const manifest = {
 		id: '/',
 		name: 'Packwise',
@@ -19,8 +29,8 @@ export const GET: RequestHandler = ({ locals }) => {
 		scope: '/',
 		display: 'standalone',
 		orientation: 'any',
-		background_color: '#f6f7fb',
-		theme_color: '#4f46e5',
+		background_color: colors.background,
+		theme_color: colors.theme,
 		categories: ['travel', 'productivity', 'lifestyle'],
 		icons: [
 			{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
