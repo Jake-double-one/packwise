@@ -1,0 +1,67 @@
+# Dependency audit: once a week and whenever dependencies or the Dockerfile change.
+# - npm audit for the packages that ship in the image (fails from "high")
+# - Trivy scan of the built image: OS packages of the Alpine base and node_modules
+#   (fails on critical, everything from "high" is listed under Security → Code scanning)
+name: Dependency audit
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['package.json', 'package-lock.json', 'Dockerfile', '.github/workflows/audit.yml']
+  pull_request:
+    paths: ['package.json', 'package-lock.json', 'Dockerfile']
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Shipped packages (fails from high)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Full report incl. build tools (informational)
+        if: always()
+        run: |
+          { echo '## npm audit (all packages)'; echo; echo '```'; npm audit || true; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  image-scan:
+    name: Image scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image (amd64 only, not pushed)
+        run: docker build -t packwise:audit .
+      - name: Critical vulnerabilities fail the job
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: packwise:audit
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+      - name: Report from high upwards
+        if: always()
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: packwise:audit
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy.sarif
+          exit-code: '0'
+      - name: Upload to Security → Code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif

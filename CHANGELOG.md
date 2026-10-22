@@ -12,6 +12,7 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 ### Security
 
+- **Dependency audit**: a weekly GitHub workflow runs `npm audit` for the shipped packages and a Trivy scan of the built image (Alpine base and node_modules), with results under *Security → Code scanning*; Dependabot opens weekly update PRs for npm packages, GitHub Actions and the Node base image.
 - **Security headers and a Content-Security-Policy** on every page (own scripts and assets only, OpenStreetMap iframe, `X-Frame-Options: DENY`, `nosniff`, referrer and permissions policy).
 - **Servers entered by users** (ntfy, Gotify, SMTP, push subscriptions) may no longer point at the container itself or at link-local / cloud-metadata addresses; names are resolved and checked on every send. LAN addresses stay allowed.
 - **`ORIGIN` warning**: with `accounts` and no `ORIGIN`, the log and the admin area warn that links in e-mails are built from the request's Host header.
