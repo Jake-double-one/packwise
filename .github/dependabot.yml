@@ -20,6 +20,9 @@ updates:
       day: monday
       time: '06:00'
       timezone: Europe/Berlin
+    groups:
+      actions:
+        patterns: ['*']
   - package-ecosystem: docker
     directory: /
     schedule:
@@ -27,3 +30,7 @@ updates:
       day: monday
       time: '06:00'
       timezone: Europe/Berlin
+    ignore:
+      # Node stays on the LTS line (24); a new major is a deliberate decision
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
