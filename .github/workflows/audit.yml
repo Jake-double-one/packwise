@@ -44,7 +44,7 @@ jobs:
       - name: Build image (amd64 only, not pushed)
         run: docker build -t packwise:audit .
       - name: Critical vulnerabilities fail the job
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: packwise:audit
           severity: CRITICAL
@@ -52,7 +52,7 @@ jobs:
           exit-code: '1'
       - name: Report from high upwards
         if: always()
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: packwise:audit
           severity: HIGH,CRITICAL
