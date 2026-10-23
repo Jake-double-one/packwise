@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Self-hosted collaborative packing lists",
   "engines": {
-    "node": ">=22.13"
+    "node": ">=22.17"
   },
   "scripts": {
     "dev": "vite dev",

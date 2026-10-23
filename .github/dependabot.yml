@@ -35,6 +35,6 @@ updates:
       time: '06:00'
       timezone: Europe/Berlin
     ignore:
-      # Node stays on the LTS line (24); a new major is a deliberate decision
+      # Node stays on the active LTS line (26); a new major is a deliberate decision
       - dependency-name: node
         update-types: ['version-update:semver-major']
