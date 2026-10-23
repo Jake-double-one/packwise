@@ -1,8 +1,8 @@
 import { all, get, run, tx } from './db';
 import { messagesFor } from './i18n';
 import { createBag, createPerson } from './repo';
-import { translate } from '$lib/i18n';
-import type { BagKind, PersonKind } from '$lib/types';
+import { translate } from '#lib/i18n/index.js';
+import type { BagKind, PersonKind } from '#lib/types.js';
 
 /**
  * Personal bags: adults and children get a suitcase and a carry-on in their

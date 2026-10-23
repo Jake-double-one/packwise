@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { useI18n } from '$lib/i18n';
-	import type { Warning } from '$lib/types';
+	import { useI18n } from '#lib/i18n/index.js';
+	import type { Warning } from '#lib/types.js';
 
 	let { warnings }: { warnings: Warning[] } = $props();
 	const { t } = useI18n();

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { DIMENSION_MAP } from '$lib/context';
-	import { useI18n } from '$lib/i18n';
-	import type { Rules } from '$lib/types';
+	import { DIMENSION_MAP } from '#lib/context.js';
+	import { useI18n } from '#lib/i18n/index.js';
+	import type { Rules } from '#lib/types.js';
 
 	let { rules }: { rules: Rules } = $props();
 	const { t } = useI18n();

@@ -1,10 +1,10 @@
 import { error, redirect } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
-import { get } from '$lib/server/db';
-import { addMember, addTripGuest } from '$lib/server/repo';
-import { addPersonWithBags } from '$lib/server/persons';
-import { consumeToken, readToken } from '$lib/server/tokens';
-import { PALETTE, householdsFor } from '$lib/server/auth';
+import { config } from '#lib/server/config.js';
+import { get } from '#lib/server/db.js';
+import { addMember, addTripGuest } from '#lib/server/repo.js';
+import { addPersonWithBags } from '#lib/server/persons.js';
+import { consumeToken, readToken } from '#lib/server/tokens.js';
+import { PALETTE, householdsFor } from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** An invitation link is either for a whole household or for a single trip. */

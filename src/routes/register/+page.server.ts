@@ -1,12 +1,12 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
-import { clientIp, createSession, createUser, hashPassword, PALETTE, rateLimit } from '$lib/server/auth';
-import { get, tx } from '$lib/server/db';
-import { addMember, addTripGuest, createBag, createHousehold, seedTemplate, seedTodos } from '$lib/server/repo';
-import { addPersonWithBags } from '$lib/server/persons';
-import { consumeToken, readToken } from '$lib/server/tokens';
-import { starterSharedBag, starterTemplate, starterTodos } from '$lib/data/starter';
-import { str } from '$lib/server/util';
+import { config } from '#lib/server/config.js';
+import { clientIp, createSession, createUser, hashPassword, PALETTE, rateLimit } from '#lib/server/auth.js';
+import { get, tx } from '#lib/server/db.js';
+import { addMember, addTripGuest, createBag, createHousehold, seedTemplate, seedTodos } from '#lib/server/repo.js';
+import { addPersonWithBags } from '#lib/server/persons.js';
+import { consumeToken, readToken } from '#lib/server/tokens.js';
+import { starterSharedBag, starterTemplate, starterTodos } from '#lib/data/starter.js';
+import { str } from '#lib/server/util.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** Invitations (to a household or to a single trip) also open registration when it is closed. */

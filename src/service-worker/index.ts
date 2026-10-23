@@ -1,22 +1,20 @@
-/// <reference types="@sveltejs/kit" />
-/// <reference no-default-lib="true"/>
-/// <reference lib="esnext" />
-/// <reference lib="webworker" />
-
 /**
  * Offline support:
  * - the app shell (JS, CSS, icons) is precached per version
  * - pages and their data (incl. /api/trips/<id>) are network-first and fall
  *   back to the last copy, so an opened packing list keeps working offline
- * - changes are queued by the page itself (see $lib/offline) – the service
+ * - changes are queued by the page itself (see #lib/offline) – the service
  *   worker never touches POST requests
  */
-import { build, files, version } from '$service-worker';
+import { self as sw } from '$app/service-worker';
+import { version } from '$app/env';
+import { assets, immutable } from '$app/manifest';
+import { resolve } from '$app/paths';
 
-const sw = self as unknown as ServiceWorkerGlobalScope;
 const STATIC = `pw-static-${version}`;
 const PAGES = 'pw-pages';
-const ASSETS = new Set([...build, ...files]);
+// the Vite output and everything in static/, as absolute pathnames
+const ASSETS = new Set([...immutable, ...assets].map((a) => resolve(a.path)));
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(
@@ -78,7 +76,7 @@ sw.addEventListener('fetch', (event) => {
 	if (cacheable(url, request)) event.respondWith(networkFirst(request));
 });
 
-// ── Web Push: reminders from the server (see $lib/server/notify) ────────────
+// ── Web Push: reminders from the server (see #lib/server/notify) ────────────
 
 sw.addEventListener('push', (event) => {
 	let data: { title?: string; body?: string; url?: string } = {};

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { useI18n } from '$lib/i18n';
+	import { useI18n } from '#lib/i18n/index.js';
 
 	type View = { source: 'env' | 'db' | 'none'; host: string; port: number; security: 'starttls' | 'ssl' | 'none'; user: string; from: string; hasPassword: boolean };
 	type Result = { smtpSaved?: string; smtpError?: string; smtpDetail?: string } | null;

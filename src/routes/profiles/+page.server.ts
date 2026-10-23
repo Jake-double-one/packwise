@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
-import { cookieOptions, createUser, getUser, listUsers, PROFILE_COOKIE } from '$lib/server/auth';
-import { addPersonWithBags } from '$lib/server/persons';
-import { safeNext, str } from '$lib/server/util';
+import { config } from '#lib/server/config.js';
+import { cookieOptions, createUser, getUser, listUsers, PROFILE_COOKIE } from '#lib/server/auth.js';
+import { addPersonWithBags } from '#lib/server/persons.js';
+import { safeNext, str } from '#lib/server/util.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

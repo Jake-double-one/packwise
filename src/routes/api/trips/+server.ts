@@ -1,5 +1,5 @@
-import { error, json } from '@sveltejs/kit';
-import { createTrip, sanitizeCreate } from '$lib/server/trips';
+import { error } from '@sveltejs/kit';
+import { createTrip, sanitizeCreate } from '#lib/server/trips.js';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
@@ -7,5 +7,5 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	if (!hh) error(404);
 	const input = sanitizeCreate(await request.json(), hh);
 	const id = createTrip(hh, locals.user, input, locals.locale);
-	return json({ id });
+	return Response.json({ id });
 };

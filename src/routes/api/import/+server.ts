@@ -1,11 +1,11 @@
-import { error, json } from '@sveltejs/kit';
-import { canEditTemplate } from '$lib/server/auth';
-import { tx } from '$lib/server/db';
-import { publish } from '$lib/server/realtime';
-import { insertTemplateNode, listTemplate } from '$lib/server/repo';
-import { MAX_GROUP_DEPTH } from '$lib/tree';
-import type { ImportTreeNode } from '$lib/importer';
-import type { TemplateNode } from '$lib/types';
+import { error } from '@sveltejs/kit';
+import { canEditTemplate } from '#lib/server/auth.js';
+import { tx } from '#lib/server/db.js';
+import { publish } from '#lib/server/realtime.js';
+import { insertTemplateNode, listTemplate } from '#lib/server/repo.js';
+import { MAX_GROUP_DEPTH } from '#lib/tree.js';
+import type { ImportTreeNode } from '#lib/importer.js';
+import type { TemplateNode } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 
 /** Merges an import tree into the template: groups with equal names are reused, existing items skipped. */
@@ -49,5 +49,5 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	});
 
 	publish(`tpl:${hh.id}`, 'nodes', { upsert: created, removed: [], client: null });
-	return json({ created: created.filter((c) => c.kind === 'item').length, groups: created.filter((c) => c.kind === 'group').length, skipped });
+	return Response.json({ created: created.filter((c) => c.kind === 'item').length, groups: created.filter((c) => c.kind === 'group').length, skipped });
 };

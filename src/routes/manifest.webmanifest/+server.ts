@@ -1,5 +1,5 @@
-import { messagesFor } from '$lib/server/i18n';
-import { translate } from '$lib/i18n';
+import { messagesFor } from '#lib/server/i18n.js';
+import { translate } from '#lib/i18n/index.js';
 import type { RequestHandler } from './$types';
 
 /**

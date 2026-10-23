@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
-import { listBags, listPersons, listTemplate, listTodoTemplates, listTrips } from '$lib/server/repo';
+import { config } from '#lib/server/config.js';
+import { listBags, listPersons, listTemplate, listTodoTemplates, listTrips } from '#lib/server/repo.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {

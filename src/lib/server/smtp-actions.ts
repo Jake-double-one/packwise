@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { translate } from '$lib/i18n';
+import { translate } from '#lib/i18n/index.js';
 import { messagesFor } from './i18n';
 import { clearSmtp, parseSmtpForm, saveSmtp, smtpView, testMail } from './mail';
 

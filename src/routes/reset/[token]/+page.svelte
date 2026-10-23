@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { useI18n } from '$lib/i18n';
+	import { useI18n } from '#lib/i18n/index.js';
 
 	let { form } = $props();
 	const { t } = useI18n();

@@ -1,6 +1,6 @@
 import { get, now, run } from './db';
 import { randomToken, sha256 } from './auth';
-import type { Role } from '$lib/types';
+import type { Role } from '#lib/types.js';
 
 export interface TokenRow {
 	kind: 'invite' | 'reset' | 'trip_invite';

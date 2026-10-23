@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { useI18n } from '$lib/i18n';
-	import type { Bag, Person, TripItem } from '$lib/types';
+	import { useI18n } from '#lib/i18n/index.js';
+	import type { Bag, Person, TripItem } from '#lib/types.js';
 	import Sheet from './Sheet.svelte';
 
 	let {

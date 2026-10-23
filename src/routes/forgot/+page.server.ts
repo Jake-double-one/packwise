@@ -1,12 +1,12 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
-import { clientIp, rateLimit, publicOrigin } from '$lib/server/auth';
-import { get } from '$lib/server/db';
-import { sendMail, smtpEnabled } from '$lib/server/mail';
-import { messagesFor } from '$lib/server/i18n';
-import { translate } from '$lib/i18n';
-import { createToken } from '$lib/server/tokens';
-import { str } from '$lib/server/util';
+import { config } from '#lib/server/config.js';
+import { clientIp, rateLimit, publicOrigin } from '#lib/server/auth.js';
+import { get } from '#lib/server/db.js';
+import { sendMail, smtpEnabled } from '#lib/server/mail.js';
+import { messagesFor } from '#lib/server/i18n.js';
+import { translate } from '#lib/i18n/index.js';
+import { createToken } from '#lib/server/tokens.js';
+import { str } from '#lib/server/util.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

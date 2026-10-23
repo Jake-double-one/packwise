@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { useI18n } from '$lib/i18n';
+	import { useI18n } from '#lib/i18n/index.js';
 	const { t } = useI18n();
 	const msg = $derived(page.error?.message ?? '');
 </script>

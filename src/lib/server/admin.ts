@@ -1,7 +1,7 @@
 import { avatarUrl } from './avatar';
 import { config } from './config';
 import { all, get, run, tx } from './db';
-import type { Role } from '$lib/types';
+import type { Role } from '#lib/types.js';
 
 export interface AdminUser {
 	id: string;

@@ -1,6 +1,5 @@
-import { json } from '@sveltejs/kit';
-import { run } from '$lib/server/db';
-import { availableLocales } from '$lib/server/i18n';
+import { run } from '#lib/server/db.js';
+import { availableLocales } from '#lib/server/i18n.js';
 import type { RequestHandler } from './$types';
 
 const THEMES = ['system', 'light', 'dark', 'amoled'];
@@ -17,5 +16,5 @@ export const POST: RequestHandler = async ({ request, cookies, locals }) => {
 		cookies.set('pw_theme', body.theme, opts);
 		if (locals.user) run('UPDATE users SET theme = ? WHERE id = ?', body.theme, locals.user.id);
 	}
-	return json({ ok: true });
+	return Response.json({ ok: true });
 };

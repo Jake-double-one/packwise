@@ -1,12 +1,12 @@
-import { error, json } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
-import { publicOrigin } from '$lib/server/auth';
-import { messagesFor } from '$lib/server/i18n';
-import { sendMail, smtpEnabled } from '$lib/server/mail';
-import { listTripGuests, removeTripGuest } from '$lib/server/repo';
-import { createToken } from '$lib/server/tokens';
-import { tripAccess } from '$lib/server/trips';
-import { translate } from '$lib/i18n';
+import { error } from '@sveltejs/kit';
+import { config } from '#lib/server/config.js';
+import { publicOrigin } from '#lib/server/auth.js';
+import { messagesFor } from '#lib/server/i18n.js';
+import { sendMail, smtpEnabled } from '#lib/server/mail.js';
+import { listTripGuests, removeTripGuest } from '#lib/server/repo.js';
+import { createToken } from '#lib/server/tokens.js';
+import { tripAccess } from '#lib/server/trips.js';
+import { translate } from '#lib/i18n/index.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -20,7 +20,7 @@ function access(locals: App.Locals, id: string) {
 
 export const GET: RequestHandler = async ({ locals, params }) => {
 	const { trip } = access(locals, params.id);
-	return json({ guests: listTripGuests(trip.id) });
+	return Response.json({ guests: listTripGuests(trip.id) });
 };
 
 /** Create an invitation link (valid 7 days, single use), optionally sent by e-mail. */
@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 			translate(m, 'mail.trip_invite.body', { name: locals.user!.name, trip: trip.name, link })
 		);
 	}
-	return json({ link, mailed, smtp: smtpEnabled() });
+	return Response.json({ link, mailed, smtp: smtpEnabled() });
 };
 
 /** Remove a guest – or leave the trip yourself as a guest. */
@@ -52,5 +52,5 @@ export const DELETE: RequestHandler = async ({ locals, params, request }) => {
 	const self = userId === locals.user!.id;
 	if (hh.role === 'guest' && !self) error(403, 'error.forbidden');
 	removeTripGuest(trip.id, userId);
-	return json({ guests: listTripGuests(trip.id) });
+	return Response.json({ guests: listTripGuests(trip.id) });
 };

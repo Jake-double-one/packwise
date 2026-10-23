@@ -1,5 +1,5 @@
 import { config } from './config';
-import type { WeatherSummary } from '$lib/types';
+import type { WeatherSummary } from '#lib/types.js';
 
 /**
  * Open-Meteo (https://open-meteo.com) – free, no API key.

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { analysePlugs, COUNTRIES, countryFlag, countryName, currencyName, LEFT_HAND_TRAFFIC } from '$lib/data/countries';
-	import { formatDate, useI18n } from '$lib/i18n';
-	import { dayIcon, tripLength } from '$lib/weather';
-	import type { Trip, TripNote } from '$lib/types';
+	import { analysePlugs, COUNTRIES, countryFlag, countryName, currencyName, LEFT_HAND_TRAFFIC } from '#lib/data/countries.js';
+	import { formatDate, useI18n } from '#lib/i18n/index.js';
+	import { dayIcon, tripLength } from '#lib/weather.js';
+	import type { Trip, TripNote } from '#lib/types.js';
 	import DrivingCard from './DrivingCard.svelte';
 	import DuplicateTrip from './DuplicateTrip.svelte';
 	import TripEditor from './TripEditor.svelte';

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { useI18n } from '$lib/i18n';
-	import type { Bag, Person, Rules, TemplateNode } from '$lib/types';
-	import { computeQty } from '$lib/generate';
+	import { useI18n } from '#lib/i18n/index.js';
+	import type { Bag, Person, Rules, TemplateNode } from '#lib/types.js';
+	import { computeQty } from '#lib/generate.js';
 	import RuleChips from './RuleChips.svelte';
 	import Sheet from './Sheet.svelte';
 

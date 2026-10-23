@@ -33,16 +33,16 @@ import {
 	updateTripItem
 } from './repo';
 import { sanitizeItemPatch } from './sanitize';
-import { computeQty, generate, generateTodos, type GenerateInput } from '$lib/generate';
-import { regionOf } from '$lib/data/countries';
-import { classifyClimate, seasonOf, tripLength } from '$lib/weather';
+import { computeQty, generate, generateTodos, type GenerateInput } from '#lib/generate.js';
+import { regionOf } from '#lib/data/countries.js';
+import { classifyClimate, seasonOf, tripLength } from '#lib/weather.js';
 import { weatherFor } from './weather';
-import { translate } from '$lib/i18n';
+import { translate } from '#lib/i18n/index.js';
 import { messagesFor } from './i18n';
-import { MAX_GROUP_DEPTH, ancestors } from '$lib/tree';
-import { NOTE_KINDS, type NoteKind, type TemplateNode, type Trip, type TodoTemplate, type TripItem, type TripNote, type TripPhase, type TripSettings, type TripTodo, type WeatherSummary } from '$lib/types';
-import { DIMENSION_MAP } from '$lib/context';
-import { COUNTRIES } from '$lib/data/countries';
+import { MAX_GROUP_DEPTH, ancestors } from '#lib/tree.js';
+import { NOTE_KINDS, type NoteKind, type TemplateNode, type Trip, type TodoTemplate, type TripItem, type TripNote, type TripPhase, type TripSettings, type TripTodo, type WeatherSummary } from '#lib/types.js';
+import { DIMENSION_MAP } from '#lib/context.js';
+import { COUNTRIES } from '#lib/data/countries.js';
 
 /**
  * Who may open a trip: members of its household – and, with accounts, guests

@@ -1,24 +1,24 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api, ApiError, clientId, describeError, isBrave, live } from '$lib/api';
-	import { toast } from '$lib/toast.svelte';
-	import { countryFlag } from '$lib/data/countries';
-	import { todoDue } from '$lib/generate';
-	import { formatDate, formatRange, timeAgo, useI18n } from '$lib/i18n';
-	import { applyLocal, clientRowId, loadQueue, OFFLINE_OPS, saveQueue, type Op, type TripState } from '$lib/offline';
-	import { childrenMap, mergeNodes } from '$lib/tree';
-	import type { TripItem, TripNote, TripPhase, TripTodo } from '$lib/types';
-	import Avatar from '$lib/components/Avatar.svelte';
-	import ItemEditor from '$lib/components/ItemEditor.svelte';
-	import Ring from '$lib/components/Ring.svelte';
-	import Sheet from '$lib/components/Sheet.svelte';
-	import WarningList from '$lib/components/WarningList.svelte';
-	import WeatherCard from '$lib/components/WeatherCard.svelte';
-	import ShareDialog from '$lib/components/ShareDialog.svelte';
-	import TripInfo from '$lib/components/TripInfo.svelte';
+	import { api, ApiError, clientId, describeError, isBrave, live } from '#lib/api.js';
+	import { toast } from '#lib/toast.svelte.js';
+	import { countryFlag } from '#lib/data/countries.js';
+	import { todoDue } from '#lib/generate.js';
+	import { formatDate, formatRange, timeAgo, useI18n } from '#lib/i18n/index.js';
+	import { applyLocal, clientRowId, loadQueue, OFFLINE_OPS, saveQueue, type Op, type TripState } from '#lib/offline.js';
+	import { childrenMap, mergeNodes } from '#lib/tree.js';
+	import type { TripItem, TripNote, TripPhase, TripTodo } from '#lib/types.js';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import ItemEditor from '#lib/components/ItemEditor.svelte';
+	import Ring from '#lib/components/Ring.svelte';
+	import Sheet from '#lib/components/Sheet.svelte';
+	import WarningList from '#lib/components/WarningList.svelte';
+	import WeatherCard from '#lib/components/WeatherCard.svelte';
+	import ShareDialog from '#lib/components/ShareDialog.svelte';
+	import TripInfo from '#lib/components/TripInfo.svelte';
 
 	let { data } = $props();
 	const i18n = useI18n();
@@ -247,7 +247,7 @@
 		if (r.trip && 'todos_enabled' in r.trip) todosEnabled = !!r.trip.todos_enabled;
 		if (r.trip?.notes) notes = r.trip.notes;
 		// destination / dates changed: weather, hints and header come from the server
-		if (r.trip?.reload) invalidateAll();
+		if (r.trip?.reload) refreshAll();
 		if (r.template) {
 			const next = { ...template };
 			for (const id of r.template.removed) delete next[id];

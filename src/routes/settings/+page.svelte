@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import { useI18n } from '$lib/i18n';
-	import LanguageSwitch from '$lib/components/LanguageSwitch.svelte';
-	import Avatar from '$lib/components/Avatar.svelte';
-	import { AVATAR_EMOJIS } from '$lib/avatars';
-	import ApiTokens from '$lib/components/ApiTokens.svelte';
-	import SmtpSettings from '$lib/components/SmtpSettings.svelte';
-	import Notifications from '$lib/components/Notifications.svelte';
-	import InstallApp from '$lib/components/InstallApp.svelte';
-	import { applyThemeColor } from '$lib/theme';
+	import { refreshAll } from '$app/navigation';
+	import { useI18n } from '#lib/i18n/index.js';
+	import LanguageSwitch from '#lib/components/LanguageSwitch.svelte';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import { AVATAR_EMOJIS } from '#lib/avatars.js';
+	import ApiTokens from '#lib/components/ApiTokens.svelte';
+	import SmtpSettings from '#lib/components/SmtpSettings.svelte';
+	import Notifications from '#lib/components/Notifications.svelte';
+	import InstallApp from '#lib/components/InstallApp.svelte';
+	import { applyThemeColor } from '#lib/theme.js';
 	import { tick } from 'svelte';
 
 	let avatarForm = $state<HTMLFormElement | null>(null);
@@ -61,7 +61,7 @@
 		document.documentElement.dataset.theme = value;
 		applyThemeColor();
 		await fetch('/api/prefs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ theme: value }) });
-		await invalidateAll();
+		await refreshAll();
 	}
 </script>
 

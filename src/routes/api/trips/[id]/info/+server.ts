@@ -1,8 +1,7 @@
-import { json } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
-import { tripAccess } from '$lib/server/trips';
-import { dailyWeather, locateCountry } from '$lib/server/weather';
-import { countryName } from '$lib/data/countries';
+import { config } from '#lib/server/config.js';
+import { tripAccess } from '#lib/server/trips.js';
+import { dailyWeather, locateCountry } from '#lib/server/weather.js';
+import { countryName } from '#lib/data/countries.js';
 import type { RequestHandler } from './$types';
 
 /** Trip info tab: position for the map and the day-by-day weather. */
@@ -15,5 +14,5 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 		if (pos) location = { ...pos, precision: 'country' };
 	}
 	const days = location && location.precision === 'place' ? await dailyWeather(location.lat, location.lon, trip.start_date, trip.end_date) : [];
-	return json({ location, days, weatherEnabled: config.weatherEnabled });
+	return Response.json({ location, days, weatherEnabled: config.weatherEnabled });
 };

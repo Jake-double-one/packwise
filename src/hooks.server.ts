@@ -1,5 +1,5 @@
-import { json, type Handle } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { config } from '#lib/server/config.js';
 import {
 	cookieOptions,
 	getUser,
@@ -10,12 +10,12 @@ import {
 	purgeExpiredSessions,
 	readSession,
 	userCount
-} from '$lib/server/auth';
-import { needsClaim } from '$lib/server/admin';
-import { db } from '$lib/server/db';
-import { resolveLocale } from '$lib/server/i18n';
-import { startScheduler } from '$lib/server/scheduler';
-import { effectiveTheme, THEME_COLORS } from '$lib/theme';
+} from '#lib/server/auth.js';
+import { needsClaim } from '#lib/server/admin.js';
+import { db } from '#lib/server/db.js';
+import { resolveLocale } from '#lib/server/i18n.js';
+import { startScheduler } from '#lib/server/scheduler.js';
+import { effectiveTheme, THEME_COLORS } from '#lib/theme.js';
 
 db();
 purgeExpiredSessions();
@@ -77,7 +77,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method) && !sameOrigin(request)) {
 		return isApi
-			? json({ error: 'cross-origin request blocked' }, { status: 403 })
+			? Response.json({ error: 'cross-origin request blocked' }, { status: 403 })
 			: new Response('Cross-origin request blocked', { status: 403 });
 	}
 
@@ -104,7 +104,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	if (!isPublic) {
 		const deny = (to: string) =>
-			isApi ? json({ error: 'unauthorized' }, { status: 401 }) : new Response(null, { status: 303, headers: { location: to } });
+			isApi ? Response.json({ error: 'unauthorized' }, { status: 401 }) : new Response(null, { status: 303, headers: { location: to } });
 		if (userCount() === 0 || needsClaim()) return deny('/setup');
 		if (!locals.unlocked) return deny(`/login?next=${encodeURIComponent(path + url.search)}`);
 		if (!locals.user && path !== '/profiles') return deny(`/profiles?next=${encodeURIComponent(path + url.search)}`);

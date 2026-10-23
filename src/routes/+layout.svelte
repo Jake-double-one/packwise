@@ -1,14 +1,14 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/state';
-	import { provideI18n } from '$lib/i18n';
-	import Avatar from '$lib/components/Avatar.svelte';
-	import Toasts from '$lib/components/Toasts.svelte';
-	import { browser } from '$app/environment';
+	import { provideI18n } from '#lib/i18n/index.js';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import Toasts from '#lib/components/Toasts.svelte';
+	import { browser } from '$app/env';
 	import { polyfillCountryFlagEmojis } from 'country-flag-emoji-polyfill';
 	import { onMount } from 'svelte';
-	import { applyThemeColor } from '$lib/theme';
-	import { captureInstallPrompt } from '$lib/install.svelte';
+	import { applyThemeColor } from '#lib/theme.js';
+	import { captureInstallPrompt } from '#lib/install.svelte.js';
 
 	let { data, children } = $props();
 	const { t } = provideI18n(() => ({ locale: data.locale, messages: data.messages }));

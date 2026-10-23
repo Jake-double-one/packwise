@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { sseResponse } from '$lib/server/realtime';
+import { sseResponse } from '#lib/server/realtime.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals }) => {

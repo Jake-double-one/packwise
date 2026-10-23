@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { useI18n } from '$lib/i18n';
-	import Avatar from '$lib/components/Avatar.svelte';
+	import { useI18n } from '#lib/i18n/index.js';
+	import Avatar from '#lib/components/Avatar.svelte';
 	import { page } from '$app/state';
 
 	let { data, form } = $props();

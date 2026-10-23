@@ -1,6 +1,6 @@
 import { avatarUrl } from './avatar';
 import { all, get, newId, now, run, tx } from './db';
-import type { Bag, BagKind, Person, PersonKind, Role, Rules, TemplateNode, TodoTemplate, Trip, TripItem, TripPhase, TripTodo } from '$lib/types';
+import type { Bag, BagKind, Person, PersonKind, Role, Rules, TemplateNode, TodoTemplate, Trip, TripItem, TripPhase, TripTodo } from '#lib/types.js';
 
 // ── Households ───────────────────────────────────────────────────────────────
 

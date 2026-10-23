@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { copyText } from '$lib/clipboard';
-	import { timeAgo, useI18n } from '$lib/i18n';
-	import { toast } from '$lib/toast.svelte';
+	import { copyText } from '#lib/clipboard.js';
+	import { timeAgo, useI18n } from '#lib/i18n/index.js';
+	import { toast } from '#lib/toast.svelte.js';
 
 	interface Token {
 		id: string;

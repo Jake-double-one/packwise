@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { copyText } from '$lib/clipboard';
-	import { useI18n } from '$lib/i18n';
-	import { clientRowId } from '$lib/offline';
-	import { toast } from '$lib/toast.svelte';
-	import { NOTE_KINDS, parseCar, type CarRental, type NoteKind, type TripNote } from '$lib/types';
+	import { copyText } from '#lib/clipboard.js';
+	import { useI18n } from '#lib/i18n/index.js';
+	import { clientRowId } from '#lib/offline.js';
+	import { toast } from '#lib/toast.svelte.js';
+	import { NOTE_KINDS, parseCar, type CarRental, type NoteKind, type TripNote } from '#lib/types.js';
 
 	let { notes, send }: { notes: TripNote[]; send: (op: { op: string; [k: string]: unknown }) => unknown } = $props();
 	const i18n = useI18n();

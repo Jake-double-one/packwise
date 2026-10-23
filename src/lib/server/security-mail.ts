@@ -1,4 +1,4 @@
-import { translate } from '$lib/i18n';
+import { translate } from '#lib/i18n/index.js';
 import { config } from './config';
 import { get } from './db';
 import { messagesFor } from './i18n';

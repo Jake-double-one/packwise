@@ -1,7 +1,6 @@
-import { json } from '@sveltejs/kit';
-import { geocode } from '$lib/server/weather';
+import { geocode } from '#lib/server/weather.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
-	return json({ places: await geocode(url.searchParams.get('q') ?? '', locals.locale) });
+	return Response.json({ places: await geocode(url.searchParams.get('q') ?? '', locals.locale) });
 };

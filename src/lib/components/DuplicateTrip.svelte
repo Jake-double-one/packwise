@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { api, describeError } from '$lib/api';
-	import { useI18n } from '$lib/i18n';
-	import { toast } from '$lib/toast.svelte';
-	import type { Trip } from '$lib/types';
+	import { api, describeError } from '#lib/api.js';
+	import { useI18n } from '#lib/i18n/index.js';
+	import { toast } from '#lib/toast.svelte.js';
+	import type { Trip } from '#lib/types.js';
 	import Sheet from './Sheet.svelte';
 
 	let { trip, onclose }: { trip: Trip; onclose: () => void } = $props();

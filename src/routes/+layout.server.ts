@@ -1,6 +1,6 @@
-import { config } from '$lib/server/config';
-import { householdsFor } from '$lib/server/auth';
-import { availableLocales, messagesFor } from '$lib/server/i18n';
+import { config } from '#lib/server/config.js';
+import { householdsFor } from '#lib/server/auth.js';
+import { availableLocales, messagesFor } from '#lib/server/i18n.js';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals }) => {

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { countryName } from '$lib/data/countries';
-	import { useI18n } from '$lib/i18n';
-	import type { Trip } from '$lib/types';
+	import { countryName } from '#lib/data/countries.js';
+	import { useI18n } from '#lib/i18n/index.js';
+	import type { Trip } from '#lib/types.js';
 	import PlaceSearch, { type Place } from './PlaceSearch.svelte';
 	import Sheet from './Sheet.svelte';
 

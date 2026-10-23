@@ -13,6 +13,10 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
     open-pull-requests-limit: 5
+    ignore:
+      # TypeScript 7 (Go compiler) has no JavaScript API yet, which svelte-check and SvelteKit need
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:

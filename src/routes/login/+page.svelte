@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { useI18n } from '$lib/i18n';
-	import LanguageSwitch from '$lib/components/LanguageSwitch.svelte';
+	import { useI18n } from '#lib/i18n/index.js';
+	import LanguageSwitch from '#lib/components/LanguageSwitch.svelte';
 
 	let { data, form } = $props();
 	const { t } = useI18n();

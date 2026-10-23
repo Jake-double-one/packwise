@@ -1,7 +1,6 @@
-import { json } from '@sveltejs/kit';
-import { get } from '$lib/server/db';
+import { get } from '#lib/server/db.js';
 
 export const GET = () => {
 	get('SELECT 1');
-	return json({ ok: true, version: __APP_VERSION__ });
+	return Response.json({ ok: true, version: __APP_VERSION__ });
 };

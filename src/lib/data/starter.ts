@@ -1,4 +1,4 @@
-import type { StarterItem, StarterNode } from '$lib/server/repo';
+import type { StarterItem, StarterNode } from '#lib/server/repo.js';
 
 /**
  * Starter templates offered in the setup wizard. Items demonstrate the

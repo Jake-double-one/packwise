@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { formatRange, useI18n } from '$lib/i18n';
+	import { formatRange, useI18n } from '#lib/i18n/index.js';
 
 	let { data } = $props();
 	const i18n = useI18n();

@@ -1,7 +1,7 @@
-import { error, json } from '@sveltejs/kit';
-import { canEditTemplate } from '$lib/server/auth';
-import { tx } from '$lib/server/db';
-import { publish } from '$lib/server/realtime';
+import { error } from '@sveltejs/kit';
+import { canEditTemplate } from '#lib/server/auth.js';
+import { tx } from '#lib/server/db.js';
+import { publish } from '#lib/server/realtime.js';
 import {
 	deleteTemplateNode,
 	getTemplateNode,
@@ -11,15 +11,15 @@ import {
 	listTemplate,
 	templateDepth,
 	updateTemplateNode
-} from '$lib/server/repo';
-import { sanitizeNodePatch } from '$lib/server/sanitize';
-import { MAX_GROUP_DEPTH } from '$lib/tree';
-import type { TemplateNode } from '$lib/types';
+} from '#lib/server/repo.js';
+import { sanitizeNodePatch } from '#lib/server/sanitize.js';
+import { MAX_GROUP_DEPTH } from '#lib/tree.js';
+import type { TemplateNode } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals }) => {
 	if (!locals.household) error(404);
-	return json({ nodes: listTemplate(locals.household.id) });
+	return Response.json({ nodes: listTemplate(locals.household.id) });
 };
 
 type Op =
@@ -105,5 +105,5 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	});
 
 	publish(`tpl:${hh.id}`, 'nodes', { ...result, client: body.client ?? null });
-	return json(result);
+	return Response.json(result);
 };

@@ -1,5 +1,5 @@
-import { clientIp, publicOrigin } from '$lib/server/auth';
-import { handleMcp } from '$lib/server/mcp';
+import { clientIp, publicOrigin } from '#lib/server/auth.js';
+import { handleMcp } from '#lib/server/mcp.js';
 import type { RequestHandler } from './$types';
 
 /** MCP endpoint – token in the Authorization header (Bearer). */

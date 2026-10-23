@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { useI18n } from '$lib/i18n';
-	import Avatar from '$lib/components/Avatar.svelte';
-	import { AVATAR_EMOJIS } from '$lib/avatars';
-	import CountrySelect from '$lib/components/CountrySelect.svelte';
-	import CopyField from '$lib/components/CopyField.svelte';
-	import { toast } from '$lib/toast.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { useI18n } from '#lib/i18n/index.js';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import { AVATAR_EMOJIS } from '#lib/avatars.js';
+	import CountrySelect from '#lib/components/CountrySelect.svelte';
+	import CopyField from '#lib/components/CopyField.svelte';
+	import { toast } from '#lib/toast.svelte.js';
+	import type { SubmitFunction } from '$app/forms';
 
 	let { data, form } = $props();
 	const { t } = useI18n();

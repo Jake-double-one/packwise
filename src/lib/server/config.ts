@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 import path from 'node:path';
 
 export type AuthMode = 'none' | 'local' | 'accounts';
@@ -14,7 +14,7 @@ function bool(value: string | undefined, fallback: boolean): boolean {
 	return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
 }
 
-/** Lazily evaluated so that `$env/dynamic/private` is read at runtime, not build time. */
+/** Lazily evaluated so that the environment (declared in src/env.ts) is read at runtime, not build time. */
 export const config = {
 	get dataDir() {
 		return path.resolve(env.DATA_DIR || './data');

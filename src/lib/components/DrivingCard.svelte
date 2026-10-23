@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { countryFlag, countryName } from '$lib/data/countries';
-	import { DRIVING } from '$lib/data/driving';
-	import { useI18n } from '$lib/i18n';
-	import type { Trip } from '$lib/types';
+	import { countryFlag, countryName } from '#lib/data/countries.js';
+	import { DRIVING } from '#lib/data/driving.js';
+	import { useI18n } from '#lib/i18n/index.js';
+	import type { Trip } from '#lib/types.js';
 
 	let { trip }: { trip: Trip } = $props();
 	const i18n = useI18n();

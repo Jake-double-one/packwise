@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { useI18n } from '$lib/i18n';
+	import { useI18n } from '#lib/i18n/index.js';
 
 	type Channel = { id: string; kind: 'email' | 'ntfy' | 'gotify' | 'webpush'; label: string; last_error: string | null };
 	type Prefs = { departureDays: number; dayBefore: boolean; todos: boolean; hour: number };
@@ -78,7 +78,7 @@
 			});
 			if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? `HTTP ${res.status}`);
 			push = 'on';
-			await invalidateAll();
+			await refreshAll();
 		} catch (err) {
 			pushError = (err as Error).message;
 			push = 'off';
@@ -95,7 +95,7 @@
 			}
 		} finally {
 			push = 'off';
-			await invalidateAll();
+			await refreshAll();
 		}
 	}
 </script>

@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import en from '$lib/i18n/en.json';
-import de from '$lib/i18n/de.json';
-import type { Messages } from '$lib/i18n';
+import en from '#lib/i18n/en.json';
+import de from '#lib/i18n/de.json';
+import type { Messages } from '#lib/i18n/index.js';
 import { config } from './config';
 
 const BUILTIN: Record<string, Messages> = { en, de };

@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import type { Cookies, RequestEvent } from '@sveltejs/kit';
 import { all, get, getMeta, newId, now, run, setMeta } from './db';
 import { config } from './config';
-import type { Role } from '$lib/types';
+import type { Role } from '#lib/types.js';
 import { avatarUrl } from './avatar';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number, opts: object) => Promise<Buffer>;

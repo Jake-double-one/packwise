@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { useI18n, formatRange } from '$lib/i18n';
-	import { countryFlag } from '$lib/data/countries';
-	import { weatherIcon } from '$lib/weather';
-	import Ring from '$lib/components/Ring.svelte';
+	import { useI18n, formatRange } from '#lib/i18n/index.js';
+	import { countryFlag } from '#lib/data/countries.js';
+	import { weatherIcon } from '#lib/weather.js';
+	import Ring from '#lib/components/Ring.svelte';
 
 	let { data } = $props();
 	const i18n = useI18n();

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
-	import { useI18n } from '$lib/i18n';
+	import { useI18n } from '#lib/i18n/index.js';
 
 	const i18n = useI18n();
 	const locales = $derived((page.data.locales ?? []) as { code: string; name: string }[]);
@@ -9,7 +9,7 @@
 	async function change(e: Event) {
 		const lang = (e.currentTarget as HTMLSelectElement).value;
 		await fetch('/api/prefs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lang }) });
-		await invalidateAll();
+		await refreshAll();
 	}
 </script>
 

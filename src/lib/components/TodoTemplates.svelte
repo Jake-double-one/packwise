@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, clientId, describeError, live } from '$lib/api';
-	import { toast } from '$lib/toast.svelte';
-	import { useI18n } from '$lib/i18n';
-	import { mergeNodes } from '$lib/tree';
-	import type { Person, Rules, TodoTemplate } from '$lib/types';
+	import { api, clientId, describeError, live } from '#lib/api.js';
+	import { toast } from '#lib/toast.svelte.js';
+	import { useI18n } from '#lib/i18n/index.js';
+	import { mergeNodes } from '#lib/tree.js';
+	import type { Person, Rules, TodoTemplate } from '#lib/types.js';
 	import RuleChips from './RuleChips.svelte';
 	import RuleSummary from './RuleSummary.svelte';
 	import Sheet from './Sheet.svelte';

@@ -108,7 +108,8 @@ export function thirdPartyLicenses({ fileName = 'licenses.txt', root = process.c
 			// imports left external by the server build (e.g. cookie) – adapter-node bundles them later
 			for (const chunk of Object.values(bundle)) if (chunk.type === 'chunk') for (const id of chunk.imports) external.add(id);
 			for (const id of external) {
-				const name = id.match(/^((?:@[\w.-]+\/)?[\w.-]+)/)?.[1];
+				// package names only – rolldown lists sibling chunks as relative paths (../chunks/x.js)
+				const name = id.match(/^((?:@[\w.-]+\/)?[\w-][\w.-]*)/)?.[1];
 				if (name && !id.startsWith('node:') && existsSync(join(root, 'node_modules', name, 'package.json'))) dirs.add(join(root, 'node_modules', name));
 			}
 			// the client build comes second and writes the file (served from /licenses.txt)

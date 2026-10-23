@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { listBags, listPersons, listTemplate, listTripItems, listTrips } from '$lib/server/repo';
-import { childrenMap } from '$lib/tree';
-import type { TemplateNode } from '$lib/types';
+import { listBags, listPersons, listTemplate, listTripItems, listTrips } from '#lib/server/repo.js';
+import { childrenMap } from '#lib/tree.js';
+import type { TemplateNode } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 
 /** Full JSON backup of the current household (template as a tree). */

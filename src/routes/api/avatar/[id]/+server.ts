@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
-import { get } from '$lib/server/db';
+import { config } from '#lib/server/config.js';
+import { get } from '#lib/server/db.js';
 import type { RequestHandler } from './$types';
 
 /** Uploaded profile picture. The URL carries a version, so it can be cached for good. */

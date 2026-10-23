@@ -1,11 +1,11 @@
 import { isHttpError } from '@sveltejs/kit';
-import { DIMENSION_MAP } from '$lib/context';
-import { analysePlugs, countryName, regionOf } from '$lib/data/countries';
-import { DRIVING } from '$lib/data/driving';
-import { translate } from '$lib/i18n';
-import { childrenMap } from '$lib/tree';
-import { parseCar, type Trip, type TripItem } from '$lib/types';
-import { classifyClimate, seasonOf } from '$lib/weather';
+import { DIMENSION_MAP } from '#lib/context.js';
+import { analysePlugs, countryName, regionOf } from '#lib/data/countries.js';
+import { DRIVING } from '#lib/data/driving.js';
+import { translate } from '#lib/i18n/index.js';
+import { childrenMap } from '#lib/tree.js';
+import { parseCar, type Trip, type TripItem } from '#lib/types.js';
+import { classifyClimate, seasonOf } from '#lib/weather.js';
 import { authenticateToken, type TokenScope } from './apitokens';
 import { householdsFor, rateLimit, type AppHousehold, type SessionUser } from './auth';
 import { config } from './config';

@@ -1,14 +1,14 @@
-import { error, json } from '@sveltejs/kit';
-import { canEditTemplate } from '$lib/server/auth';
-import { publish } from '$lib/server/realtime';
-import { deleteTodoTemplate, insertTodoTemplate, listPersons, listTodoTemplates, updateTodoTemplate } from '$lib/server/repo';
-import { sanitizeRules } from '$lib/server/sanitize';
-import type { TodoTemplate } from '$lib/types';
+import { error } from '@sveltejs/kit';
+import { canEditTemplate } from '#lib/server/auth.js';
+import { publish } from '#lib/server/realtime.js';
+import { deleteTodoTemplate, insertTodoTemplate, listPersons, listTodoTemplates, updateTodoTemplate } from '#lib/server/repo.js';
+import { sanitizeRules } from '#lib/server/sanitize.js';
+import type { TodoTemplate } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals }) => {
 	if (!locals.household) error(404);
-	return json({ todos: listTodoTemplates(locals.household.id) });
+	return Response.json({ todos: listTodoTemplates(locals.household.id) });
 };
 
 /** To-do template operations: add | update | delete. */
@@ -49,5 +49,5 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	} else error(400, 'unknown op');
 
 	publish(`tpl:${hh.id}`, 'todos', { upsert, removed, client: body.client ?? null });
-	return json({ upsert, removed });
+	return Response.json({ upsert, removed });
 };

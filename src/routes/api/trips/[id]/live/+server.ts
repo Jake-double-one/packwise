@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { sseResponse } from '$lib/server/realtime';
-import { tripAccess } from '$lib/server/trips';
+import { sseResponse } from '#lib/server/realtime.js';
+import { tripAccess } from '#lib/server/trips.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals, params }) => {

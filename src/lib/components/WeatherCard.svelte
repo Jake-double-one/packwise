@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { useI18n } from '$lib/i18n';
-	import { weatherIcon } from '$lib/weather';
-	import type { WeatherSummary } from '$lib/types';
+	import { useI18n } from '#lib/i18n/index.js';
+	import { weatherIcon } from '#lib/weather.js';
+	import type { WeatherSummary } from '#lib/types.js';
 
 	let { weather, loading = false, compact = false }: { weather: WeatherSummary | null; loading?: boolean; compact?: boolean } = $props();
 	const { t } = useI18n();

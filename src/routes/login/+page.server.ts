@@ -1,10 +1,10 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
-import { smtpEnabled } from '$lib/server/mail';
-import { checkAppPassword, clientIp, createSession, hashPassword, rateLimit, userCount, verifyPassword } from '$lib/server/auth';
-import { needsClaim } from '$lib/server/admin';
-import { get } from '$lib/server/db';
-import { safeNext, str } from '$lib/server/util';
+import { config } from '#lib/server/config.js';
+import { smtpEnabled } from '#lib/server/mail.js';
+import { checkAppPassword, clientIp, createSession, hashPassword, rateLimit, userCount, verifyPassword } from '#lib/server/auth.js';
+import { needsClaim } from '#lib/server/admin.js';
+import { get } from '#lib/server/db.js';
+import { safeNext, str } from '#lib/server/util.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** Unknown e-mail addresses cost the same time as wrong passwords, so timing tells nothing. */

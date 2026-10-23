@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { useI18n } from '$lib/i18n';
-	import Avatar from '$lib/components/Avatar.svelte';
-	import CountrySelect from '$lib/components/CountrySelect.svelte';
-	import LanguageSwitch from '$lib/components/LanguageSwitch.svelte';
+	import { useI18n } from '#lib/i18n/index.js';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import CountrySelect from '#lib/components/CountrySelect.svelte';
+	import LanguageSwitch from '#lib/components/LanguageSwitch.svelte';
 
 	let { data, form } = $props();
 	const i18n = useI18n();

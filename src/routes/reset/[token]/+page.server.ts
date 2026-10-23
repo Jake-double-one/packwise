@@ -1,8 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { createSession, hashPassword, publicOrigin } from '$lib/server/auth';
-import { passwordChangedMail } from '$lib/server/security-mail';
-import { get, now, run } from '$lib/server/db';
-import { consumeToken, readToken } from '$lib/server/tokens';
+import { createSession, hashPassword, publicOrigin } from '#lib/server/auth.js';
+import { passwordChangedMail } from '#lib/server/security-mail.js';
+import { get, now, run } from '#lib/server/db.js';
+import { consumeToken, readToken } from '#lib/server/tokens.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

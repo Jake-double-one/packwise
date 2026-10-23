@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { useI18n } from '$lib/i18n';
-	import { install, isStandalone } from '$lib/install.svelte';
+	import { useI18n } from '#lib/i18n/index.js';
+	import { install, isStandalone } from '#lib/install.svelte.js';
 
 	const { t } = useI18n();
 	type State = 'checking' | 'installed' | 'prompt' | 'ios' | 'insecure' | 'manual';

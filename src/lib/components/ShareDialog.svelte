@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { api, describeError } from '$lib/api';
-	import { useI18n } from '$lib/i18n';
-	import { toast } from '$lib/toast.svelte';
+	import { api, describeError } from '#lib/api.js';
+	import { useI18n } from '#lib/i18n/index.js';
+	import { toast } from '#lib/toast.svelte.js';
 	import Avatar from './Avatar.svelte';
 	import CopyField from './CopyField.svelte';
 	import Sheet from './Sheet.svelte';

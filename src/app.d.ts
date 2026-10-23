@@ -1,4 +1,4 @@
-import type { SessionUser, AppHousehold } from '$lib/server/auth';
+import type { SessionUser, AppHousehold } from '#lib/server/auth.js';
 
 declare global {
 	const __APP_VERSION__: string;

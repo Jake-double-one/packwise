@@ -2,7 +2,7 @@ import { config } from './config';
 import { tx } from './db';
 import { addPersonWithBags } from './persons';
 import { createBag, createHousehold, seedTemplate, seedTodos } from './repo';
-import { starterSharedBag, starterTemplate, starterTodos } from '$lib/data/starter';
+import { starterSharedBag, starterTemplate, starterTodos } from '#lib/data/starter.js';
 
 /**
  * A new household for a user: they become its creator (accounts mode) and a

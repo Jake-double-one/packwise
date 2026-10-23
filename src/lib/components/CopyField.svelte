@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useI18n } from '$lib/i18n';
+	import { useI18n } from '#lib/i18n/index.js';
 	let { value }: { value: string } = $props();
 	const { t } = useI18n();
 	let copied = $state(false);

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { api } from '$lib/api';
-	import { useI18n } from '$lib/i18n';
-	import { htmlToText, normalise, parseJson, parseText, toTree, type ImportLine } from '$lib/importer';
-	import { MAX_GROUP_DEPTH } from '$lib/tree';
+	import { api } from '#lib/api.js';
+	import { useI18n } from '#lib/i18n/index.js';
+	import { htmlToText, normalise, parseJson, parseText, toTree, type ImportLine } from '#lib/importer.js';
+	import { MAX_GROUP_DEPTH } from '#lib/tree.js';
 
 	let { data } = $props();
 	const { t } = useI18n();

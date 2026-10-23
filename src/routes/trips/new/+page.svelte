@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { api } from '$lib/api';
-	import { DIMENSIONS } from '$lib/context';
-	import { countryName, regionOf } from '$lib/data/countries';
-	import { generate, generateTodos, todoDue } from '$lib/generate';
-	import { formatDate, useI18n } from '$lib/i18n';
-	import { classifyClimate, seasonOf, tripLength, weatherIcon } from '$lib/weather';
-	import type { TripContext, WeatherSummary } from '$lib/types';
-	import Avatar from '$lib/components/Avatar.svelte';
-	import PlaceSearch, { type Place } from '$lib/components/PlaceSearch.svelte';
-	import WeatherCard from '$lib/components/WeatherCard.svelte';
-	import WarningList from '$lib/components/WarningList.svelte';
+	import { api } from '#lib/api.js';
+	import { DIMENSIONS } from '#lib/context.js';
+	import { countryName, regionOf } from '#lib/data/countries.js';
+	import { generate, generateTodos, todoDue } from '#lib/generate.js';
+	import { formatDate, useI18n } from '#lib/i18n/index.js';
+	import { classifyClimate, seasonOf, tripLength, weatherIcon } from '#lib/weather.js';
+	import type { TripContext, WeatherSummary } from '#lib/types.js';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import PlaceSearch, { type Place } from '#lib/components/PlaceSearch.svelte';
+	import WeatherCard from '#lib/components/WeatherCard.svelte';
+	import WarningList from '#lib/components/WarningList.svelte';
 
 	let { data } = $props();
 	const i18n = useI18n();

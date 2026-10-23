@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { api, clientId, describeError, live } from '$lib/api';
-	import { toast } from '$lib/toast.svelte';
-	import { useI18n } from '$lib/i18n';
-	import { childrenMap, depthOf, mergeNodes, MAX_GROUP_DEPTH, ancestors } from '$lib/tree';
-	import type { TemplateNode } from '$lib/types';
-	import Avatar from '$lib/components/Avatar.svelte';
-	import NodeEditor from '$lib/components/NodeEditor.svelte';
-	import RuleSummary from '$lib/components/RuleSummary.svelte';
-	import TodoTemplates from '$lib/components/TodoTemplates.svelte';
+	import { api, clientId, describeError, live } from '#lib/api.js';
+	import { toast } from '#lib/toast.svelte.js';
+	import { useI18n } from '#lib/i18n/index.js';
+	import { childrenMap, depthOf, mergeNodes, MAX_GROUP_DEPTH, ancestors } from '#lib/tree.js';
+	import type { TemplateNode } from '#lib/types.js';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import NodeEditor from '#lib/components/NodeEditor.svelte';
+	import RuleSummary from '#lib/components/RuleSummary.svelte';
+	import TodoTemplates from '#lib/components/TodoTemplates.svelte';
 	import { page } from '$app/state';
 
 	let { data } = $props();

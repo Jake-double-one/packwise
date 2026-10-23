@@ -10,8 +10,8 @@
 </script>
 
 <script lang="ts">
-	import { countryFlag } from '$lib/data/countries';
-	import { useI18n } from '$lib/i18n';
+	import { countryFlag } from '#lib/data/countries.js';
+	import { useI18n } from '#lib/i18n/index.js';
 	import CountrySelect from './CountrySelect.svelte';
 
 	let {

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { countryFlag, sortedCountries } from '$lib/data/countries';
-	import { useI18n } from '$lib/i18n';
+	import { countryFlag, sortedCountries } from '#lib/data/countries.js';
+	import { useI18n } from '#lib/i18n/index.js';
 
 	let { name = 'country', value = $bindable(''), required = false, id = name }: { name?: string; value?: string; required?: boolean; id?: string } = $props();
 	const i18n = useI18n();

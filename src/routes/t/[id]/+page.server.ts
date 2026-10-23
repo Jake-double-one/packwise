@@ -1,7 +1,7 @@
-import { config } from '$lib/server/config';
-import { canEditTemplate } from '$lib/server/auth';
-import { listActivity, listBags, listPersons, listTemplate, listTodoTemplates, listTripGuests, listTripItems, listTripTodos } from '$lib/server/repo';
-import { tripAccess } from '$lib/server/trips';
+import { config } from '#lib/server/config.js';
+import { canEditTemplate } from '#lib/server/auth.js';
+import { listActivity, listBags, listPersons, listTemplate, listTodoTemplates, listTripGuests, listTripItems, listTripTodos } from '#lib/server/repo.js';
+import { tripAccess } from '#lib/server/trips.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {

@@ -1,5 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { config } from '$lib/server/config';
+import { config } from '#lib/server/config.js';
 import {
 	cookieOptions,
 	createSession,
@@ -9,14 +9,14 @@ import {
 	setAppPassword,
 	listUsers,
 	userCount
-} from '$lib/server/auth';
-import { claimAccount, needsClaim } from '$lib/server/admin';
-import { get } from '$lib/server/db';
-import { tx } from '$lib/server/db';
-import { createBag, createHousehold, seedTemplate, seedTodos } from '$lib/server/repo';
-import { addPersonWithBags } from '$lib/server/persons';
-import { starterSharedBag, starterTemplate, starterTodos } from '$lib/data/starter';
-import { COUNTRIES } from '$lib/data/countries';
+} from '#lib/server/auth.js';
+import { claimAccount, needsClaim } from '#lib/server/admin.js';
+import { get } from '#lib/server/db.js';
+import { tx } from '#lib/server/db.js';
+import { createBag, createHousehold, seedTemplate, seedTodos } from '#lib/server/repo.js';
+import { addPersonWithBags } from '#lib/server/persons.js';
+import { starterSharedBag, starterTemplate, starterTodos } from '#lib/data/starter.js';
+import { COUNTRIES } from '#lib/data/countries.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {

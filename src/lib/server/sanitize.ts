@@ -1,5 +1,5 @@
-import { DIMENSION_MAP } from '$lib/context';
-import type { Rules, TemplateNode, TripItem } from '$lib/types';
+import { DIMENSION_MAP } from '#lib/context.js';
+import type { Rules, TemplateNode, TripItem } from '#lib/types.js';
 
 const num = (v: unknown, min: number, max: number): number | undefined => {
 	const n = Number(v);

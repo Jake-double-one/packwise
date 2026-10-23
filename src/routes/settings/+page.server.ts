@@ -1,18 +1,18 @@
 import { fail } from '@sveltejs/kit';
-import { adminResetAt } from '$lib/server/admin';
-import { config } from '$lib/server/config';
-import { smtpEnabled, smtpView } from '$lib/server/mail';
-import { smtpAction } from '$lib/server/smtp-actions';
-import { addChannel, deleteChannel, getPrefs, listChannels, MAX_CHANNELS, parseChannel, rememberOrigin, sendToChannel, setPrefs } from '$lib/server/notify';
-import { messagesFor } from '$lib/server/i18n';
-import { translate } from '$lib/i18n';
-import { hashPassword, SESSION_COOKIE, sha256, verifyPassword } from '$lib/server/auth';
-import { get, run } from '$lib/server/db';
-import { AVATAR_DATA_URL, MAX_AVATAR_CHARS } from '$lib/server/avatar';
-import { createApiToken, deleteToken, listTokens, MAX_TOKENS, renameToken } from '$lib/server/apitokens';
-import { publicOrigin } from '$lib/server/auth';
-import { passwordChangedMail } from '$lib/server/security-mail';
-import { str } from '$lib/server/util';
+import { adminResetAt } from '#lib/server/admin.js';
+import { config } from '#lib/server/config.js';
+import { smtpEnabled, smtpView } from '#lib/server/mail.js';
+import { smtpAction } from '#lib/server/smtp-actions.js';
+import { addChannel, deleteChannel, getPrefs, listChannels, MAX_CHANNELS, parseChannel, rememberOrigin, sendToChannel, setPrefs } from '#lib/server/notify.js';
+import { messagesFor } from '#lib/server/i18n.js';
+import { translate } from '#lib/i18n/index.js';
+import { hashPassword, SESSION_COOKIE, sha256, verifyPassword } from '#lib/server/auth.js';
+import { get, run } from '#lib/server/db.js';
+import { AVATAR_DATA_URL, MAX_AVATAR_CHARS } from '#lib/server/avatar.js';
+import { createApiToken, deleteToken, listTokens, MAX_TOKENS, renameToken } from '#lib/server/apitokens.js';
+import { publicOrigin } from '#lib/server/auth.js';
+import { passwordChangedMail } from '#lib/server/security-mail.js';
+import { str } from '#lib/server/util.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, request }) => ({

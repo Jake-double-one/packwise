@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
-import { canEditTemplate } from '$lib/server/auth';
-import { listBags, listPersons, listTemplate, listTodoTemplates } from '$lib/server/repo';
+import { canEditTemplate } from '#lib/server/auth.js';
+import { listBags, listPersons, listTemplate, listTodoTemplates } from '#lib/server/repo.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {

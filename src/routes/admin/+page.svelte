@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { timeAgo, useI18n } from '$lib/i18n';
-	import { countryFlag } from '$lib/data/countries';
-	import Avatar from '$lib/components/Avatar.svelte';
-	import CopyField from '$lib/components/CopyField.svelte';
-	import SmtpSettings from '$lib/components/SmtpSettings.svelte';
+	import type { SubmitFunction } from '$app/forms';
+	import { timeAgo, useI18n } from '#lib/i18n/index.js';
+	import { countryFlag } from '#lib/data/countries.js';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import CopyField from '#lib/components/CopyField.svelte';
+	import SmtpSettings from '#lib/components/SmtpSettings.svelte';
 
 	let { data, form } = $props();
 	type Result = { error?: string; household?: string; for?: string; done?: string; link?: string; linkFor?: string; mailed?: boolean };
