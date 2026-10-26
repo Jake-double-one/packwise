@@ -15,4 +15,12 @@ describe('rateLimit', () => {
 		for (let i = 0; i < 60_000; i++) rateLimit(`login:${i}@x.test`, 3);
 		expect(rateLimit('login:victim@x.test', 3)).toBe(false);
 	});
+
+	it('with only blocked keys the table stays bounded and the newest blocks survive', () => {
+		for (let i = 0; i < 55_000; i++) for (let n = 0; n < 2; n++) rateLimit(`login:${i}`, 1);
+		expect(rateLimit('login:54999', 1)).toBe(false);
+		expect(rateLimit('login:54998', 1)).toBe(false);
+		// the oldest were evicted: a fresh attempt from them counts as the first again
+		expect(rateLimit('login:0', 1)).toBe(true);
+	});
 });

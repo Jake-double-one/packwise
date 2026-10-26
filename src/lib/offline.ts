@@ -57,9 +57,14 @@ export function loadQueue(tripId: string, userId: string | null): Op[] {
 		// a queue left from an older version goes to the person who opens the trip first
 		const old = localStorage.getItem(legacyKey(tripId));
 		if (!old) return [];
-		localStorage.removeItem(legacyKey(tripId));
-		localStorage.setItem(key(tripId, userId), old);
-		return JSON.parse(old) as Op[];
+		const ops = JSON.parse(old) as Op[];
+		try {
+			localStorage.setItem(key(tripId, userId), old);
+			localStorage.removeItem(legacyKey(tripId));
+		} catch {
+			/* storage full – the old key stays until it can be moved */
+		}
+		return ops;
 	} catch {
 		return [];
 	}

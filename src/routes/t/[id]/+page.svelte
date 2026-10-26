@@ -21,6 +21,7 @@
 	import TripInfo from '#lib/components/TripInfo.svelte';
 
 	let { data } = $props();
+	const userId = $derived(data.user?.id ?? null);
 	const i18n = useI18n();
 	const { t } = i18n;
 
@@ -144,10 +145,10 @@
 		}
 		const tripId = data.trip.id;
 		// replay changes made offline (page may come from the offline cache)
-		queue = loadQueue(tripId, data.user?.id ?? null);
+		queue = loadQueue(tripId, userId);
 		if (queue.length) {
 			let st = getState();
-			for (const op of queue) st = applyLocal(st, op, data.user?.id ?? null);
+			for (const op of queue) st = applyLocal(st, op, userId);
 			setState(st);
 			flush();
 		}
@@ -266,7 +267,7 @@
 
 	function enqueue(op: Op) {
 		queue = [...queue, op];
-		saveQueue(data.trip.id, data.user?.id ?? null, queue);
+		saveQueue(data.trip.id, userId, queue);
 	}
 
 	let flushing = false;
@@ -280,10 +281,11 @@
 					applyResult(await post(queue[0]));
 				} catch (err) {
 					if (!(err instanceof ApiError)) break; // still offline
+					if (err.status === 401) break; // logged out – the queue waits for the next login
 					// rejected by the server (e.g. item deleted meanwhile) – drop it
 				}
 				queue = queue.slice(1);
-				saveQueue(data.trip.id, data.user?.id ?? null, queue);
+				saveQueue(data.trip.id, userId, queue);
 			}
 		} finally {
 			flushing = false;
@@ -294,7 +296,7 @@
 	async function send(op: Op) {
 		errorMsg = '';
 		const offlineable = OFFLINE_OPS.has(op.op);
-		if (offlineable) setState(applyLocal(getState(), op, data.user?.id ?? null));
+		if (offlineable) setState(applyLocal(getState(), op, userId));
 		if (offlineable && queue.length) {
 			enqueue(op); // keep order behind earlier offline changes
 			flush();

@@ -30,8 +30,8 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
   - *Import*: merging is linear in the size of the template (was quadratic) and capped at 20,000 entries and 32 levels.
   - Redirect targets after login are normalised the way the browser reads them; emoji avatars can't contain URL characters.
   - *Offline copies*: when the server says a device is logged out (session expired, logged out on another device or by the admin), the lists kept for offline use are deleted on the next online visit – not only when logging out on that device. Login and invitation pages are no longer cached.
-  - *Offline changes are kept per person*: changes made without a connection are only sent for the person who made them, also when someone else uses the device in between; nothing is lost (a queue from before the update goes to the first person who opens the trip).
-  - *Login attempts*: a flood of requests can no longer reset the limit on password guessing – when the table is full, harmless counters are forgotten first, blocked ones stay. Expired counters are swept at most once a minute instead of on every request.
+  - *Offline changes are kept per person*: changes made without a connection are only sent for the person who made them, also when someone else uses the device in between; nothing is lost (a queue from before the update goes to the first person who opens the trip). If the session ended in the meantime, the changes wait for the next login instead of being dropped.
+  - *Login attempts*: a flood of requests can no longer reset the limit on password guessing – when the table is full, expired and harmless counters are forgotten first, blocked ones stay. Expired counters are swept at most once a minute instead of on every request.
   - `docker-compose.yml` no longer ships `APP_PASSWORD: change-me` (the setup wizard asks for the password; a warning is logged if `change-me` is still in use) and lists `TZ` only once.
 
 ### Changed
