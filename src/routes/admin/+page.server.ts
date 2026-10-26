@@ -7,7 +7,9 @@ import { messagesFor } from '#lib/server/i18n.js';
 import { sendMail, smtpEnabled, smtpView } from '#lib/server/mail.js';
 import { smtpAction } from '#lib/server/smtp-actions.js';
 import { createOwnHousehold } from '#lib/server/households.js';
-import { createToken } from '#lib/server/tokens.js';
+import { createToken, revokeInvitesBy } from '#lib/server/tokens.js';
+import { revokeApiTokens } from '#lib/server/apitokens.js';
+import { closeUserStreams } from '#lib/server/realtime.js';
 import { translate } from '#lib/i18n/index.js';
 import { passwordChangedMail } from '#lib/server/security-mail.js';
 import { str } from '#lib/server/util.js';
@@ -94,7 +96,10 @@ export const actions: Actions = {
 		if (email && !EMAIL.test(email)) return fail(400, { error: 'auth.err.email', for: id });
 		if (!email && id === me.id) return fail(400, { error: 'admin.err.self', for: id });
 		if (email && emailTaken(email, id)) return fail(400, { error: 'auth.err.email_taken', for: id });
+		const before = get<{ email: string | null }>('SELECT email FROM users WHERE id = ?', id)?.email ?? null;
 		run('UPDATE users SET name = ?, email = ? WHERE id = ?', name, email || null, id);
+		// reset links went to the old address
+		if ((email || null) !== before) run("DELETE FROM tokens WHERE kind = 'reset' AND user_id = ? AND by_admin = 0", id);
 		// a profile without e-mail cannot log in any more
 		if (!email) run('DELETE FROM sessions WHERE user_id = ?', id);
 		return { done: 'saved', for: id };
@@ -112,8 +117,12 @@ export const actions: Actions = {
 		run('UPDATE users SET password_hash = ? WHERE id = ?', await hashPassword(password), id);
 		if (hadPassword && id !== me.id) run('UPDATE users SET admin_reset_at = ? WHERE id = ?', now(), id);
 		if (hadPassword) passwordChangedMail(id, id !== me.id, publicOrigin(event.request));
-		// log the user out everywhere (but keep the admin's own current session)
-		if (id !== me.id) run('DELETE FROM sessions WHERE user_id = ?', id);
+		// log the user out everywhere (but keep the admin's own current session); their API tokens end too
+		if (id !== me.id) {
+			run('DELETE FROM sessions WHERE user_id = ?', id);
+			if (hadPassword) revokeApiTokens(id);
+			closeUserStreams(id);
+		}
 		return { done: 'password_set', for: id };
 	},
 
@@ -130,6 +139,7 @@ export const actions: Actions = {
 		const id = str(await request.formData(), 'id');
 		if (id === me.id) return fail(400, { error: 'admin.err.self', for: id });
 		run('DELETE FROM sessions WHERE user_id = ?', id);
+		closeUserStreams(id);
 		return { done: 'logged_out', for: id };
 	},
 
@@ -164,7 +174,9 @@ export const actions: Actions = {
 			run('DELETE FROM memberships WHERE household_id = ? AND user_id = ?', householdId, userId);
 			run('UPDATE persons SET user_id = NULL WHERE household_id = ? AND user_id = ?', householdId, userId);
 			if (current.role === 'owner') run("UPDATE memberships SET role = 'owner' WHERE household_id = ? AND user_id = ?", householdId, next!.user_id);
+			revokeInvitesBy(householdId, userId);
 		});
+		closeUserStreams(userId, `tpl:${householdId}`);
 		return { done: 'saved', for: userId };
 	},
 

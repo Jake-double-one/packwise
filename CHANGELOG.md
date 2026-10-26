@@ -17,6 +17,19 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 - **Servers entered by users** (ntfy, Gotify, SMTP, push subscriptions) may no longer point at the container itself or at link-local / cloud-metadata addresses; names are resolved and checked on every send. LAN addresses stay allowed.
 - **`ORIGIN` warning**: with `accounts` and no `ORIGIN`, the log and the admin area warn that links in e-mails are built from the request's Host header.
 - Changing your own password logs out your other devices. Login takes the same time for unknown e-mail addresses as for wrong passwords. API tokens use unbiased random characters. Caps for the rate-limit table and open live connections.
+- **Findings of a security review fixed** (none of them changes how Packwise is used):
+  - *Switching login modes*: with `AUTH_MODE=local` only the shared password opens the app – a session left over from `accounts` no longer does. Outside `accounts`, account sessions and outstanding reset and invitation links are removed at start, and `/reset` and `/forgot` are off.
+  - *Before login* the page data no longer contains the household's name (`local`, `accounts`).
+  - *Live updates* end as soon as the session is gone or access was taken away (logged out by the admin, removed from the household or the trip), instead of streaming on until the browser disconnects; at most 30 open live connections per person.
+  - *Invitation links* end when the person who made them leaves or is removed from the household (links made from now on). Two registrations can no longer use one invitation link at the same time.
+  - *When the administration replaces someone's password* (directly or with a reset link), that person's API tokens end too. Using a reset link removes the person's other reset links; so does changing your password. Changing an account's e-mail address in the admin area ends reset links sent to the old address.
+  - *SMTP*: the stored password is only sent to the server and user it was entered for – after changing the server or the user name, or switching encryption off, it has to be typed in again.
+  - *Links in notifications* use the address each person last opened Packwise with, not one address for everybody that any request could set (unless `ORIGIN` is set, which always wins).
+  - *Outgoing requests*: IPv4 addresses written in IPv6 hex form (`[::ffff:7f00:1]`) are recognised as the address they stand for and blocked like `127.0.0.1`. Web Push endpoints are checked again on every send.
+  - *MCP*: a JSON-RPC batch holds at most 50 calls and runs them one after the other; `create_trip` accepts only known country codes and caps the trip name.
+  - *Import*: merging is linear in the size of the template (was quadratic) and capped at 20,000 entries and 32 levels.
+  - Redirect targets after login are normalised the way the browser reads them; emoji avatars can't contain URL characters.
+  - `docker-compose.yml` no longer ships `APP_PASSWORD: change-me` (the setup wizard asks for the password; a warning is logged if `change-me` is still in use) and lists `TZ` only once.
 
 ### Changed
 

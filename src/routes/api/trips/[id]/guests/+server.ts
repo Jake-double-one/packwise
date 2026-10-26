@@ -5,6 +5,7 @@ import { messagesFor } from '#lib/server/i18n.js';
 import { sendMail, smtpEnabled } from '#lib/server/mail.js';
 import { listTripGuests, removeTripGuest } from '#lib/server/repo.js';
 import { createToken } from '#lib/server/tokens.js';
+import { closeUserStreams } from '#lib/server/realtime.js';
 import { tripAccess } from '#lib/server/trips.js';
 import { translate } from '#lib/i18n/index.js';
 import type { RequestHandler } from './$types';
@@ -30,7 +31,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 	const body = await request.json().catch(() => ({}));
 	const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
 	if (email && !/^\S+@\S+\.\S+$/.test(email)) error(400, 'auth.err.email');
-	const token = createToken('trip_invite', { trip_id: trip.id, email: email || null }, 7 * 86_400_000);
+	const token = createToken('trip_invite', { trip_id: trip.id, email: email || null, created_by: locals.user!.id }, 7 * 86_400_000);
 	const link = `${publicOrigin(request)}/invite/${token}`;
 	let mailed = false;
 	if (email && smtpEnabled()) {
@@ -52,5 +53,6 @@ export const DELETE: RequestHandler = async ({ locals, params, request }) => {
 	const self = userId === locals.user!.id;
 	if (hh.role === 'guest' && !self) error(403, 'error.forbidden');
 	removeTripGuest(trip.id, userId);
+	closeUserStreams(userId, `trip:${trip.id}`);
 	return Response.json({ guests: listTripGuests(trip.id) });
 };

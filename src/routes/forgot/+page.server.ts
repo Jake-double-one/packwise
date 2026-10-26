@@ -16,6 +16,7 @@ export const load: PageServerLoad = async () => {
 
 export const actions: Actions = {
 	default: async (event) => {
+		if (config.authMode !== 'accounts') return fail(404);
 		if (!smtpEnabled()) return fail(400, { error: 'auth.err.no_smtp' });
 		if (!rateLimit(`forgot:${clientIp(event)}`, 5, 3_600_000)) return fail(429, { error: 'auth.err.rate_limited' });
 		const email = str(await event.request.formData(), 'email').toLowerCase();

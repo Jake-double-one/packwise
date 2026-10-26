@@ -1,6 +1,6 @@
 import { isHttpError } from '@sveltejs/kit';
 import { DIMENSION_MAP } from '#lib/context.js';
-import { analysePlugs, countryName, regionOf } from '#lib/data/countries.js';
+import { analysePlugs, COUNTRIES, countryName, regionOf } from '#lib/data/countries.js';
 import { DRIVING } from '#lib/data/driving.js';
 import { translate } from '#lib/i18n/index.js';
 import { childrenMap } from '#lib/tree.js';
@@ -318,7 +318,7 @@ const TOOLS: Tool[] = [
 			const start = String(args.start ?? '');
 			const end = String(args.end ?? '');
 			if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || end < start) throw new ToolError('start and end must be dates (YYYY-MM-DD), end not before start.');
-			const wantedCountry = typeof args.country === 'string' ? args.country.toUpperCase() : null;
+			const wantedCountry = typeof args.country === 'string' && COUNTRIES[args.country.trim().toUpperCase()] ? args.country.trim().toUpperCase() : null;
 			const places = await geocode(String(args.destination ?? ''), ctx.locale);
 			const place = places.find((p) => !wantedCountry || p.country_code === wantedCountry) ?? null;
 			const country = place?.country_code ?? wantedCountry;
@@ -332,7 +332,7 @@ const TOOLS: Tool[] = [
 				hh,
 				ctx.user,
 				{
-					name: String(args.name ?? '').trim().slice(0, 120) || (place?.name ?? String(args.destination)),
+					name: String(args.name ?? '').trim().slice(0, 120) || (place?.name ?? String(args.destination)).slice(0, 120),
 					destination: place ? [place.name, place.admin1].filter(Boolean).join(', ') : String(args.destination).slice(0, 200),
 					country,
 					lat: place?.lat ?? null,
@@ -435,6 +435,8 @@ const CORS = {
 	'access-control-expose-headers': 'mcp-session-id'
 };
 
+const MAX_BATCH = 50;
+
 const jsonResponse = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
 	new Response(body === null ? null : JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...CORS, ...extra } });
 
@@ -471,8 +473,14 @@ export async function handleMcp(request: Request, pathToken: string | null, clie
 		origin,
 		t: (k, p) => translate(messages, k, p)
 	};
+	// batches run one after the other and are capped, so one request can't start hundreds of lookups at once
 	if (Array.isArray(body)) {
-		const out = (await Promise.all(body.map((m) => handleOne(m, ctx)))).filter(Boolean);
+		if (body.length === 0 || body.length > MAX_BATCH) return jsonResponse(rpcError(null, -32600, `A batch must contain 1 to ${MAX_BATCH} requests`), 400);
+		const out: object[] = [];
+		for (const m of body) {
+			const r = await handleOne(m, ctx);
+			if (r) out.push(r);
+		}
 		return out.length ? jsonResponse(out) : jsonResponse(null, 202);
 	}
 	const res = await handleOne(body as RpcRequest, ctx);

@@ -36,7 +36,7 @@ export const actions: Actions = {
 		const cfg = await parseChannel(await request.formData());
 		if ('error' in cfg) return fail(400, { notifyError: cfg.error });
 		if (!addChannel(locals.user.id, cfg)) return fail(400, { notifyError: 'notify.err.max' });
-		rememberOrigin(publicOrigin(request));
+		rememberOrigin(locals.user.id, publicOrigin(request));
 		return { notifySaved: 'added' };
 	},
 	notifyDelete: async ({ request, locals }) => {
@@ -48,7 +48,7 @@ export const actions: Actions = {
 		if (!locals.user) return fail(401);
 		const id = str(await request.formData(), 'id');
 		const m = messagesFor(locals.locale);
-		rememberOrigin(publicOrigin(request));
+		rememberOrigin(locals.user.id, publicOrigin(request));
 		const err = await sendToChannel(locals.user.id, id, {
 			title: translate(m, 'notify.test_title'),
 			body: translate(m, 'notify.test_body'),
@@ -68,7 +68,7 @@ export const actions: Actions = {
 			todos: form.get('todos') === 'on',
 			hour: Number(form.get('hour'))
 		});
-		rememberOrigin(publicOrigin(request));
+		rememberOrigin(locals.user.id, publicOrigin(request));
 		return { notifySaved: 'prefs' };
 	},
 	smtpSave: async ({ request, locals }) => (smtpGuard(locals) ? smtpAction('save', request, locals.locale) : fail(403)),
@@ -94,7 +94,7 @@ export const actions: Actions = {
 		} else if (image) {
 			if (image.length > MAX_AVATAR_CHARS || !AVATAR_DATA_URL.test(image)) return fail(400, { avatarError: 'settings.avatar_invalid' });
 			run('UPDATE users SET avatar = ?, avatar_img = ? WHERE id = ?', `img:${Date.now().toString(36)}`, image, locals.user.id);
-		} else if (emoji && [...emoji].length <= 4 && emoji.length <= 16 && !/[\w\s<>"'&]/.test(emoji)) {
+		} else if (emoji && [...emoji].length <= 4 && emoji.length <= 16 && !/[\w\s<>"'&/\\:.%;=()]/.test(emoji)) {
 			run('UPDATE users SET avatar = ?, avatar_img = NULL WHERE id = ?', emoji, locals.user.id);
 		} else return fail(400, { avatarError: 'settings.avatar_invalid' });
 		return { saved: 'avatar' };
@@ -128,6 +128,7 @@ export const actions: Actions = {
 		run('UPDATE users SET password_hash = ? WHERE id = ?', await hashPassword(next), locals.user.id);
 		// everybody else who knew the old password is logged out; this device stays
 		run('DELETE FROM sessions WHERE user_id = ? AND id != ?', locals.user.id, sha256(cookies.get(SESSION_COOKIE) ?? ''));
+		run("DELETE FROM tokens WHERE kind = 'reset' AND user_id = ?", locals.user.id);
 		passwordChangedMail(locals.user.id, false, publicOrigin(request));
 		return { saved: 'password' };
 	}

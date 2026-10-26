@@ -10,9 +10,13 @@ import { isIP } from 'node:net';
 export function isBlockedIp(ip: string): boolean {
 	let v = ip.toLowerCase();
 	if (v.startsWith('[') && v.endsWith(']')) v = v.slice(1, -1);
-	// IPv4 mapped into IPv6 (::ffff:127.0.0.1) counts as its IPv4 address
-	const mapped = v.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-	if (mapped) v = mapped[1];
+	if (isIP(v) === 6) v = canonicalIpv6(v);
+	// IPv4 mapped into IPv6 (::ffff:127.0.0.1, written ::ffff:7f00:1 too) counts as its IPv4 address
+	const mapped = v.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+	if (mapped) {
+		const [hi, lo] = [parseInt(mapped[1], 16), parseInt(mapped[2], 16)];
+		v = [hi >> 8, hi & 255, lo >> 8, lo & 255].join('.');
+	}
 	if (isIP(v) === 4) {
 		const [a, b] = v.split('.').map(Number);
 		return a === 0 || a === 127 || (a === 169 && b === 254);
@@ -23,6 +27,15 @@ export function isBlockedIp(ip: string): boolean {
 		return (head & 0xffc0) === 0xfe80; // fe80::/10 link-local
 	}
 	return false;
+}
+
+/** One spelling per address (zeros compressed, embedded IPv4 in hex), as the URL parser writes it. */
+function canonicalIpv6(v: string): string {
+	try {
+		return new URL(`http://[${v}]/`).hostname.slice(1, -1);
+	} catch {
+		return v;
+	}
 }
 
 export function isBlockedHostname(host: string): boolean {

@@ -227,6 +227,7 @@ async function deliver(cfg: ChannelConfig, msg: Message): Promise<string | null>
 				})
 			});
 		case 'webpush': {
+			if (!(await hostAllowed(cfg.subscription.endpoint))) return 'blocked host';
 			const keys = vapidKeys();
 			try {
 				await webpush.sendNotification(cfg.subscription, JSON.stringify({ title: msg.title, body: msg.body, url: msg.url }), {
@@ -269,11 +270,16 @@ export function markSent(userId: string, key: string): boolean {
 	return Number(res.changes) > 0;
 }
 
-/** The address links in notifications point to: ORIGIN, else the last address the app was used under. */
-export function linkOrigin(): string {
-	return config.origin || getMeta('notify_origin') || '';
+/**
+ * The address links in notifications point to: ORIGIN, else the address this person last
+ * used the app under (per person, so nobody can redirect the links of others with a forged
+ * Host header). The old app-wide value is only a fallback for people who haven't been back.
+ */
+export function linkOrigin(userId: string): string {
+	if (config.origin) return config.origin;
+	return get<{ o: string | null }>('SELECT notify_origin AS o FROM users WHERE id = ?', userId)?.o || getMeta('notify_origin') || '';
 }
 
-export function rememberOrigin(origin: string) {
-	if (!config.origin && origin && getMeta('notify_origin') !== origin) setMeta('notify_origin', origin);
+export function rememberOrigin(userId: string, origin: string) {
+	if (!config.origin && origin) run('UPDATE users SET notify_origin = ? WHERE id = ? AND notify_origin IS NOT ?', origin, userId, origin);
 }

@@ -248,6 +248,11 @@ const MIGRATIONS: string[] = [
 		PRIMARY KEY (user_id, key)
 	);
 	ALTER TABLE users ADD COLUMN notify_prefs TEXT;
+	`,
+	/* 10 – invitations remember who made them (they end when that person leaves the household);
+	        links in notifications use the address the person themselves opened Packwise with */ `
+	ALTER TABLE tokens ADD COLUMN created_by TEXT REFERENCES users(id) ON DELETE CASCADE;
+	ALTER TABLE users ADD COLUMN notify_origin TEXT;
 	`
 ];
 

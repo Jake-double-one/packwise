@@ -807,6 +807,7 @@
 	"smtp.err.host": "Bitte gib einen gültigen Servernamen ein.",
 	"smtp.err.port": "Bitte gib einen Port zwischen 1 und 65535 ein.",
 	"smtp.err.from": "Der Absender muss eine E-Mail-Adresse sein, z. B. „Packwise <packwise@example.com>“.",
+	"smtp.err.pass_required": "Bitte gib das Passwort erneut ein – Server, Benutzername oder Verschlüsselung haben sich geändert.",
 	"smtp.err.test_to": "Bitte gib eine E-Mail-Adresse für die Testmail ein.",
 	"smtp.err.test": "Die Testmail konnte nicht verschickt werden:",
 	"notify.title": "Benachrichtigungen",

@@ -6,7 +6,7 @@ import type { LayoutServerLoad } from './$types';
 export const load: LayoutServerLoad = async ({ locals }) => {
 	return {
 		user: locals.user,
-		household: locals.household,
+		household: locals.unlocked ? locals.household : null,
 		households: locals.unlocked ? householdsFor(locals.user) : [],
 		locale: locals.locale,
 		messages: messagesFor(locals.locale),

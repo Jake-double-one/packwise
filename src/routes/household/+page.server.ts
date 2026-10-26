@@ -8,7 +8,8 @@ import { translate } from '#lib/i18n/index.js';
 import { addMember, createBag, listBags, listMembers, listPersons, moveInList } from '#lib/server/repo.js';
 import { createOwnHousehold } from '#lib/server/households.js';
 import { addPersonWithBags, createPersonBags, syncPersonBags } from '#lib/server/persons.js';
-import { createToken } from '#lib/server/tokens.js';
+import { createToken, revokeInvitesBy } from '#lib/server/tokens.js';
+import { closeUserStreams } from '#lib/server/realtime.js';
 import { str } from '#lib/server/util.js';
 import { COUNTRIES } from '#lib/data/countries.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -162,7 +163,7 @@ export const actions: Actions = {
 		const hh = requireRole(locals, MEMBERS);
 		const form = await request.formData();
 		const email = str(form, 'email').toLowerCase();
-		const token = createToken('invite', { household_id: hh.id, role: 'member', email: email || null }, 7 * 86_400_000);
+		const token = createToken('invite', { household_id: hh.id, role: 'member', email: email || null, created_by: locals.user?.id ?? null }, 7 * 86_400_000);
 		const link = `${publicOrigin(request)}/invite/${token}`;
 		let mailed = false;
 		if (email && smtpEnabled()) {
@@ -193,7 +194,10 @@ export const actions: Actions = {
 			run('DELETE FROM memberships WHERE household_id = ? AND user_id = ?', hh.id, userId);
 			run('UPDATE persons SET user_id = NULL WHERE household_id = ? AND user_id = ?', hh.id, userId);
 			if (target.role === 'owner') run("UPDATE memberships SET role = 'owner' WHERE household_id = ? AND user_id = ?", hh.id, next!.user_id);
+			revokeInvitesBy(hh.id, userId);
 		});
+		// the template stream ends now, trip streams of this household with their next event
+		closeUserStreams(userId, `tpl:${hh.id}`);
 		if (self) redirect(303, '/');
 		return { saved: 'member' };
 	}

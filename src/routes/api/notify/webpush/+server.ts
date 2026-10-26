@@ -29,7 +29,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	if (!(await hostAllowed(endpoint))) error(400, 'invalid subscription');
 	const id = addChannel(locals.user.id, { kind: 'webpush', subscription: { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } } }, String(body.device ?? ''));
 	if (!id) error(400, 'notify.err.max');
-	rememberOrigin(publicOrigin(request));
+	rememberOrigin(locals.user.id, publicOrigin(request));
 	return Response.json({ id });
 };
 
