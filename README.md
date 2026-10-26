@@ -62,7 +62,7 @@ services:
     environment:
       TZ: Europe/Berlin
       AUTH_MODE: local          # none | local | accounts
-      APP_PASSWORD: change-me   # for AUTH_MODE=local
+      # APP_PASSWORD: …         # AUTH_MODE=local – or choose it in the setup wizard
       DEFAULT_LANG: en          # en | de
 ```
 
@@ -219,7 +219,7 @@ The full license texts of everything Packwise ships – browser and server code,
 
 ## 🇩🇪 Kurzanleitung
 
-1. Den Compose-Block oben in Portainer als Stack einfügen. `APP_PASSWORD` ändern und `DEFAULT_LANG: de` setzen.
+1. Den Compose-Block oben in Portainer als Stack einfügen. `DEFAULT_LANG: de` setzen; das gemeinsame Passwort fragt der Einrichtungsassistent ab (oder `APP_PASSWORD` setzen).
 2. `http://<server>:8080` öffnen. Der Einrichtungsassistent fragt Name, Haushalt, Heimatland und Starter-Template ab.
 3. Unter **Template** die eigene Liste pflegen oder unter **Import** die OneNote-Liste einfügen. Vor dem Speichern wird alles geprüft.
 4. **Neue Reise**: Ziel, Datum, Mitreisende, Anreise und Unterkunft wählen. Die Vorschau zeigt, was warum eingepackt wird, und bezieht Wetter, Adapter und Vignetten mit ein.

@@ -66,7 +66,7 @@ export function remindersFor(userId: string, today = localDate()): { key: string
 	const m = messagesFor(locale);
 	const t = (key: string, vars?: Record<string, string | number>) => translate(m, key, vars);
 	const mine = new Set(all<{ id: string }>('SELECT id FROM persons WHERE user_id = ?', userId).map((p) => p.id));
-	const origin = linkOrigin();
+	const origin = linkOrigin(userId);
 	const out: { key: string; trip: TripRow; message: Message }[] = [];
 
 	for (const trip of tripsFor(userId, today)) {

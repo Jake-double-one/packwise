@@ -3,12 +3,12 @@ import { hostAllowed, isBlockedHostname, isBlockedIp } from './netguard';
 
 describe('netguard', () => {
 	it('blocks the container itself, link-local and nothing', () => {
-		for (const ip of ['127.0.0.1', '127.1.2.3', '0.0.0.0', '169.254.169.254', '::1', '::', '[::1]', '::ffff:127.0.0.1', 'fe80::1', 'FE80::abcd'])
+		for (const ip of ['127.0.0.1', '127.1.2.3', '0.0.0.0', '169.254.169.254', '::1', '::', '[::1]', '::ffff:127.0.0.1', '::ffff:7f00:1', '0:0:0:0:0:ffff:7f00:1', '::ffff:a9fe:a9fe', '0:0:0:0:0:0:0:1', 'fe80::1', 'FE80::abcd'])
 			expect(isBlockedIp(ip), ip).toBe(true);
 	});
 
 	it('allows public and private LAN addresses', () => {
-		for (const ip of ['8.8.8.8', '192.168.1.5', '10.0.0.2', '172.16.0.9', '2001:db8::1', 'fd00::1', '::ffff:192.168.1.5'])
+		for (const ip of ['8.8.8.8', '192.168.1.5', '10.0.0.2', '172.16.0.9', '2001:db8::1', 'fd00::1', '::ffff:192.168.1.5', '::ffff:c0a8:105'])
 			expect(isBlockedIp(ip), ip).toBe(false);
 	});
 
@@ -23,6 +23,10 @@ describe('netguard', () => {
 		expect(await hostAllowed('https://[::1]/')).toBe(false);
 		expect(await hostAllowed('http://169.254.169.254/latest/meta-data')).toBe(false);
 		expect(await hostAllowed('http://localhost:2586')).toBe(false);
+		expect(await hostAllowed('http://[::ffff:7f00:1]/')).toBe(false);
+		expect(await hostAllowed('http://[::ffff:127.0.0.1]/')).toBe(false);
+		expect(await hostAllowed('http://[::ffff:a9fe:a9fe]/')).toBe(false);
+		expect(await hostAllowed('https://[0:0:0:0:0:ffff:7f00:1]/')).toBe(false);
 		expect(await hostAllowed('http://192.168.1.20:8080')).toBe(true);
 		expect(await hostAllowed('not a url')).toBe(false);
 	});

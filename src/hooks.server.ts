@@ -20,12 +20,21 @@ import { effectiveTheme, THEME_COLORS } from '#lib/theme.js';
 db();
 purgeExpiredSessions();
 // profile pictures only exist with real accounts – drop leftovers from none/local
-if (config.authMode !== 'accounts') db().exec('UPDATE users SET avatar = NULL, avatar_img = NULL WHERE avatar IS NOT NULL OR avatar_img IS NOT NULL');
+if (config.authMode !== 'accounts') {
+	db().exec('UPDATE users SET avatar = NULL, avatar_img = NULL WHERE avatar IS NOT NULL OR avatar_img IS NOT NULL');
+	// logins and links of accounts mode mean nothing here – and must not outlive a switch back and forth
+	db().exec('DELETE FROM sessions WHERE user_id IS NOT NULL');
+	db().exec("DELETE FROM tokens WHERE kind IN ('reset', 'invite', 'trip_invite')");
+}
 startScheduler();
 // Links in e-mails and the cookie's Secure flag come from the request's Host / X-Forwarded-*
 // headers unless ORIGIN is set – anybody who can reach the port could forge them.
 if (config.authMode === 'accounts' && !config.origin) {
 	console.warn('[packwise] ORIGIN is not set. With AUTH_MODE=accounts set ORIGIN=https://your.host so that password links in e-mails can\'t be redirected via a forged Host header.');
+}
+
+if (config.authMode === 'local' && config.appPassword === 'change-me') {
+	console.warn('[packwise] APP_PASSWORD is still "change-me" from the example docker-compose.yml – please choose your own.');
 }
 
 /** Paths reachable without passing the gate. */
@@ -83,7 +92,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const mode = config.authMode;
 	const session = mode === 'none' ? null : readSession(cookies);
-	locals.unlocked = mode === 'none' || (mode === 'local' ? !!session : !!session?.user_id);
+	// the app password opens sessions without a user; a session of an account only counts in accounts mode
+	locals.unlocked = mode === 'none' || (mode === 'local' ? !!session && session.user_id === null : !!session?.user_id);
 	locals.user = !locals.unlocked
 		? null
 		: mode === 'accounts'
@@ -91,7 +101,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			: (getUser(cookies.get(PROFILE_COOKIE)) ?? soleProfile(event));
 	if (mode === 'accounts' && locals.unlocked && !locals.user) locals.unlocked = false;
 
-	const households = householdsFor(locals.user);
+	const households = locals.unlocked ? householdsFor(locals.user) : [];
 	const wanted = cookies.get(HOUSEHOLD_COOKIE);
 	locals.household = households.find((h) => h.id === wanted) ?? households[0] ?? null;
 

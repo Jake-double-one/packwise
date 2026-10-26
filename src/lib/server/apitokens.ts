@@ -77,6 +77,11 @@ export function renameToken(userId: string, id: string, name: string) {
 	if (name.trim()) run('UPDATE api_tokens SET name = ? WHERE id = ? AND user_id = ?', name.trim().slice(0, 60), id, userId);
 }
 
+/** All tokens of a person end – when the administration replaced their password. */
+export function revokeApiTokens(userId: string) {
+	run('DELETE FROM api_tokens WHERE user_id = ?', userId);
+}
+
 /** The user (and scope) behind a token – or null. */
 export function authenticateToken(token: string): { user: SessionUser; scope: TokenScope; tokenName: string } | null {
 	if (!/^pw_[A-Za-z0-9]{20,80}$/.test(token)) return null;

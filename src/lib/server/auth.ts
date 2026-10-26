@@ -138,6 +138,15 @@ export function readSession(cookies: Cookies): { user_id: string | null } | null
 	return { user_id: row.user_id };
 }
 
+/** For long-lived connections (live updates): is the session they were opened with still there? */
+export function sessionAlive(cookies: Cookies): () => boolean {
+	if (config.authMode === 'none') return () => true;
+	const token = cookies.get(SESSION_COOKIE);
+	if (!token) return () => false;
+	const id = sha256(token);
+	return () => !!get('SELECT 1 FROM sessions WHERE id = ? AND expires_at >= ?', id, now());
+}
+
 export function purgeExpiredSessions() {
 	run('DELETE FROM sessions WHERE expires_at < ?', now());
 	run('DELETE FROM tokens WHERE expires_at < ?', now());

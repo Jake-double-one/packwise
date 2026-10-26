@@ -807,6 +807,7 @@
 	"smtp.err.host": "Please enter a valid server name.",
 	"smtp.err.port": "Please enter a port between 1 and 65535.",
 	"smtp.err.from": "The sender must be an e-mail address, e.g. \"Packwise <packwise@example.com>\".",
+	"smtp.err.pass_required": "Please enter the password again – the server, the user name or the encryption has changed.",
 	"smtp.err.test_to": "Please enter an e-mail address for the test mail.",
 	"smtp.err.test": "The test mail could not be sent:",
 	"notify.title": "Notifications",

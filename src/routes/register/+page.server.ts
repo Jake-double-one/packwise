@@ -48,6 +48,8 @@ export const actions: Actions = {
 		const hash = await hashPassword(password);
 		const lang = event.locals.locale;
 		const userId = tx(() => {
+			// the invitation is used up in the same step – two registrations can't share one link
+			if (invite && res.token && !consumeToken(invite)) return null;
 			const uid = createUser({ name, email, passwordHash: hash, locale: lang });
 			if (res.token?.household_id) {
 				addMember(res.token.household_id, uid, 'member');
@@ -65,7 +67,7 @@ export const actions: Actions = {
 			}
 			return uid;
 		});
-		if (invite && res.token) consumeToken(invite);
+		if (!userId) return fail(403, { name, email, error: 'auth.err.registration_closed' });
 		createSession(event, userId);
 		redirect(303, res.token?.trip_id ? `/t/${res.token.trip_id}` : '/');
 	}

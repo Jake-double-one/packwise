@@ -89,7 +89,12 @@ export async function parseSmtpForm(form: FormData): Promise<{ cfg: SmtpConfig; 
 	if (from && !/^(.+<\S+@\S+\.\S+>|\S+@\S+\.\S+)$/.test(from)) return { error: 'smtp.err.from' };
 	const pass = String(form.get('pass') ?? '');
 	const keepPass = !pass && !form.get('clear_pass');
-	return { cfg: { host, port, security, user: text('user'), pass: keepPass ? (smtpConfig()?.pass ?? '') : pass, from }, keepPass };
+	// the stored password only goes back to the server and account it was entered for, and never unencrypted if it wasn't before
+	const prev = stored();
+	const user = text('user');
+	const moved = prev?.pass_enc && (prev.host.toLowerCase() !== host.toLowerCase() || prev.user !== user || (security === 'none' && prev.security !== 'none'));
+	if (keepPass && moved) return { error: 'smtp.err.pass_required' };
+	return { cfg: { host, port, security, user, pass: keepPass ? (smtpConfig()?.pass ?? '') : pass, from }, keepPass };
 }
 
 export function saveSmtp(cfg: SmtpConfig, keepPass: boolean) {
