@@ -39,17 +39,28 @@ sw.addEventListener('message', (event) => {
 	if (event.data === 'clear-pages') event.waitUntil(caches.delete(PAGES));
 });
 
+/** Login and invitation pages are never kept – offline they would only get in the way. */
+const AUTH_PAGES = /^\/(login|register|setup|forgot|reset|invite)(\/|$)/;
+
 /** Responses worth keeping for offline use. */
 function cacheable(url: URL, request: Request): boolean {
 	if (url.pathname.startsWith('/api/')) return /^\/api\/(trips\/[^/]+(\/info)?|avatar\/[^/]+)$/.test(url.pathname);
+	if (AUTH_PAGES.test(url.pathname)) return false;
 	return request.mode === 'navigate' || url.pathname.endsWith('/__data.json');
+}
+
+/** The server answered "not logged in": what this device cached for offline use goes. */
+function loggedOut(response: Response): boolean {
+	if (response.status === 401) return true;
+	return response.redirected && /^\/login(\/|$)/.test(new URL(response.url).pathname);
 }
 
 async function networkFirst(request: Request): Promise<Response> {
 	const cache = await caches.open(PAGES);
 	try {
 		const response = await fetch(request);
-		if (response.ok && response.type === 'basic' && !response.redirected) cache.put(request, response.clone());
+		if (loggedOut(response)) await caches.delete(PAGES);
+		else if (response.ok && response.type === 'basic' && !response.redirected) cache.put(request, response.clone());
 		return response;
 	} catch (err) {
 		const hit = await cache.match(request, { ignoreVary: true });

@@ -144,7 +144,7 @@
 		}
 		const tripId = data.trip.id;
 		// replay changes made offline (page may come from the offline cache)
-		queue = loadQueue(tripId);
+		queue = loadQueue(tripId, data.user?.id ?? null);
 		if (queue.length) {
 			let st = getState();
 			for (const op of queue) st = applyLocal(st, op, data.user?.id ?? null);
@@ -266,7 +266,7 @@
 
 	function enqueue(op: Op) {
 		queue = [...queue, op];
-		saveQueue(data.trip.id, queue);
+		saveQueue(data.trip.id, data.user?.id ?? null, queue);
 	}
 
 	let flushing = false;
@@ -283,7 +283,7 @@
 					// rejected by the server (e.g. item deleted meanwhile) – drop it
 				}
 				queue = queue.slice(1);
-				saveQueue(data.trip.id, queue);
+				saveQueue(data.trip.id, data.user?.id ?? null, queue);
 			}
 		} finally {
 			flushing = false;

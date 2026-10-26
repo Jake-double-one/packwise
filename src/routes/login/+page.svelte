@@ -2,10 +2,18 @@
 	import { enhance } from '$app/forms';
 	import { useI18n } from '#lib/i18n/index.js';
 	import LanguageSwitch from '#lib/components/LanguageSwitch.svelte';
+	import { clearOfflineCache } from '#lib/offline.js';
+	import { onMount } from 'svelte';
 
 	let { data, form } = $props();
 	const { t } = useI18n();
 	let busy = $state(false);
+
+	// the server says this device is logged out (session expired, logged out elsewhere or by
+	// the admin): lists cached for offline use go too
+	onMount(() => {
+		if (navigator.onLine) clearOfflineCache();
+	});
 </script>
 
 <svelte:head><title>{t('auth.login')} · Packwise</title></svelte:head>
