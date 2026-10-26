@@ -10,6 +10,7 @@
 	import Notifications from '#lib/components/Notifications.svelte';
 	import InstallApp from '#lib/components/InstallApp.svelte';
 	import { applyThemeColor } from '#lib/theme.js';
+	import { clearOfflineCache } from '#lib/offline.js';
 	import { tick } from 'svelte';
 
 	let avatarForm = $state<HTMLFormElement | null>(null);
@@ -45,16 +46,6 @@
 	const { t } = i18n;
 	const themes = ['system', 'light', 'dark', 'amoled'];
 	let theme = $derived(data.theme);
-
-	/** Cached lists must not survive a logout on shared devices. */
-	function clearOfflineCache() {
-		try {
-			caches?.delete('pw-pages');
-			navigator.serviceWorker?.controller?.postMessage('clear-pages');
-		} catch {
-			/* no cache support */
-		}
-	}
 
 	async function setTheme(value: string) {
 		theme = value;

@@ -42,23 +42,45 @@ export function clientRowId(): string {
 	return out.length === 16 ? out : clientRowId();
 }
 
-const key = (tripId: string) => `pw_queue_${tripId}`;
+/**
+ * One queue per trip and person: changes made offline are only sent for the person who
+ * made them, never under whoever uses the device next.
+ */
+const key = (tripId: string, userId: string | null) => `pw_queue_${tripId}_${userId ?? ''}`;
+/** before queues were per person */
+const legacyKey = (tripId: string) => `pw_queue_${tripId}`;
 
-export function loadQueue(tripId: string): Op[] {
+export function loadQueue(tripId: string, userId: string | null): Op[] {
 	try {
-		const raw = localStorage.getItem(key(tripId));
-		return raw ? (JSON.parse(raw) as Op[]) : [];
+		const raw = localStorage.getItem(key(tripId, userId));
+		if (raw) return JSON.parse(raw) as Op[];
+		// a queue left from an older version goes to the person who opens the trip first
+		const old = localStorage.getItem(legacyKey(tripId));
+		if (!old) return [];
+		localStorage.removeItem(legacyKey(tripId));
+		localStorage.setItem(key(tripId, userId), old);
+		return JSON.parse(old) as Op[];
 	} catch {
 		return [];
 	}
 }
 
-export function saveQueue(tripId: string, queue: Op[]) {
+export function saveQueue(tripId: string, userId: string | null, queue: Op[]) {
 	try {
-		if (queue.length) localStorage.setItem(key(tripId), JSON.stringify(queue));
-		else localStorage.removeItem(key(tripId));
+		if (queue.length) localStorage.setItem(key(tripId, userId), JSON.stringify(queue));
+		else localStorage.removeItem(key(tripId, userId));
 	} catch {
 		/* storage full / unavailable – queue stays in memory */
+	}
+}
+
+/** Cached pages must not outlive a logout on shared devices (queued changes stay – they belong to their person). */
+export function clearOfflineCache() {
+	try {
+		caches?.delete('pw-pages');
+		navigator.serviceWorker?.controller?.postMessage('clear-pages');
+	} catch {
+		/* no cache support */
 	}
 }
 

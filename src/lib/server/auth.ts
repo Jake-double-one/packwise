@@ -226,19 +226,34 @@ export function canEditTemplate(hh: AppHousehold | null) {
 
 // ── Brute force protection ──────────────────────────────────────────────────
 
-const attempts = new Map<string, { count: number; reset: number }>();
+const attempts = new Map<string, { count: number; max: number; reset: number }>();
+const MAX_KEYS = 50_000;
+let lastSweep = 0;
 
 export function rateLimit(key: string, max = 10, windowMs = 15 * 60_000): boolean {
 	const t = now();
-	if (attempts.size > 5000) for (const [k, v] of attempts) if (v.reset < t) attempts.delete(k);
-	if (attempts.size > 50_000) attempts.clear(); // flood of distinct keys – better to forget than to grow
+	// expired counters go at most once a minute (a sweep looks at every entry)
+	if (attempts.size > 5000 && t - lastSweep > 60_000) {
+		lastSweep = t;
+		for (const [k, v] of attempts) if (v.reset < t) attempts.delete(k);
+	}
+	// a flood of distinct keys: forget the harmless counters first, never the ones that block right now
+	if (attempts.size > MAX_KEYS) for (const [k, v] of attempts) if (v.count <= v.max && attempts.size > MAX_KEYS / 2) attempts.delete(k);
+	// only blocked keys left: the oldest go, so the table can't grow without end
+	if (attempts.size > MAX_KEYS) for (const k of attempts.keys()) if (attempts.size > MAX_KEYS) attempts.delete(k);
 	const entry = attempts.get(key);
 	if (!entry || entry.reset < t) {
-		attempts.set(key, { count: 1, reset: t + windowMs });
+		attempts.set(key, { count: 1, max, reset: t + windowMs });
 		return true;
 	}
 	entry.count++;
 	return entry.count <= max;
+}
+
+/** For tests: start with an empty table. */
+export function resetRateLimits() {
+	attempts.clear();
+	lastSweep = 0;
 }
 
 export function clientIp(event: RequestEvent): string {

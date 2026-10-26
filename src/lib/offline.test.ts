@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyLocal, clientRowId, type TripState } from './offline';
+import { applyLocal, clientRowId, loadQueue, saveQueue, type TripState } from './offline';
 import { generateTodos, todoDue } from './generate';
 import type { TodoTemplate, TripItem } from './types';
 
@@ -96,5 +96,30 @@ describe('to-dos', () => {
 	it('computes due dates', () => {
 		expect(todoDue('2026-07-10', 3)).toBe('2026-07-07');
 		expect(todoDue('2026-03-01', 1)).toBe('2026-02-28');
+	});
+});
+
+describe('offline queue', () => {
+	const store = new Map<string, string>();
+	globalThis.localStorage = {
+		getItem: (k: string) => store.get(k) ?? null,
+		setItem: (k: string, v: string) => void store.set(k, v),
+		removeItem: (k: string) => void store.delete(k)
+	} as Storage;
+
+	it('keeps changes per person', () => {
+		saveQueue('t1', 'anna', [{ op: 'check', id: 'a', checked: true }]);
+		expect(loadQueue('t1', 'ben')).toEqual([]);
+		expect(loadQueue('t1', 'anna')).toEqual([{ op: 'check', id: 'a', checked: true }]);
+		saveQueue('t1', 'anna', []);
+		expect(loadQueue('t1', 'anna')).toEqual([]);
+	});
+
+	it('hands a queue from before the update to the first person who opens the trip', () => {
+		store.set('pw_queue_t2', JSON.stringify([{ op: 'rename', name: 'x' }]));
+		expect(loadQueue('t2', 'anna')).toEqual([{ op: 'rename', name: 'x' }]);
+		expect(store.has('pw_queue_t2')).toBe(false);
+		expect(loadQueue('t2', 'ben')).toEqual([]);
+		expect(loadQueue('t2', 'anna')).toHaveLength(1);
 	});
 });
