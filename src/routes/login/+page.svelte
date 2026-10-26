@@ -9,11 +9,10 @@
 	const { t } = useI18n();
 	let busy = $state(false);
 
-	// the server says this device is logged out (session expired, logged out elsewhere or by
-	// the admin): lists cached for offline use go too
-	onMount(() => {
-		if (navigator.onLine) clearOfflineCache();
-	});
+	// this page is never served from the offline cache, so if it renders the server said this
+	// device is logged out (session expired, logged out elsewhere or by the admin): lists cached
+	// for offline use go too
+	onMount(clearOfflineCache);
 </script>
 
 <svelte:head><title>{t('auth.login')} · Packwise</title></svelte:head>

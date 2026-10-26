@@ -30,6 +30,7 @@ sw.addEventListener('activate', (event) => {
 		caches
 			.keys()
 			.then((keys) => Promise.all(keys.filter((k) => k.startsWith('pw-static-') && k !== STATIC).map((k) => caches.delete(k))))
+			.then(dropAuthPages)
 			.then(() => sw.clients.claim())
 	);
 });
@@ -42,6 +43,13 @@ sw.addEventListener('message', (event) => {
 /** Login and invitation pages are never kept – offline they would only get in the way. */
 const AUTH_PAGES = /^\/(login|register|setup|forgot|reset|invite)(\/|$)/;
 
+/** Copies an older version kept of those pages. */
+async function dropAuthPages() {
+	if (!(await caches.has(PAGES))) return;
+	const cache = await caches.open(PAGES);
+	for (const req of await cache.keys()) if (AUTH_PAGES.test(new URL(req.url).pathname)) await cache.delete(req);
+}
+
 /** Responses worth keeping for offline use. */
 function cacheable(url: URL, request: Request): boolean {
 	if (url.pathname.startsWith('/api/')) return /^\/api\/(trips\/[^/]+(\/info)?|avatar\/[^/]+)$/.test(url.pathname);
@@ -49,7 +57,11 @@ function cacheable(url: URL, request: Request): boolean {
 	return request.mode === 'navigate' || url.pathname.endsWith('/__data.json');
 }
 
-/** The server answered "not logged in": what this device cached for offline use goes. */
+/**
+ * The server answered "not logged in": what this device cached for offline use goes. Seen on
+ * data and API requests only – a navigation that is redirected comes back opaque, and then the
+ * login page itself clears the cache when it renders.
+ */
 function loggedOut(response: Response): boolean {
 	if (response.status === 401) return true;
 	return response.redirected && /^\/login(\/|$)/.test(new URL(response.url).pathname);

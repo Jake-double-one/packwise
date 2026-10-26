@@ -229,6 +229,7 @@ export function canEditTemplate(hh: AppHousehold | null) {
 const attempts = new Map<string, { count: number; max: number; reset: number }>();
 const MAX_KEYS = 50_000;
 let lastSweep = 0;
+let lastEvict = 0;
 
 export function rateLimit(key: string, max = 10, windowMs = 15 * 60_000): boolean {
 	const t = now();
@@ -237,10 +238,23 @@ export function rateLimit(key: string, max = 10, windowMs = 15 * 60_000): boolea
 		lastSweep = t;
 		for (const [k, v] of attempts) if (v.reset < t) attempts.delete(k);
 	}
-	// a flood of distinct keys: forget the harmless counters first, never the ones that block right now
-	if (attempts.size > MAX_KEYS) for (const [k, v] of attempts) if (v.count <= v.max && attempts.size > MAX_KEYS / 2) attempts.delete(k);
+	// a flood of distinct keys: forget the harmless counters first (expired or under the limit),
+	// never the ones that block right now and not the one being counted – this looks at every
+	// entry, so at most once a second; in between the oldest go (below)
+	if (attempts.size > MAX_KEYS && t - lastEvict > 1000) {
+		lastEvict = t;
+		for (const [k, v] of attempts) {
+			if (attempts.size <= MAX_KEYS / 2) break;
+			if (k !== key && (v.reset < t || v.count <= v.max)) attempts.delete(k);
+		}
+	}
 	// only blocked keys left: the oldest go, so the table can't grow without end
-	if (attempts.size > MAX_KEYS) for (const k of attempts.keys()) if (attempts.size > MAX_KEYS) attempts.delete(k);
+	if (attempts.size > MAX_KEYS) {
+		for (const k of attempts.keys()) {
+			if (attempts.size <= MAX_KEYS) break;
+			attempts.delete(k);
+		}
+	}
 	const entry = attempts.get(key);
 	if (!entry || entry.reset < t) {
 		attempts.set(key, { count: 1, max, reset: t + windowMs });
@@ -254,6 +268,7 @@ export function rateLimit(key: string, max = 10, windowMs = 15 * 60_000): boolea
 export function resetRateLimits() {
 	attempts.clear();
 	lastSweep = 0;
+	lastEvict = 0;
 }
 
 export function clientIp(event: RequestEvent): string {
