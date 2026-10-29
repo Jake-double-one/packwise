@@ -8,6 +8,7 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 - **To-dos before heading home**: the return tab has its own to-do list (check-out, look through the room), with due dates counting down to the end of the trip. It works like the list before departure: its own section in the to-do template, chips, reminders on the due day, *to template* and offline. Starter template gets two of them. A trip made before a to-do was added to the template offers *Add from template* in the list.
 - **Fold away what you don't use**: on the return tab the packing list and the to-dos can be folded; on the packing tab the to-dos. The state is kept for the whole household (it is a preference, not a view) and folded parts don't count towards the progress. To-dos can be hidden again on a trip (they were only switchable on).
+- **To-dos on a trip can be edited**: tapping one opens name, due day, who and note (both lists). The to-do field has a `+` button, so adding doesn't depend on the keyboard.
 - **One progress for list and to-dos**: the ring on the trip and on the overview counts items and the to-dos of the current phase together.
 - **Weather at home on the way back**: the household can set a **home town** (place search; it also sets the home country). The return tab then shows the weather at home for the arrival day and the two days after.
 

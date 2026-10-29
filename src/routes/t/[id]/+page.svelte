@@ -76,6 +76,9 @@
 	let quickAdd = $state('');
 	let newTodo = $state('');
 	let newTodoDays = $state(1);
+	/** to-do open in the editor sheet (name, due, who, note) */
+	let editingTodoId = $state<string | null>(null);
+	const editingTodo = $derived(todos.find((td) => td.id === editingTodoId) ?? null);
 
 	// drag & drop (mouse / trackpad only – on touch screens dragging fights with scrolling)
 	let canDrag = $state(false);
@@ -842,8 +845,8 @@
 						<button class="box" onclick={() => send({ op: 'todoCheck', id: td.id, done: !td.done })} aria-pressed={td.done} aria-label={td.name}>
 							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
 						</button>
-						<span class="label static-label"
-							><span class="nm">{td.name}</span>{#if td.note}<span class="note tiny">{td.note}</span>{/if}<span class="due due-inline tiny {due.cls}">{due.label}</span></span
+						<button class="label" onclick={() => (editingTodoId = td.id)}
+							><span class="nm">{td.name}</span>{#if td.note}<span class="note tiny">{td.note}</span>{/if}<span class="due due-inline tiny {due.cls}">{due.label}</span></button
 						>
 						<span class="due due-col tiny {due.cls}">{due.label}</span>
 						{#if data.canEditTemplate && (!td.template_id || !todoTemplateIds.has(td.template_id))}
@@ -854,12 +857,11 @@
 					</div>
 				{/each}
 				<form class="add-row row no-print" onsubmit={(e) => { e.preventDefault(); addTodo(); }}>
-					<!-- two fields and no button: Enter would not submit without one -->
-					<button class="sr-only" tabindex="-1" aria-hidden="true">{t('common.add')}</button>
-					<span class="plus">+</span>
 					<input class="grow" placeholder={t('todo.new')} aria-label={t('todo.new')} bind:value={newTodo} />
-					<input class="days" type="number" min="0" max="365" bind:value={newTodoDays} aria-label={t('todo.due')} />
+					<input class="days" type="number" min="0" max="365" bind:value={newTodoDays} aria-label={t(returning ? 'todo.due_return' : 'todo.due')} />
 					<span class="tiny muted">{t('todo.days_short')}</span>
+					<!-- a real button: on phones the keyboard is not the only way, and Enter submits a two-field form -->
+					<button class="btn primary small" aria-label={t('common.add')} title={t('common.add')}>+</button>
 				</form>
 			{/if}
 		</section>
@@ -1154,6 +1156,34 @@
 	/>
 {/if}
 
+{#if editingTodo}
+	{@const td = editingTodo}
+	<Sheet title={t('todo.edit')} onclose={() => (editingTodoId = null)}>
+		<div class="field">
+			<label for="tdname">{t('template.name')}</label>
+			<input id="tdname" value={td.name} onchange={(e) => { const name = (e.currentTarget as HTMLInputElement).value.trim(); if (name) send({ op: 'todoUpdate', id: td.id, patch: { name } }); }} />
+		</div>
+		<div class="grid-2">
+			<div class="field">
+				<label for="tddays">{t(td.phase === 'return' ? 'todo.due_return' : 'todo.due')}</label>
+				<input id="tddays" type="number" min="0" max="365" value={td.days_before} onchange={(e) => send({ op: 'todoUpdate', id: td.id, patch: { days_before: +(e.currentTarget as HTMLInputElement).value } })} />
+				<p class="tiny muted">{t(td.phase === 'return' ? 'todo.due_hint_return' : 'todo.due_hint')}</p>
+			</div>
+			<div class="field">
+				<label for="tdperson">{t('todo.who')}</label>
+				<select id="tdperson" value={td.person_id ?? ''} onchange={(e) => send({ op: 'todoUpdate', id: td.id, patch: { person_id: (e.currentTarget as HTMLSelectElement).value || null } })}>
+					<option value="">{t('template.everyone')}</option>
+					{#each data.persons as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
+				</select>
+			</div>
+		</div>
+		<div class="field">
+			<label for="tdnote">{t('template.note')}</label>
+			<textarea id="tdnote" rows="2" value={td.note} onchange={(e) => send({ op: 'todoUpdate', id: td.id, patch: { note: (e.currentTarget as HTMLTextAreaElement).value } })}></textarea>
+		</div>
+	</Sheet>
+{/if}
+
 {#if deleting}
 	<Sheet title={t('trip.delete_title', { name: deleting.name })} onclose={() => (deleting = null)}>
 		<p>{deleting.kind === 'todo' ? t('todo.delete_question') : t('trip.delete_question')}</p>
@@ -1265,9 +1295,6 @@
 	.todo-head h2 {
 		font-size: 1rem;
 		margin: 0.2rem 0;
-	}
-	.static-label {
-		cursor: default;
 	}
 	.due {
 		white-space: nowrap;
