@@ -1,6 +1,8 @@
 import { avatarUrl } from './avatar';
 import { all, get, newId, now, run, tx } from './db';
-import type { Bag, BagKind, Person, PersonKind, Role, Rules, TemplateNode, TodoTemplate, Trip, TripItem, TripPhase, TripTodo } from '#lib/types.js';
+import type { Bag, BagKind, Person, PersonKind, Role, Rules, Section, TemplateNode, TodoTemplate, Trip, TripItem, TripPhase, TripTodo } from '#lib/types.js';
+import { overallProgress, type Counts } from '#lib/progress.js';
+import { parseCollapsed } from './auth';
 
 // ── Households ───────────────────────────────────────────────────────────────
 
@@ -248,6 +250,7 @@ interface TripRow {
 	phase: string;
 	todos_enabled: number;
 	notes: string;
+	weather_at: number | null;
 	created_at: number;
 	updated_at: number;
 }
@@ -278,15 +281,41 @@ export function getTrip(id: string) {
 	return r ? toTrip(r) : null;
 }
 
-export function listTrips(householdId: string) {
-	const rows = all<TripRow & { total: number; done: number }>(
-		`SELECT t.*,
-			(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item') AS total,
-			(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item' AND i.checked = 1) AS done
-		 FROM trips t WHERE t.household_id = ? ORDER BY t.start_date DESC`,
-		householdId
-	);
-	return rows.map((r) => ({ ...toTrip(r), total: r.total, done: r.done }));
+/** Counts behind the progress ring: items packed / back in the bag, to-dos of both lists. */
+const COUNT_COLS = `
+	(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item') AS items_total,
+	(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item' AND i.checked = 1) AS items_done,
+	(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item' AND i.consumable = 0) AS return_total,
+	(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item' AND i.consumable = 0 AND i.returned = 1) AS return_done,
+	(SELECT COUNT(*) FROM trip_todos d WHERE d.trip_id = t.id AND d.phase = 'pack') AS pack_todos_total,
+	(SELECT COUNT(*) FROM trip_todos d WHERE d.trip_id = t.id AND d.phase = 'pack' AND d.done = 1) AS pack_todos_done,
+	(SELECT COUNT(*) FROM trip_todos d WHERE d.trip_id = t.id AND d.phase = 'return') AS return_todos_total,
+	(SELECT COUNT(*) FROM trip_todos d WHERE d.trip_id = t.id AND d.phase = 'return' AND d.done = 1) AS return_todos_done`;
+
+interface CountRow {
+	items_total: number;
+	items_done: number;
+	return_total: number;
+	return_done: number;
+	pack_todos_total: number;
+	pack_todos_done: number;
+	return_todos_total: number;
+	return_todos_done: number;
+}
+
+const toCounts = (r: CountRow): Counts => ({
+	items: { done: r.items_done, total: r.items_total },
+	returnItems: { done: r.return_done, total: r.return_total },
+	packTodos: { done: r.pack_todos_done, total: r.pack_todos_total },
+	returnTodos: { done: r.return_todos_done, total: r.return_todos_total }
+});
+
+export function listTrips(householdId: string, collapsed: Section[] = []) {
+	const rows = all<TripRow & CountRow>(`SELECT t.*, ${COUNT_COLS} FROM trips t WHERE t.household_id = ? ORDER BY t.start_date DESC`, householdId);
+	return rows.map((r) => {
+		const trip = toTrip(r);
+		return { ...trip, ...overallProgress(trip.phase, trip.todos_enabled, collapsed, toCounts(r)) };
+	});
 }
 
 // ── Trip guests (accounts invited to a single trip) ─────────────────────────
@@ -313,17 +342,18 @@ export function listTripGuests(tripId: string) {
 
 /** Trips of other households that this account was invited to. */
 export function listSharedTrips(userId: string) {
-	const rows = all<TripRow & { total: number; done: number; household_name: string }>(
-		`SELECT t.*, h.name AS household_name,
-			(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item') AS total,
-			(SELECT COUNT(*) FROM trip_items i WHERE i.trip_id = t.id AND i.kind = 'item' AND i.checked = 1) AS done
+	const rows = all<TripRow & CountRow & { household_name: string; collapsed: string }>(
+		`SELECT t.*, h.name AS household_name, h.collapsed, ${COUNT_COLS}
 		 FROM trip_guests g JOIN trips t ON t.id = g.trip_id JOIN households h ON h.id = t.household_id
 		 WHERE g.user_id = ?
 		   AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.household_id = t.household_id AND m.user_id = g.user_id)
 		 ORDER BY t.start_date`,
 		userId
 	);
-	return rows.map((r) => ({ ...toTrip(r), total: r.total, done: r.done, household_name: r.household_name }));
+	return rows.map((r) => {
+		const trip = toTrip(r);
+		return { ...trip, ...overallProgress(trip.phase, trip.todos_enabled, parseCollapsed(r.collapsed), toCounts(r)), household_name: r.household_name };
+	});
 }
 
 interface TripItemRow extends Omit<TripItem, 'needs_power' | 'consumable' | 'checked' | 'returned' | 'not_needed'> {
@@ -451,32 +481,33 @@ export function listActivity(tripId: string, limit = 100) {
 
 // ── To-dos ───────────────────────────────────────────────────────────────────
 
-interface TodoTemplateRow extends Omit<TodoTemplate, 'rules'> {
+interface TodoTemplateRow extends Omit<TodoTemplate, 'rules' | 'phase'> {
 	rules: string;
+	phase: string;
 }
 
-const toTodoTemplate = (r: TodoTemplateRow): TodoTemplate => ({ ...r, rules: parse(r.rules, {}) });
+export const asPhase = (v: unknown): TripPhase => (v === 'return' ? 'return' : 'pack');
+const toTodoTemplate = (r: TodoTemplateRow): TodoTemplate => ({ ...r, rules: parse(r.rules, {}), phase: asPhase(r.phase) });
+const TPL_COLS = 'id, name, days_before, phase, person_id, rules, note';
 
 export function listTodoTemplates(householdId: string): TodoTemplate[] {
-	return all<TodoTemplateRow>(
-		'SELECT id, name, days_before, person_id, rules, note FROM todo_templates WHERE household_id = ? ORDER BY days_before DESC, name',
-		householdId
-	).map(toTodoTemplate);
+	return all<TodoTemplateRow>(`SELECT ${TPL_COLS} FROM todo_templates WHERE household_id = ? ORDER BY days_before DESC, name`, householdId).map(toTodoTemplate);
 }
 
 export function getTodoTemplate(householdId: string, id: string): TodoTemplate | null {
-	const r = get<TodoTemplateRow>('SELECT id, name, days_before, person_id, rules, note FROM todo_templates WHERE household_id = ? AND id = ?', householdId, id);
+	const r = get<TodoTemplateRow>(`SELECT ${TPL_COLS} FROM todo_templates WHERE household_id = ? AND id = ?`, householdId, id);
 	return r ? toTodoTemplate(r) : null;
 }
 
 export function insertTodoTemplate(householdId: string, input: Partial<Omit<TodoTemplate, 'id'>> & { name: string }): TodoTemplate {
 	const id = newId();
 	run(
-		'INSERT INTO todo_templates (id, household_id, name, days_before, person_id, rules, note, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+		'INSERT INTO todo_templates (id, household_id, name, days_before, phase, person_id, rules, note, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		id,
 		householdId,
 		input.name.trim(),
 		input.days_before ?? 0,
+		asPhase(input.phase),
 		input.person_id ?? null,
 		JSON.stringify(input.rules ?? {}),
 		input.note ?? '',
@@ -488,7 +519,7 @@ export function insertTodoTemplate(householdId: string, input: Partial<Omit<Todo
 export function updateTodoTemplate(householdId: string, id: string, patch: Partial<TodoTemplate>): TodoTemplate | null {
 	const sets: string[] = [];
 	const values: (string | number | null)[] = [];
-	for (const key of ['name', 'days_before', 'person_id', 'rules', 'note'] as const) {
+	for (const key of ['name', 'days_before', 'phase', 'person_id', 'rules', 'note'] as const) {
 		if (!(key in patch)) continue;
 		sets.push(`${key} = ?`);
 		const v = patch[key];
@@ -502,12 +533,13 @@ export function deleteTodoTemplate(householdId: string, id: string) {
 	run('DELETE FROM todo_templates WHERE household_id = ? AND id = ?', householdId, id);
 }
 
-interface TripTodoRow extends Omit<TripTodo, 'done'> {
+interface TripTodoRow extends Omit<TripTodo, 'done' | 'phase'> {
 	done: number;
+	phase: string;
 }
 
-const TODO_COLS = 'id, name, days_before, person_id, note, template_id, origin, done, done_by, done_at';
-const toTodo = (r: TripTodoRow): TripTodo => ({ ...r, done: !!r.done });
+const TODO_COLS = 'id, name, days_before, phase, person_id, note, template_id, origin, done, done_by, done_at';
+const toTodo = (r: TripTodoRow): TripTodo => ({ ...r, done: !!r.done, phase: asPhase(r.phase) });
 
 export function listTripTodos(tripId: string): TripTodo[] {
 	return all<TripTodoRow>(`SELECT ${TODO_COLS} FROM trip_todos WHERE trip_id = ? ORDER BY days_before DESC, name`, tripId).map(toTodo);
@@ -520,11 +552,12 @@ export function getTripTodo(tripId: string, id: string): TripTodo | null {
 
 export function insertTripTodo(tripId: string, input: Partial<Omit<TripTodo, 'id'>> & { name: string }, id = newId()): TripTodo {
 	run(
-		'INSERT INTO trip_todos (id, trip_id, name, days_before, person_id, note, template_id, origin, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+		'INSERT INTO trip_todos (id, trip_id, name, days_before, phase, person_id, note, template_id, origin, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		id,
 		tripId,
 		input.name.trim(),
 		input.days_before ?? 0,
+		asPhase(input.phase),
 		input.person_id ?? null,
 		input.note ?? '',
 		input.template_id ?? null,
@@ -537,7 +570,7 @@ export function insertTripTodo(tripId: string, input: Partial<Omit<TripTodo, 'id
 export function updateTripTodo(tripId: string, id: string, patch: Partial<TripTodo>): TripTodo | null {
 	const sets: string[] = [];
 	const values: (string | number | null)[] = [];
-	for (const key of ['name', 'days_before', 'person_id', 'note', 'template_id', 'origin', 'done', 'done_by', 'done_at'] as const) {
+	for (const key of ['name', 'days_before', 'phase', 'person_id', 'note', 'template_id', 'origin', 'done', 'done_by', 'done_at'] as const) {
 		if (!(key in patch)) continue;
 		let v = patch[key] as unknown;
 		if (typeof v === 'boolean') v = v ? 1 : 0;

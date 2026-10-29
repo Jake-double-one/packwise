@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		/** the administration replaced the password recently – the person should know */
 		adminReset: reset && Date.now() - reset < RESET_NOTICE_DAYS * 86_400_000 ? reset : null,
-		trips: locals.household ? listTrips(locals.household.id) : [],
+		trips: locals.household ? listTrips(locals.household.id, locals.household.collapsed) : [],
 		/** no household of one's own (yet) – the page offers to create one */
 		noHousehold: !locals.household,
 		/** trips of other households this account was invited to */

@@ -26,6 +26,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 			const n = Math.round(Number(p.days_before));
 			out.days_before = Number.isFinite(n) ? Math.max(0, Math.min(365, n)) : 0;
 		}
+		if ('phase' in p) out.phase = p.phase === 'return' ? 'return' : 'pack';
 		if ('person_id' in p) out.person_id = typeof p.person_id === 'string' && persons.has(p.person_id) ? p.person_id : null;
 		if ('note' in p) out.note = String(p.note ?? '').slice(0, 1000);
 		if ('rules' in p) out.rules = sanitizeRules(p.rules);

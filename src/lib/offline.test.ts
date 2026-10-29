@@ -83,7 +83,7 @@ describe('applyLocal', () => {
 });
 
 describe('to-dos', () => {
-	const tpl = (name: string, rules = {}, person_id: string | null = null): TodoTemplate => ({ id: name, name, days_before: 1, person_id, rules, note: '' });
+	const tpl = (name: string, rules = {}, person_id: string | null = null): TodoTemplate => ({ id: name, name, days_before: 1, phase: 'pack', person_id, rules, note: '' });
 
 	it('uses chip rules and travelling persons', () => {
 		const list = [tpl('Check-in', { transport: { plane: 1 } }), tpl('Plants'), tpl('Kid stuff', {}, 'p2')];

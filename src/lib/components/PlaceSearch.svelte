@@ -18,8 +18,11 @@
 		place = $bindable(null),
 		country = $bindable(''),
 		query = $bindable(''),
+		label = '',
+		id = 'place-q',
+		withCountry = true,
 		onchange
-	}: { place?: Place | null; country?: string; query?: string; onchange?: () => void } = $props();
+	}: { place?: Place | null; country?: string; query?: string; label?: string; id?: string; withCountry?: boolean; onchange?: () => void } = $props();
 	const { t } = useI18n();
 
 	let places = $state<Place[]>([]);
@@ -67,9 +70,9 @@
 </script>
 
 <div class="field search">
-	<label for="place-q">{t('wizard.destination')}</label>
+	<label for={id}>{label || t('wizard.destination')}</label>
 	<input
-		id="place-q"
+		{id}
 		type="search"
 		autocomplete="off"
 		placeholder={t('wizard.destination_placeholder')}
@@ -80,11 +83,11 @@
 		onblur={() => (open = false)}
 		role="combobox"
 		aria-expanded={open}
-		aria-controls="place-list"
+		aria-controls="{id}-list"
 		aria-autocomplete="list"
 	/>
 	{#if open && places.length}
-		<ul class="suggestions" id="place-list" role="listbox">
+		<ul class="suggestions" id="{id}-list" role="listbox">
 			{#each places as p, i}
 				<li role="option" aria-selected={i === active}>
 					<!-- mousedown would blur the input and close the list before the click arrives -->
@@ -97,7 +100,7 @@
 		</ul>
 	{/if}
 </div>
-{#if !place}
+{#if withCountry && !place}
 	<div class="field">
 		<label for="country">{t('wizard.country_manual')}</label>
 		<CountrySelect bind:value={country} />

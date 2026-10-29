@@ -3,11 +3,18 @@
 	import { weatherIcon } from '#lib/weather.js';
 	import type { WeatherSummary } from '#lib/types.js';
 
-	let { weather, loading = false, compact = false }: { weather: WeatherSummary | null; loading?: boolean; compact?: boolean } = $props();
+	let {
+		weather,
+		loading = false,
+		compact = false,
+		title = '',
+		hint = ''
+	}: { weather: WeatherSummary | null; loading?: boolean; compact?: boolean; title?: string; hint?: string } = $props();
 	const { t } = useI18n();
 </script>
 
 <section class="weather card" class:compact>
+	{#if title}<div class="title tiny"><strong>{title}</strong>{#if hint}<span class="muted"> · {hint}</span>{/if}</div>{/if}
 	{#if loading}
 		<p class="muted small">⏳ {t('weather.loading')}</p>
 	{:else if weather}
@@ -47,6 +54,9 @@
 	}
 	.compact {
 		padding: 0.6rem 0.8rem;
+	}
+	.title {
+		margin-bottom: 0.3rem;
 	}
 	.compact .icon {
 		font-size: 1.8rem;

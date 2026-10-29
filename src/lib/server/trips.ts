@@ -1,9 +1,10 @@
 import { error } from '@sveltejs/kit';
-import { canEditTemplate, householdsFor, type AppHousehold, type SessionUser } from './auth';
+import { canEditTemplate, householdsFor, parseCollapsed, type AppHousehold, type SessionUser } from './auth';
 import { config } from './config';
-import { get, newId, now, run, tx } from './db';
+import { all, get, newId, now, run, tx } from './db';
 import { publish } from './realtime';
 import {
+	asPhase,
 	deleteTodoTemplate,
 	deleteTripTodo,
 	getTodoTemplate,
@@ -40,7 +41,7 @@ import { weatherFor } from './weather';
 import { translate } from '#lib/i18n/index.js';
 import { messagesFor } from './i18n';
 import { MAX_GROUP_DEPTH, ancestors } from '#lib/tree.js';
-import { NOTE_KINDS, type NoteKind, type TemplateNode, type Trip, type TodoTemplate, type TripItem, type TripNote, type TripPhase, type TripSettings, type TripTodo, type WeatherSummary } from '#lib/types.js';
+import { NOTE_KINDS, SECTIONS, type NoteKind, type Section, type TemplateNode, type Trip, type TodoTemplate, type TripItem, type TripNote, type TripPhase, type TripSettings, type TripTodo, type WeatherSummary } from '#lib/types.js';
 import { DIMENSION_MAP } from '#lib/context.js';
 import { COUNTRIES } from '#lib/data/countries.js';
 
@@ -55,8 +56,11 @@ export function tripAccessFor(user: SessionUser | null, id: string): { trip: Tri
 	const hh = householdsFor(user).find((h) => h.id === trip.household_id);
 	if (hh) return { trip, hh };
 	if (config.authMode === 'accounts' && user && isTripGuest(trip.id, user.id)) {
-		const host = get<{ id: string; name: string; home_country: string | null }>('SELECT id, name, home_country FROM households WHERE id = ?', trip.household_id);
-		if (host) return { trip, hh: { ...host, role: 'guest' } };
+		const host = get<{ id: string; name: string; home_country: string | null; home_place: string | null; home_lat: number | null; home_lon: number | null; collapsed: string }>(
+			'SELECT id, name, home_country, home_place, home_lat, home_lon, collapsed FROM households WHERE id = ?',
+			trip.household_id
+		);
+		if (host) return { trip, hh: { ...host, collapsed: parseCollapsed(host.collapsed), role: 'guest' } };
 	}
 	return null;
 }
@@ -156,8 +160,8 @@ export function createTrip(hh: AppHousehold, user: SessionUser | null, input: Cr
 	const id = newId(12);
 	tx(() => {
 		run(
-			`INSERT INTO trips (id, household_id, name, destination, country, lat, lon, start_date, end_date, settings, weather, warnings, todos_enabled, created_by, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO trips (id, household_id, name, destination, country, lat, lon, start_date, end_date, settings, weather, weather_at, warnings, todos_enabled, created_by, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			id,
 			hh.id,
 			input.name,
@@ -169,6 +173,7 @@ export function createTrip(hh: AppHousehold, user: SessionUser | null, input: Cr
 			input.end,
 			JSON.stringify(input.settings),
 			input.weather ? JSON.stringify(input.weather) : null,
+			input.weather ? now() : null,
 			JSON.stringify(result.warnings),
 			input.settings.todos ? 1 : 0,
 			user?.id ?? null,
@@ -225,8 +230,10 @@ export type TripOp =
 	| { op: 'phase'; phase: TripPhase }
 	| { op: 'resetReturn' }
 	| { op: 'todos'; enabled: boolean }
+	| { op: 'collapse'; section: Section; collapsed: boolean }
 	| { op: 'todoCheck'; id: string; done: boolean }
-	| { op: 'todoAdd'; id?: string; name: string; days_before?: number; person_id?: string | null }
+	| { op: 'todoAdd'; id?: string; name: string; days_before?: number; phase?: TripPhase; person_id?: string | null }
+	| { op: 'todoFromTemplate'; phase: TripPhase }
 	| { op: 'todoUpdate'; id: string; patch: Record<string, unknown> }
 	| { op: 'todoDelete'; id: string; alsoTemplate?: boolean }
 	| { op: 'todoPromote'; id: string }
@@ -240,6 +247,8 @@ export interface OpResult {
 	trip?: { name?: string; phase?: TripPhase; todos_enabled?: boolean; notes?: TripNote[]; reload?: boolean };
 	todos?: { upsert: TripTodo[]; removed: string[] };
 	todoTemplate?: { upsert: TodoTemplate[]; removed: string[] };
+	/** the household's folded sections changed */
+	collapsed?: Section[];
 }
 
 /** Client-generated ids (offline mode) must look like ours. */
@@ -468,6 +477,33 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 				}
 				return { upsert: [], removed: [], trip: { todos_enabled: enabled }, todos: { upsert, removed: [] } };
 			}
+			case 'collapse': {
+				// a preference of the household, not of this device: what it doesn't use stays folded everywhere
+				needTemplateRights();
+				if (!SECTIONS.includes(op.section)) error(400, 'unknown section');
+				const collapsed = hh.collapsed.filter((s) => s !== op.section);
+				if (op.collapsed) collapsed.push(op.section);
+				run('UPDATE households SET collapsed = ? WHERE id = ?', JSON.stringify(collapsed), hh.id);
+				hh.collapsed = collapsed;
+				return { upsert: [], removed: [], collapsed };
+			}
+			case 'todoFromTemplate': {
+				// to-dos added to the template after this trip was made (or the whole list before heading home)
+				const phase = asPhase(op.phase);
+				const trip = getTrip(tripId)!;
+				const have = new Set(listTripTodos(tripId).map((td) => td.template_id));
+				const upsert: TripTodo[] = [];
+				for (const td of generateTodos(listTodoTemplates(hh.id), trip.settings)) {
+					if (td.phase !== phase || have.has(td.template_id)) continue;
+					upsert.push(insertTripTodo(tripId, { ...td, origin: 'template' }));
+				}
+				return {
+					upsert: [],
+					removed: [],
+					todos: { upsert, removed: [] },
+					activity: upsert.length ? logActivity(tripId, uid, actor, 'todos_from_template', String(upsert.length)) : undefined
+				};
+			}
 			case 'todoCheck': {
 				const td = getTripTodo(tripId, op.id);
 				if (!td) error(404, 'trip.err.item');
@@ -485,6 +521,7 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 					{
 						name,
 						days_before: clampDays(op.days_before),
+						phase: asPhase(op.phase),
 						person_id: op.person_id && ids.persons.has(op.person_id) ? op.person_id : null,
 						origin: 'manual'
 					},
@@ -526,7 +563,7 @@ export function applyTripOp(tripId: string, hh: AppHousehold, user: SessionUser 
 				needTemplateRights();
 				const td = getTripTodo(tripId, op.id);
 				if (!td) error(404, 'trip.err.item');
-				const tpl = insertTodoTemplate(hh.id, { name: td.name, days_before: td.days_before, person_id: td.person_id, note: td.note });
+				const tpl = insertTodoTemplate(hh.id, { name: td.name, days_before: td.days_before, phase: td.phase, person_id: td.person_id, note: td.note });
 				const updated = updateTripTodo(tripId, td.id, { template_id: tpl.id, origin: 'template' })!;
 				return {
 					upsert: [],
@@ -569,6 +606,12 @@ function collectTemplateDescendants(householdId: string, id: string): string[] {
 
 export function broadcastTripOp(tripId: string, hhId: string, result: OpResult, client: string | null) {
 	publish(`trip:${tripId}`, 'ops', { ...result, client });
+	// folded sections belong to the household: the other open trips learn it too
+	if (result.collapsed) {
+		for (const { id } of all<{ id: string }>('SELECT id FROM trips WHERE household_id = ? AND id != ?', hhId, tripId)) {
+			publish(`trip:${id}`, 'ops', { upsert: [], removed: [], collapsed: result.collapsed, client: null });
+		}
+	}
 	if (result.template) publish(`tpl:${hhId}`, 'nodes', { ...result.template, client: null });
 	if (result.todoTemplate) publish(`tpl:${hhId}`, 'todos', { ...result.todoTemplate, client: null });
 }
@@ -631,7 +674,7 @@ export async function editTrip(tripId: string, hh: AppHousehold, user: SessionUs
 	});
 
 	run(
-		`UPDATE trips SET name = ?, destination = ?, country = ?, lat = ?, lon = ?, start_date = ?, end_date = ?, settings = ?, weather = ?, warnings = ?, updated_at = ?
+		`UPDATE trips SET name = ?, destination = ?, country = ?, lat = ?, lon = ?, start_date = ?, end_date = ?, settings = ?, weather = ?, weather_at = ?, warnings = ?, updated_at = ?
 		 WHERE id = ?`,
 		name,
 		destination,
@@ -642,6 +685,7 @@ export async function editTrip(tripId: string, hh: AppHousehold, user: SessionUs
 		end,
 		JSON.stringify(settings),
 		weather ? JSON.stringify(weather) : null,
+		weather ? (placeChanged || datesChanged ? now() : trip.weather_at) : null,
 		JSON.stringify(warnings),
 		now(),
 		tripId
@@ -668,8 +712,8 @@ export async function duplicateTrip(srcId: string, hh: AppHousehold, user: Sessi
 	const laundry = src.settings.laundryDays ?? 0;
 	tx(() => {
 		run(
-			`INSERT INTO trips (id, household_id, name, destination, country, lat, lon, start_date, end_date, settings, weather, warnings, notes, todos_enabled, created_by, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO trips (id, household_id, name, destination, country, lat, lon, start_date, end_date, settings, weather, weather_at, warnings, notes, todos_enabled, created_by, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			id,
 			hh.id,
 			name,
@@ -681,6 +725,7 @@ export async function duplicateTrip(srcId: string, hh: AppHousehold, user: Sessi
 			src.end_date,
 			JSON.stringify(src.settings),
 			src.weather ? JSON.stringify(src.weather) : null,
+			src.weather_at,
 			JSON.stringify(src.warnings),
 			JSON.stringify(src.notes ?? []),
 			src.todos_enabled ? 1 : 0,
@@ -716,7 +761,7 @@ export async function duplicateTrip(srcId: string, hh: AppHousehold, user: Sessi
 		};
 		copy(null, null);
 		for (const td of listTripTodos(srcId)) {
-			insertTripTodo(id, { name: td.name, days_before: td.days_before, person_id: td.person_id, note: td.note, template_id: td.template_id, origin: td.origin });
+			insertTripTodo(id, { name: td.name, days_before: td.days_before, phase: td.phase, person_id: td.person_id, note: td.note, template_id: td.template_id, origin: td.origin });
 		}
 		logActivity(id, user?.id ?? null, user?.name ?? '?', 'duplicated', src.name);
 	});

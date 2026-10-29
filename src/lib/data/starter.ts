@@ -165,7 +165,7 @@ export function starterSharedBag(lang: string) {
 }
 
 /** Starter to-dos before departure (days_before = due x days before the start date). */
-const TODOS: { name: { en: string; de: string }; days_before: number; rules?: StarterNode['rules'] }[] = [
+const TODOS: { name: { en: string; de: string }; days_before: number; phase?: 'return'; rules?: StarterNode['rules'] }[] = [
 	{ name: T('Check passports / ID cards are valid', 'Pässe / Ausweise auf Gültigkeit prüfen'), days_before: 30 },
 	{ name: T('Check travel health insurance', 'Auslandskrankenversicherung prüfen'), days_before: 21, rules: { region: { domestic: -1 } } },
 	{ name: T('Arrange plant / pet sitting', 'Pflanzen- / Haustierbetreuung organisieren'), days_before: 7 },
@@ -177,10 +177,13 @@ const TODOS: { name: { en: string; de: string }; days_before: number; rules?: St
 	{ name: T('Charge all devices', 'Alle Geräte laden'), days_before: 1 },
 	{ name: T('Set out-of-office reply', 'Abwesenheitsnotiz einrichten'), days_before: 1 },
 	{ name: T('Empty the fridge, take out the bins', 'Kühlschrank leeren, Müll rausbringen'), days_before: 0 },
-	{ name: T('Heating down, windows closed, water off', 'Heizung runter, Fenster zu, Wasser abdrehen'), days_before: 0 }
+	{ name: T('Heating down, windows closed, water off', 'Heizung runter, Fenster zu, Wasser abdrehen'), days_before: 0 },
+	// before heading home (days_before counts down to the end date)
+	{ name: T('Check the return trip: tickets, times, check-out', 'Rückreise prüfen: Tickets, Zeiten, Check-out'), days_before: 1, phase: 'return' },
+	{ name: T('Look through the room: chargers, bathroom, safe', 'Zimmer absuchen: Ladegeräte, Bad, Safe'), days_before: 0, phase: 'return' }
 ];
 
 export function starterTodos(lang: string) {
 	const l = lang === 'de' ? 'de' : 'en';
-	return TODOS.map((t) => ({ name: t.name[l], days_before: t.days_before, rules: t.rules ?? {} }));
+	return TODOS.map((t) => ({ name: t.name[l], days_before: t.days_before, phase: t.phase ?? ('pack' as const), rules: t.rules ?? {} }));
 }

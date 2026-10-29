@@ -79,7 +79,7 @@
 				<div class="row tiny meta">
 					{#if countdown(tr.start_date, tr.end_date)}<span class="badge">{countdown(tr.start_date, tr.end_date)}</span>{/if}
 					{#if tr.weather}<span>{weatherIcon(tr.weather)} {Math.round(tr.weather.avgMax)}° / {Math.round(tr.weather.avgMin)}°</span>{/if}
-					<span class="muted">{t('trips.items_progress', { done: tr.done, total: tr.total })}</span>
+					<span class="muted">{t(tr.withTodos ? 'trip.overall_progress' : 'trips.items_progress', { done: tr.done, total: tr.total })}</span>
 				</div>
 			</div>
 			<Ring value={tr.done} total={tr.total} />

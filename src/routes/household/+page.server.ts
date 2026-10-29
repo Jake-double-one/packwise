@@ -45,7 +45,22 @@ export const actions: Actions = {
 		const name = str(form, 'name');
 		const country = str(form, 'country').toUpperCase();
 		if (!name) return fail(400, { error: 'setup.err.household' });
-		run('UPDATE households SET name = ?, home_country = ? WHERE id = ?', name, COUNTRIES[country] ? country : null, hh.id);
+		// home town (for the weather at home on the way back): empty clears it; text without a
+		// chosen place keeps the old coordinates
+		const place = str(form, 'home_place').slice(0, 200);
+		const lat = Number(form.get('home_lat'));
+		const lon = Number(form.get('home_lon'));
+		const located = Number.isFinite(lat) && Number.isFinite(lon) && form.get('home_lat') !== '' && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+		const home = !place ? { place: null, lat: null, lon: null } : located ? { place, lat, lon } : { place: hh.home_place, lat: hh.home_lat, lon: hh.home_lon };
+		run(
+			'UPDATE households SET name = ?, home_country = ?, home_place = ?, home_lat = ?, home_lon = ? WHERE id = ?',
+			name,
+			COUNTRIES[country] ? country : null,
+			home.place,
+			home.lat,
+			home.lon,
+			hh.id
+		);
 		return { saved: 'household' };
 	},
 	addPerson: async ({ request, locals }) => {

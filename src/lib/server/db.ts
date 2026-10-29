@@ -253,6 +253,17 @@ const MIGRATIONS: string[] = [
 	        links in notifications use the address the person themselves opened Packwise with */ `
 	ALTER TABLE tokens ADD COLUMN created_by TEXT REFERENCES users(id) ON DELETE CASCADE;
 	ALTER TABLE users ADD COLUMN notify_origin TEXT;
+	`,
+	/* 11 – to-dos before heading home; the household's home town (weather at home on the way back);
+	        collapsed sections (what the household doesn't use); when the trip's weather was last fetched */ `
+	ALTER TABLE todo_templates ADD COLUMN phase TEXT NOT NULL DEFAULT 'pack'; -- pack | return
+	ALTER TABLE trip_todos ADD COLUMN phase TEXT NOT NULL DEFAULT 'pack';
+	ALTER TABLE households ADD COLUMN home_place TEXT;
+	ALTER TABLE households ADD COLUMN home_lat REAL;
+	ALTER TABLE households ADD COLUMN home_lon REAL;
+	ALTER TABLE households ADD COLUMN collapsed TEXT NOT NULL DEFAULT '[]';
+	ALTER TABLE trips ADD COLUMN weather_at INTEGER;
+	UPDATE trips SET weather_at = created_at WHERE weather IS NOT NULL;
 	`
 ];
 

@@ -114,8 +114,10 @@ export interface Warning {
 export interface TodoTemplate {
 	id: string;
 	name: string;
-	/** due this many days before the start date (0 = departure day) */
+	/** due this many days before the start date – or, for the list before heading home, before the end date (0 = that day) */
 	days_before: number;
+	/** which list: before departure ('pack') or before heading home ('return') */
+	phase: TripPhase;
 	person_id: string | null;
 	rules: Rules;
 	note: string;
@@ -125,6 +127,7 @@ export interface TripTodo {
 	id: string;
 	name: string;
 	days_before: number;
+	phase: TripPhase;
 	person_id: string | null;
 	note: string;
 	template_id: string | null;
@@ -135,6 +138,14 @@ export interface TripTodo {
 }
 
 export type TripPhase = 'pack' | 'return';
+
+/**
+ * Parts of a trip page a household can fold away when it doesn't use them. The state is
+ * shared by the household (it is a preference, not a view) and folded parts don't count
+ * towards the progress.
+ */
+export type Section = 'pack_todos' | 'return_items' | 'return_todos';
+export const SECTIONS: Section[] = ['pack_todos', 'return_items', 'return_todos'];
 
 export type NoteKind = 'address' | 'phone' | 'link' | 'code' | 'text' | 'secret' | 'car';
 export const NOTE_KINDS: NoteKind[] = ['address', 'phone', 'link', 'code', 'text', 'secret', 'car'];
@@ -178,6 +189,8 @@ export interface Trip {
 	end_date: string;
 	settings: TripSettings;
 	weather: WeatherSummary | null;
+	/** when the weather was last fetched (it is refreshed while the forecast reaches the trip) */
+	weather_at: number | null;
 	warnings: Warning[];
 	phase: TripPhase;
 	todos_enabled: boolean;

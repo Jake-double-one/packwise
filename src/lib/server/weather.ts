@@ -245,3 +245,32 @@ export async function locateCountry(code: string, name: string): Promise<{ lat: 
 	const hit = (await geocode(name, 'en')).find((p) => p.country_code === code);
 	return hit ? { lat: hit.lat, lon: hit.lon } : null;
 }
+
+// ── Keeping a trip's weather fresh ──────────────────────────────────────────
+
+/** A stored summary is looked at again after this long – only when somebody opens the trip. */
+export const WEATHER_STALE_MS = 6 * 3_600_000;
+
+/**
+ * Whether the weather stored with a trip should be fetched again. The forecast only reaches
+ * 16 days ahead; before that the climate average stands and doesn't change, so a far-away trip
+ * is fetched once. Nothing is fetched for a trip that is over or was looked at recently.
+ */
+export function weatherNeedsRefresh(
+	trip: { lat: number | null; lon: number | null; start_date: string; end_date: string; weather: unknown; weather_at: number | null },
+	today = new Date()
+): boolean {
+	if (!config.weatherEnabled || trip.lat == null || trip.lon == null) return false;
+	const t0 = iso(today);
+	if (trip.end_date < t0) return false;
+	if (trip.weather_at && today.getTime() - trip.weather_at < WEATHER_STALE_MS) return false;
+	if (!trip.weather) return true;
+	return trip.start_date <= iso(addDays(new Date(`${t0}T00:00:00Z`), FORECAST_DAYS - 1));
+}
+
+/** The first days back home: arrival day and the two after it. */
+export function homeWeatherFor(lat: number, lon: number, endDate: string, today = new Date()): Promise<WeatherSummary | null> {
+	const end = new Date(`${endDate}T00:00:00Z`);
+	if (Number.isNaN(end.getTime())) return Promise.resolve(null);
+	return weatherFor(lat, lon, endDate, iso(addDays(end, 2)), today);
+}

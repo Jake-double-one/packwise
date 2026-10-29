@@ -4,6 +4,7 @@
 	import Avatar from '#lib/components/Avatar.svelte';
 	import { AVATAR_EMOJIS } from '#lib/avatars.js';
 	import CountrySelect from '#lib/components/CountrySelect.svelte';
+	import PlaceSearch, { type Place } from '#lib/components/PlaceSearch.svelte';
 	import CopyField from '#lib/components/CopyField.svelte';
 	import { toast } from '#lib/toast.svelte.js';
 	import type { SubmitFunction } from '$app/forms';
@@ -18,6 +19,9 @@
 	/** no roles: everybody in the household may edit; only its creator ("owner") may delete it */
 	const canEdit = $derived(data.hh?.role === 'owner' || data.hh?.role === 'member');
 	let country = $derived(data.hh?.home_country ?? '');
+	/** home town for the weather on the way back – typed text without a chosen place keeps the stored coordinates */
+	let homeQuery = $derived(data.hh?.home_place ?? '');
+	let homePlace = $state<Place | null>(null);
 	const keep = () => async ({ update }: { update: (o?: { reset?: boolean }) => Promise<void> }) => update({ reset: false });
 	/** rows of travellers and bags save themselves on every change – a short note confirms it */
 	const autosave: SubmitFunction = () => async ({ result, update }) => {
@@ -59,6 +63,11 @@
 					</div>
 				</div>
 				<p class="tiny muted">{t('household.home_country_hint')}</p>
+				<PlaceSearch id="home-q" label={t('household.home_place')} bind:place={homePlace} bind:country bind:query={homeQuery} withCountry={false} />
+				<input type="hidden" name="home_place" value={homeQuery.trim()} />
+				<input type="hidden" name="home_lat" value={homePlace?.lat ?? ''} />
+				<input type="hidden" name="home_lon" value={homePlace?.lon ?? ''} />
+				<p class="tiny muted">{t('household.home_place_hint')}</p>
 				{#if canEdit}<button class="btn primary">{t('common.save')}</button>{/if}
 			</form>
 		</section>

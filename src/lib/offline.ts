@@ -182,6 +182,7 @@ export function applyLocal(state: TripState, op: Op, userId: string | null): Tri
 					id: String(op.id),
 					name: String(op.name),
 					days_before: Number(op.days_before) || 0,
+					phase: op.phase === 'return' ? 'return' : 'pack',
 					person_id: (op.person_id as string) ?? null,
 					note: '',
 					template_id: null,

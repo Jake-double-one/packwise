@@ -17,7 +17,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		trip,
 		items: listTripItems(trip.id),
 		todos: listTripTodos(trip.id),
-		todoTemplateIds: member ? listTodoTemplates(hh.id).map((t) => t.id) : [],
+		/** which to-do templates exist and for which list – to offer adding ones made after the trip */
+		todoTemplates: member ? listTodoTemplates(hh.id).map((t) => ({ id: t.id, phase: t.phase })) : [],
 		persons: listPersons(hh.id),
 		bags: listBags(hh.id),
 		template,
@@ -28,6 +29,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		isGuest: !member,
 		hostHousehold: hh.name,
 		guests: config.authMode === 'accounts' ? listTripGuests(trip.id) : null,
-		homeCountry: hh.home_country
+		homeCountry: hh.home_country,
+		homePlace: hh.home_place,
+		/** sections the household folded away (shared, see Section) */
+		collapsed: hh.collapsed
 	};
 };

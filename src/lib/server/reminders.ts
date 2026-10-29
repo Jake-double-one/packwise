@@ -25,10 +25,11 @@ interface TripRow {
 	name: string;
 	household_id: string;
 	start_date: string;
+	end_date: string;
 	settings: string;
 }
 
-/** Upcoming trips a person travels on. */
+/** Upcoming and running trips a person travels on (to-dos before heading home are due during the trip). */
 function tripsFor(userId: string, today: string): TripRow[] {
 	const user = getUser(userId);
 	if (!user) return [];
@@ -36,7 +37,7 @@ function tripsFor(userId: string, today: string): TripRow[] {
 	const mine = new Set(all<{ id: string }>('SELECT id FROM persons WHERE user_id = ?', userId).map((p) => p.id));
 	const own = households.length
 		? all<TripRow>(
-				`SELECT id, name, household_id, start_date, settings FROM trips WHERE start_date >= ? AND household_id IN (${households.map(() => '?').join(',')})`,
+				`SELECT id, name, household_id, start_date, end_date, settings FROM trips WHERE end_date >= ? AND household_id IN (${households.map(() => '?').join(',')})`,
 				today,
 				...households
 			).filter((t) => {
@@ -50,8 +51,8 @@ function tripsFor(userId: string, today: string): TripRow[] {
 	const guest =
 		config.authMode === 'accounts'
 			? all<TripRow>(
-					`SELECT t.id, t.name, t.household_id, t.start_date, t.settings FROM trip_guests g JOIN trips t ON t.id = g.trip_id
-					 WHERE g.user_id = ? AND t.start_date >= ?`,
+					`SELECT t.id, t.name, t.household_id, t.start_date, t.end_date, t.settings FROM trip_guests g JOIN trips t ON t.id = g.trip_id
+					 WHERE g.user_id = ? AND t.end_date >= ?`,
 					userId,
 					today
 				)
@@ -72,11 +73,14 @@ export function remindersFor(userId: string, today = localDate()): { key: string
 	for (const trip of tripsFor(userId, today)) {
 		const days = daysBetween(today, trip.start_date);
 		const departure = (prefs.departureDays > 0 && days === prefs.departureDays) || (prefs.dayBefore && days === 1);
+		// to-dos before departure count down to the start, those before heading home to the end
 		const due = prefs.todos
 			? all<{ name: string; person_id: string | null }>(
-					`SELECT name, person_id FROM trip_todos WHERE trip_id = ? AND done = 0 AND days_before = ? ORDER BY name`,
+					`SELECT name, person_id FROM trip_todos WHERE trip_id = ? AND done = 0
+					   AND ((phase = 'pack' AND days_before = ?) OR (phase = 'return' AND days_before = ?)) ORDER BY name`,
 					trip.id,
-					days
+					days,
+					daysBetween(today, trip.end_date)
 				).filter((td) => !td.person_id || mine.has(td.person_id))
 			: [];
 		if (!departure && !due.length) continue;
@@ -96,7 +100,12 @@ export function remindersFor(userId: string, today = localDate()): { key: string
 			key: `trip:${trip.id}:${today}`,
 			trip,
 			message: {
-				title: days === 0 ? t('notify.msg.title_today', { trip: trip.name }) : t('notify.msg.title_days', { trip: trip.name, count: days }),
+				title:
+					days < 0
+						? t('notify.msg.title_away', { trip: trip.name })
+						: days === 0
+							? t('notify.msg.title_today', { trip: trip.name })
+							: t('notify.msg.title_days', { trip: trip.name, count: days }),
 				body: lines.join('\n'),
 				url: origin ? `${origin}/t/${trip.id}` : undefined,
 				tags: ['luggage']

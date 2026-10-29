@@ -88,14 +88,14 @@ const TOOLS: Tool[] = [
 			const hhs = args.household ? [householdFor(ctx, args.household)] : ctx.households;
 			const lines: string[] = [];
 			for (const hh of hhs) {
-				const trips = listTrips(hh.id)
+				const trips = listTrips(hh.id, hh.collapsed)
 					.filter((tr) => args.include_past || tr.end_date >= today())
 					.sort((a, b) => a.start_date.localeCompare(b.start_date));
 				lines.push(`# ${hh.name}`);
 				if (!trips.length) lines.push('(no trips)');
 				for (const tr of trips) {
 					lines.push(
-						`- ${tr.name} — id: ${tr.id} — ${tr.destination || (tr.country ? countryName(tr.country, ctx.locale) : '?')}, ${tr.start_date} to ${tr.end_date}, packed ${tr.done}/${tr.total}${tr.phase === 'return' ? ', return trip in progress' : ''}`
+						`- ${tr.name} — id: ${tr.id} — ${tr.destination || (tr.country ? countryName(tr.country, ctx.locale) : '?')}, ${tr.start_date} to ${tr.end_date}, ${tr.withTodos ? 'done' : 'packed'} ${tr.done}/${tr.total}${tr.phase === 'return' ? ', return trip in progress' : ''}`
 					);
 				}
 			}
@@ -103,7 +103,7 @@ const TOOLS: Tool[] = [
 				const shared = listSharedTrips(ctx.user.id).filter((tr) => args.include_past || tr.end_date >= today());
 				if (shared.length) {
 					lines.push('# Shared with me');
-					for (const tr of shared) lines.push(`- ${tr.name} — id: ${tr.id} — from ${tr.household_name}, ${tr.start_date} to ${tr.end_date}, packed ${tr.done}/${tr.total}`);
+					for (const tr of shared) lines.push(`- ${tr.name} — id: ${tr.id} — from ${tr.household_name}, ${tr.start_date} to ${tr.end_date}, ${tr.withTodos ? 'done' : 'packed'} ${tr.done}/${tr.total}`);
 				}
 			}
 			return lines.join('\n');

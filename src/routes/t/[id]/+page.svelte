@@ -6,11 +6,12 @@
 	import { api, ApiError, clientId, describeError, isBrave, live } from '#lib/api.js';
 	import { toast } from '#lib/toast.svelte.js';
 	import { countryFlag } from '#lib/data/countries.js';
-	import { todoDue } from '#lib/generate.js';
+	import { todoAnchor, todoDue } from '#lib/generate.js';
+	import { overallProgress } from '#lib/progress.js';
 	import { formatDate, formatRange, timeAgo, useI18n } from '#lib/i18n/index.js';
 	import { applyLocal, clientRowId, loadQueue, OFFLINE_OPS, saveQueue, type Op, type TripState } from '#lib/offline.js';
 	import { childrenMap, mergeNodes } from '#lib/tree.js';
-	import type { TripItem, TripNote, TripPhase, TripTodo } from '#lib/types.js';
+	import type { Section, TripItem, TripNote, TripPhase, TripTodo, WeatherSummary } from '#lib/types.js';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import ItemEditor from '#lib/components/ItemEditor.svelte';
 	import Ring from '#lib/components/Ring.svelte';
@@ -36,7 +37,15 @@
 	let todosEnabled = $derived(data.trip.todos_enabled);
 	let notes = $derived<TripNote[]>(data.trip.notes);
 	let template = $derived<Record<string, TemplateInfo>>(data.template);
-	let todoTemplateIds = $derived(new Set<string>(data.todoTemplateIds));
+	let todoTemplates = $derived<{ id: string; phase: TripPhase }[]>(data.todoTemplates);
+	const todoTemplateIds = $derived(new Set(todoTemplates.map((x) => x.id)));
+	/** sections the household folded away – shared with everybody, see Section */
+	let collapsed = $derived(new Set<Section>(data.collapsed));
+	/** destination weather – the stored copy, refreshed by the server when the trip is opened */
+	let weather = $derived<WeatherSummary | null>(data.trip.weather);
+	/** the first days back home, when the household has set its home town */
+	let homeWeather = $state<WeatherSummary | null>(null);
+	let homePlace = $derived<string | null>(data.homePlace);
 	let activity = $derived(data.activity);
 	let presence = $state<{ id: string; name: string; color: string; avatar?: string | null }[]>([]);
 	let online = $state(true);
@@ -60,7 +69,6 @@
 	let showShare = $state(false);
 	let showActivity = $state(false);
 	let showWarnings = $state(true);
-	let showTodos = $state(true);
 	/** "info" is a per-device view; packing / return phase is shared with everybody */
 	let tab = $state<'list' | 'info'>('list');
 	let errorMsg = $state('');
@@ -114,15 +122,35 @@
 	const allItems = $derived(items.filter((i) => i.kind === 'item'));
 	const counted = $derived(allItems.filter(relevant));
 	const done = $derived(counted.filter(isDone).length);
+	const packTodos = $derived(todos.filter((td) => td.phase !== 'return'));
+	const returnTodos = $derived(todos.filter((td) => td.phase === 'return'));
+	/** the to-do list of the current phase */
+	const phaseTodos = $derived(returning ? returnTodos : packTodos);
+	const todoSection = $derived<Section>(returning ? 'return_todos' : 'pack_todos');
+	const todosOpen = $derived(todosEnabled && !collapsed.has(todoSection));
+	/** on the way back the packing list itself can be folded away */
+	const listOpen = $derived(!returning || !collapsed.has('return_items'));
+	const tally = (list: { done: boolean }[]) => ({ done: list.filter((x) => x.done).length, total: list.length });
+	/** one visible progress out of list and to-dos – folded sections don't count (see #lib/progress) */
+	const progress = $derived(
+		overallProgress(phase, todosEnabled, [...collapsed], {
+			items: { done: allItems.filter((i) => i.checked).length, total: allItems.length },
+			returnItems: { done: allItems.filter((i) => !i.consumable && i.returned).length, total: allItems.filter((i) => !i.consumable).length },
+			packTodos: tally(packTodos),
+			returnTodos: tally(returnTodos)
+		})
+	);
+	/** to-dos in the template (of this phase) that this trip doesn't have – made after the trip, or the trip is older than the list */
+	const missingTemplateTodos = $derived(todoTemplates.filter((tt) => tt.phase === (returning ? 'return' : 'pack') && !todos.some((td) => td.template_id === tt.id)).length);
 	const today = new Date().toISOString().slice(0, 10);
 	const daysUntil = $derived(Math.round((Date.parse(data.trip.start_date) - Date.parse(today)) / 86_400_000));
 	const homeward = $derived(!returning && today >= data.trip.end_date.slice(0, 10) && Date.parse(today) - Date.parse(data.trip.end_date) < 3 * 86_400_000);
 	const sortedTodos = $derived(
-		[...todos]
+		[...phaseTodos]
 			.filter((td) => !query.trim() || td.name.toLowerCase().includes(query.trim().toLowerCase()))
 			.sort((a, b) => b.days_before - a.days_before || a.name.localeCompare(b.name))
 	);
-	const todosDone = $derived(todos.filter((x) => x.done).length);
+	const todosDone = $derived(phaseTodos.filter((x) => x.done).length);
 
 	// ── sync ────────────────────────────────────────────────────────────────
 	const getState = (): TripState => ({ items, todos, name: tripName, phase, notes });
@@ -144,6 +172,18 @@
 			/* storage unavailable */
 		}
 		const tripId = data.trip.id;
+		// weather: the stored copy is refreshed on the server while the forecast reaches the trip,
+		// and the way back gets the first days at home – only when somebody opens the trip
+		if (navigator.onLine)
+			fetch(`/api/trips/${tripId}/weather`)
+				.then((r) => (r.ok ? r.json() : null))
+				.then((w: { weather: WeatherSummary | null; home: WeatherSummary | null; homePlace: string | null } | null) => {
+					if (!w) return;
+					if (w.weather) weather = w.weather;
+					homeWeather = w.home;
+					homePlace = w.homePlace;
+				})
+				.catch(() => {});
 		// replay changes made offline (page may come from the offline cache)
 		queue = loadQueue(tripId, userId);
 		if (queue.length) {
@@ -236,7 +276,8 @@
 		template?: { upsert: ({ id: string } & TemplateInfo)[]; removed: string[] };
 		trip?: { name?: string; phase?: TripPhase; todos_enabled?: boolean; notes?: TripNote[]; reload?: boolean };
 		todos?: { upsert: TripTodo[]; removed: string[] };
-		todoTemplate?: { upsert: { id: string }[]; removed: string[] };
+		todoTemplate?: { upsert: { id: string; phase: TripPhase }[]; removed: string[] };
+		collapsed?: Section[];
 	}
 
 	function applyResult(r: OpResult) {
@@ -256,11 +297,31 @@
 			template = next;
 		}
 		if (r.todoTemplate) {
-			const next = new Set(todoTemplateIds);
-			r.todoTemplate.removed.forEach((id) => next.delete(id));
-			r.todoTemplate.upsert.forEach((x) => next.add(x.id));
-			todoTemplateIds = next;
+			const removed = new Set(r.todoTemplate.removed);
+			const added = r.todoTemplate.upsert.map((x) => ({ id: x.id, phase: x.phase }));
+			todoTemplates = [...todoTemplates.filter((x) => !removed.has(x.id) && !added.some((a) => a.id === x.id)), ...added];
 		}
+		if (r.collapsed) collapsed = new Set(r.collapsed);
+	}
+
+	/** Fold a section away (or open it) – for the whole household, and it leaves the progress. Guests fold for themselves only. */
+	async function toggleSection(section: Section) {
+		const before = collapsed;
+		const next = new Set(collapsed);
+		const fold = !next.has(section);
+		if (fold) next.add(section);
+		else next.delete(section);
+		collapsed = next;
+		if (data.isGuest) return;
+		if (!(await send({ op: 'collapse', section, collapsed: fold }))) collapsed = before;
+	}
+
+	/** To-dos the template has for this list and the trip doesn't. */
+	async function todosFromTemplate() {
+		const res = await send({ op: 'todoFromTemplate', phase: returning ? 'return' : 'pack' });
+		if (!res) return;
+		const n = res.todos?.upsert.length ?? 0;
+		toast(n ? t('todo.from_template_added', { count: n }) : t('todo.from_template_none'), 'info');
 	}
 
 	const post = (op: Op) => api<OpResult>(`/api/trips/${data.trip.id}`, { ...op, client: clientId });
@@ -463,7 +524,7 @@
 		const name = newTodo.trim();
 		if (!name) return;
 		newTodo = '';
-		await send({ op: 'todoAdd', id: clientRowId(), name, days_before: newTodoDays });
+		await send({ op: 'todoAdd', id: clientRowId(), name, days_before: newTodoDays, phase: returning ? 'return' : 'pack' });
 	}
 
 	function rename() {
@@ -482,7 +543,7 @@
 	}
 
 	function dueInfo(td: TripTodo): { label: string; cls: string } {
-		const due = todoDue(data.trip.start_date, td.days_before);
+		const due = todoDue(todoAnchor(data.trip, td.phase), td.days_before);
 		const diff = Math.round((Date.parse(due) - Date.parse(today)) / 86_400_000);
 		const date = formatDate(due, i18n.locale, { weekday: 'short', day: 'numeric', month: 'short' });
 		if (td.done) return { label: date, cls: '' };
@@ -698,9 +759,11 @@
 
 		<div class="rings row wrap no-print">
 			<div class="ring-main row">
-				<Ring value={done} total={counted.length} size={64} />
+				<Ring value={progress.done} total={progress.total} size={64} />
 				<div>
-					<strong>{returning ? t('trip.return_progress', { done, total: counted.length }) : t('trips.items_progress', { done, total: counted.length })}</strong>
+					<strong>
+						{#if todosOpen && phaseTodos.length}{t('trip.overall_progress', { done: progress.done, total: progress.total })}{:else}{t(returning ? 'trip.return_progress' : 'trips.items_progress', { done: progress.done, total: progress.total })}{/if}
+					</strong>
 					<div class="tiny muted">{returning ? t('trip.returned') : t('trip.packed')}</div>
 				</div>
 			</div>
@@ -722,9 +785,14 @@
 	{#if tab === 'info'}
 		<TripInfo trip={data.trip} {notes} homeCountry={data.homeCountry} canEdit={true} canDuplicate={data.canDelete} {send} />
 	{:else}
-	{#if data.trip.weather || data.trip.warnings.length}
+	{@const shownWeather = returning ? homeWeather : weather}
+	{#if shownWeather || data.trip.warnings.length}
 		<div class="info-grid no-print pk-hide">
-			{#if data.trip.weather}<WeatherCard weather={data.trip.weather} compact />{/if}
+			{#if returning && shownWeather}
+				<WeatherCard weather={shownWeather} compact title={`🏠 ${homePlace || t('weather.home')}`} hint={t('weather.home_hint')} />
+			{:else if shownWeather}
+				<WeatherCard weather={shownWeather} compact />
+			{/if}
 			{#if data.trip.warnings.length}
 				<div>
 					<button class="btn ghost small" onclick={() => (showWarnings = !showWarnings)}>
@@ -754,15 +822,19 @@
 		</div>
 	{/if}
 
-	{#if todosEnabled && !returning}
-		<section class="card todos pk-hide" class:all-done={todos.length > 0 && todosDone === todos.length}>
+	{#if todosEnabled}
+		<section class="card todos pk-hide" class:all-done={todosOpen && phaseTodos.length > 0 && todosDone === phaseTodos.length} class:folded={!todosOpen}>
 			<div class="row between">
-				<button class="todo-head grow" onclick={() => (showTodos = !showTodos)}>
-					<h2><span class="no-print">{showTodos ? '▾' : '▸'}</span> ✅ {t('todo.title')}</h2>
+				<button class="todo-head grow" onclick={() => toggleSection(todoSection)} title={t('trip.section_hint')} aria-expanded={todosOpen}>
+					<h2><span class="no-print">{todosOpen ? '▾' : '▸'}</span> {returning ? '🏠' : '✅'} {t(returning ? 'todo.title_return' : 'todo.title')}</h2>
 				</button>
-				<span class="gcount tiny" class:complete={todos.length > 0 && todosDone === todos.length}>{todosDone}/{todos.length}</span>
+				{#if todosOpen && missingTemplateTodos && data.canEditTemplate}
+					<button class="btn ghost small no-print" onclick={todosFromTemplate} title={t('todo.from_template')}>📋 <span class="hide-sm">{t('todo.from_template')}</span></button>
+				{/if}
+				<span class="gcount tiny" class:complete={phaseTodos.length > 0 && todosDone === phaseTodos.length}>{todosDone}/{phaseTodos.length}</span>
+				<button class="btn ghost icon no-print" onclick={() => send({ op: 'todos', enabled: false })} title={t('todo.disable')} aria-label={t('todo.disable')}>⊘</button>
 			</div>
-			{#if showTodos}
+			{#if todosOpen}
 				{#each sortedTodos as td (td.id)}
 					{@const due = dueInfo(td)}
 					{@const person = td.person_id ? personById.get(td.person_id) : null}
@@ -782,6 +854,8 @@
 					</div>
 				{/each}
 				<form class="add-row row no-print" onsubmit={(e) => { e.preventDefault(); addTodo(); }}>
+					<!-- two fields and no button: Enter would not submit without one -->
+					<button class="sr-only" tabindex="-1" aria-hidden="true">{t('common.add')}</button>
 					<span class="plus">+</span>
 					<input class="grow" placeholder={t('todo.new')} aria-label={t('todo.new')} bind:value={newTodo} />
 					<input class="days" type="number" min="0" max="365" bind:value={newTodoDays} aria-label={t('todo.due')} />
@@ -795,6 +869,16 @@
 		<div class="alert no-print small pk-hide">📋 {t('trip.pending_template', { count: pendingTemplate.length })}</div>
 	{/if}
 
+	{#if returning}
+		<div class="row between list-head no-print">
+			<button class="todo-head grow" onclick={() => toggleSection('return_items')} title={t('trip.section_hint')} aria-expanded={listOpen}>
+				<h2><span>{listOpen ? '▾' : '▸'}</span> 🧳 {t('trip.list_title')}</h2>
+			</button>
+			<span class="gcount tiny" class:complete={counted.length > 0 && done === counted.length}>{done}/{counted.length}</span>
+		</div>
+	{/if}
+
+	{#if listOpen}
 	<div class="toolbar row wrap no-print" bind:this={toolbarEl}>
 		<div class="seg">
 			{#each [['category', '📂'], ['bag', '🧳'], ['person', '👤']] as [v, icon]}
@@ -1038,6 +1122,7 @@
 		<button class="btn primary" aria-label={t('common.add')} title={t('common.add')}>+</button>
 	</form>
 	{/if}
+	{/if}
 
 	{#if data.canDelete}
 		<div class="danger-zone no-print pk-hide">
@@ -1156,6 +1241,17 @@
 	}
 	.todos.all-done {
 		opacity: 0.8;
+	}
+	.todos.folded {
+		padding-top: 0.4rem;
+		padding-bottom: 0.4rem;
+	}
+	.list-head {
+		margin: 0.4rem 0 0.2rem;
+	}
+	.list-head h2 {
+		font-size: 1rem;
+		margin: 0.2rem 0;
 	}
 	.todo-head {
 		background: none;

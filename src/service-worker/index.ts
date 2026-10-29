@@ -52,7 +52,7 @@ async function dropAuthPages() {
 
 /** Responses worth keeping for offline use. */
 function cacheable(url: URL, request: Request): boolean {
-	if (url.pathname.startsWith('/api/')) return /^\/api\/(trips\/[^/]+(\/info)?|avatar\/[^/]+)$/.test(url.pathname);
+	if (url.pathname.startsWith('/api/')) return /^\/api\/(trips\/[^/]+(\/info|\/weather)?|avatar\/[^/]+)$/.test(url.pathname);
 	if (AUTH_PAGES.test(url.pathname)) return false;
 	return request.mode === 'navigate' || url.pathname.endsWith('/__data.json');
 }

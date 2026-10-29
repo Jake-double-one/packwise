@@ -297,16 +297,19 @@
 					</details>
 				{/each}
 
-				{#if todoPreview.length}
-					<details class="pgroup">
-						<summary><strong>✅ {t('todo.title')}</strong> <span class="tiny muted">{todoPreview.length}</span></summary>
-						<ul>
-							{#each todoPreview as td}
-								<li class="row"><span class="grow">{td.name}</span><span class="tiny muted">{formatDate(todoDue(start, td.days_before), i18n.locale, { day: 'numeric', month: 'short' })}</span></li>
-							{/each}
-						</ul>
-					</details>
-				{/if}
+				{#each [['pack', '✅', 'todo.title', start], ['return', '🏠', 'todo.title_return', end]] as [ph, icon, title, anchor] (ph)}
+					{@const list = todoPreview.filter((td) => td.phase === ph)}
+					{#if list.length}
+						<details class="pgroup">
+							<summary><strong>{icon} {t(title)}</strong> <span class="tiny muted">{list.length}</span></summary>
+							<ul>
+								{#each list as td}
+									<li class="row"><span class="grow">{td.name}</span><span class="tiny muted">{formatDate(todoDue(anchor, td.days_before), i18n.locale, { day: 'numeric', month: 'short' })}</span></li>
+								{/each}
+							</ul>
+						</details>
+					{/if}
+				{/each}
 
 				{#if preview.excluded.length}
 					<button type="button" class="btn ghost small toggle-ex" onclick={() => (showExcluded = !showExcluded)}>

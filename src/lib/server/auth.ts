@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import type { Cookies, RequestEvent } from '@sveltejs/kit';
 import { all, get, getMeta, newId, now, run, setMeta } from './db';
 import { config } from './config';
-import type { Role } from '#lib/types.js';
+import type { Role, Section } from '#lib/types.js';
 import { avatarUrl } from './avatar';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number, opts: object) => Promise<Buffer>;
@@ -28,8 +28,27 @@ export interface AppHousehold {
 	id: string;
 	name: string;
 	home_country: string | null;
+	/** home town for the weather at home on the way back (chosen in the household settings) */
+	home_place: string | null;
+	home_lat: number | null;
+	home_lon: number | null;
+	/** parts of the trip page this household has folded away */
+	collapsed: Section[];
 	role: Role;
 }
+
+const HH_COLS = 'h.id, h.name, h.home_country, h.home_place, h.home_lat, h.home_lon, h.collapsed';
+type HouseholdRow = Omit<AppHousehold, 'collapsed'> & { collapsed: string };
+
+export function parseCollapsed(s: string | null | undefined): Section[] {
+	try {
+		const v = JSON.parse(s || '[]');
+		return Array.isArray(v) ? v.filter((x): x is Section => x === 'pack_todos' || x === 'return_items' || x === 'return_todos') : [];
+	} catch {
+		return [];
+	}
+}
+const toHousehold = (r: HouseholdRow): AppHousehold => ({ ...r, collapsed: parseCollapsed(r.collapsed) });
 
 // ── Passwords ────────────────────────────────────────────────────────────────
 
@@ -208,15 +227,15 @@ export function createUser(data: { name: string; email?: string | null; password
  */
 export function householdsFor(user: SessionUser | null): AppHousehold[] {
 	if (config.authMode !== 'accounts') {
-		return all<AppHousehold>(`SELECT id, name, home_country, 'owner' AS role FROM households ORDER BY created_at`);
+		return all<HouseholdRow>(`SELECT ${HH_COLS}, 'owner' AS role FROM households h ORDER BY h.created_at`).map(toHousehold);
 	}
 	if (!user) return [];
-	return all<AppHousehold>(
-		`SELECT h.id, h.name, h.home_country, m.role FROM households h
+	return all<HouseholdRow>(
+		`SELECT ${HH_COLS}, m.role FROM households h
 		 JOIN memberships m ON m.household_id = h.id AND m.user_id = ?
 		 ORDER BY h.created_at`,
 		user.id
-	);
+	).map(toHousehold);
 }
 
 /** Template, travellers and bags belong to the household: every member may edit them, trip guests may not. */

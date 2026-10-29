@@ -1,18 +1,24 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { api, clientId, describeError, live } from '#lib/api.js';
+	import { api, clientId, describeError } from '#lib/api.js';
 	import { toast } from '#lib/toast.svelte.js';
 	import { useI18n } from '#lib/i18n/index.js';
-	import { mergeNodes } from '#lib/tree.js';
-	import type { Person, Rules, TodoTemplate } from '#lib/types.js';
+	import type { Person, Rules, TodoTemplate, TripPhase } from '#lib/types.js';
 	import RuleChips from './RuleChips.svelte';
 	import RuleSummary from './RuleSummary.svelte';
 	import Sheet from './Sheet.svelte';
 
-	let { todos: initial, persons, canEdit }: { todos: TodoTemplate[]; persons: Person[]; canEdit: boolean } = $props();
+	/** The page owns the list (and the live connection); this shows the to-dos of one phase and hands results back. */
+	let {
+		todos: all,
+		persons,
+		canEdit,
+		phase = 'pack',
+		onresult
+	}: { todos: TodoTemplate[]; persons: Person[]; canEdit: boolean; phase?: TripPhase; onresult: (res: { upsert: TodoTemplate[]; removed: string[] }) => void } = $props();
 	const { t } = useI18n();
+	const returning = $derived(phase === 'return');
 
-	let todos = $derived(initial);
+	const todos = $derived(all.filter((td) => td.phase === phase));
 	let editingId = $state<string | null>(null);
 	let newName = $state('');
 	let newDays = $state(1);
@@ -20,29 +26,20 @@
 	const sorted = $derived([...todos].sort((a, b) => b.days_before - a.days_before || a.name.localeCompare(b.name)));
 	const editing = $derived(todos.find((x) => x.id === editingId) ?? null);
 
-	onMount(() =>
-		live('/api/template/live', {
-			todos: (msg: { upsert: TodoTemplate[]; removed: string[]; client: string | null }) => {
-				if (msg.client !== clientId) todos = mergeNodes(todos, msg.upsert, msg.removed);
-			}
-		})
-	);
-
 	async function send(body: Record<string, unknown>) {
 		errorMsg = '';
 		try {
-			const res = await api<{ upsert: TodoTemplate[]; removed: string[] }>('/api/todos', { ...body, client: clientId });
-			todos = mergeNodes(todos, res.upsert, res.removed);
+			onresult(await api<{ upsert: TodoTemplate[]; removed: string[] }>('/api/todos', { ...body, client: clientId }));
 		} catch (err) {
 			toast(describeError(err, t));
 		}
 	}
 
-	const dueLabel = (d: number) => (d === 0 ? t('todo.departure_day') : t('todo.days_before', { count: d }));
+	const dueLabel = (d: number) => (d === 0 ? t(returning ? 'todo.return_day' : 'todo.departure_day') : t('todo.days_before', { count: d }));
 </script>
 
 {#if errorMsg}<div class="alert danger">{errorMsg}</div>{/if}
-<p class="small muted">{t('todo.template_hint')}</p>
+<h2 class="phase-title">{returning ? '🏠' : '✅'} {t(returning ? 'todo.title_return' : 'todo.title')}</h2>
 
 <div class="card list">
 	{#if !sorted.length}<p class="muted small">{t('todo.empty')}</p>{/if}
@@ -61,8 +58,8 @@
 		</div>
 	{/each}
 	{#if canEdit}
-		<form class="row add" onsubmit={(e) => { e.preventDefault(); if (!newName.trim()) return; send({ op: 'add', name: newName, patch: { days_before: newDays } }); newName = ''; }}>
-			<input class="grow" placeholder={t('todo.new')} aria-label={t('todo.new')} bind:value={newName} />
+		<form class="row add" onsubmit={(e) => { e.preventDefault(); if (!newName.trim()) return; send({ op: 'add', name: newName, patch: { days_before: newDays, phase } }); newName = ''; }}>
+			<input class="grow" placeholder={t('todo.new')} aria-label={`${t('todo.new')} – ${t(returning ? 'todo.title_return' : 'todo.title')}`} bind:value={newName} />
 			<label class="days">
 				<input type="number" min="0" max="365" bind:value={newDays} />
 				<span class="tiny">{t('todo.days_short')}</span>
@@ -80,9 +77,9 @@
 		</div>
 		<div class="grid-2">
 			<div class="field">
-				<label for="tddays">{t('todo.due')}</label>
+				<label for="tddays">{t(returning ? 'todo.due_return' : 'todo.due')}</label>
 				<input id="tddays" type="number" min="0" max="365" value={editing.days_before} disabled={!canEdit} onchange={(e) => send({ op: 'update', id: editing.id, patch: { days_before: +(e.currentTarget as HTMLInputElement).value } })} />
-				<p class="tiny muted">{t('todo.due_hint')}</p>
+				<p class="tiny muted">{t(returning ? 'todo.due_hint_return' : 'todo.due_hint')}</p>
 			</div>
 			<div class="field">
 				<label for="tdperson">{t('todo.who')}</label>
@@ -102,6 +99,10 @@
 {/if}
 
 <style>
+	.phase-title {
+		font-size: 1rem;
+		margin: 1rem 0 0.4rem;
+	}
 	.list {
 		padding: 0.4rem 0.75rem;
 	}

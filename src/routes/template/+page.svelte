@@ -5,7 +5,7 @@
 	import { toast } from '#lib/toast.svelte.js';
 	import { useI18n } from '#lib/i18n/index.js';
 	import { childrenMap, depthOf, mergeNodes, MAX_GROUP_DEPTH, ancestors } from '#lib/tree.js';
-	import type { TemplateNode } from '#lib/types.js';
+	import type { TemplateNode, TodoTemplate } from '#lib/types.js';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import NodeEditor from '#lib/components/NodeEditor.svelte';
 	import RuleSummary from '#lib/components/RuleSummary.svelte';
@@ -16,6 +16,9 @@
 	const { t } = useI18n();
 
 	let nodes = $derived<TemplateNode[]>(data.nodes);
+	/** both to-do lists (before departure, before heading home) are views on this one state */
+	let todos = $derived<TodoTemplate[]>(data.todos);
+	const mergeTodos = (res: { upsert: TodoTemplate[]; removed: string[] }) => (todos = mergeNodes(todos, res.upsert, res.removed));
 	let errorMsg = $state('');
 	let tab = $derived<'items' | 'todos'>(page.url.searchParams.get('tab') === 'todos' ? 'todos' : 'items');
 	let query = $state('');
@@ -50,6 +53,9 @@
 		live('/api/template/live', {
 			nodes: (msg: { upsert: TemplateNode[]; removed: string[]; client: string | null }) => {
 				if (msg.client !== clientId) nodes = mergeNodes(nodes, msg.upsert, msg.removed);
+			},
+			todos: (msg: { upsert: TodoTemplate[]; removed: string[]; client: string | null }) => {
+				if (msg.client !== clientId) todos = mergeNodes(todos, msg.upsert, msg.removed);
 			}
 		})
 	);
@@ -166,7 +172,9 @@
 	</div>
 
 	{#if tab === 'todos'}
-		<TodoTemplates todos={data.todos} persons={data.persons} canEdit={data.canEdit} />
+		<p class="small muted">{t('todo.template_hint')}</p>
+		<TodoTemplates {todos} persons={data.persons} canEdit={data.canEdit} onresult={mergeTodos} />
+		<TodoTemplates {todos} persons={data.persons} canEdit={data.canEdit} phase="return" onresult={mergeTodos} />
 	{:else}
 	<div class="row toolbar">
 		<input type="search" class="grow" placeholder={t('template.search')} aria-label={t('template.search')} bind:value={query} />

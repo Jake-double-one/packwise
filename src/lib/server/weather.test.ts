@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { climateDays, dailyWeather, forecastDays, setFetcher } from './weather';
+import { climateDays, dailyWeather, forecastDays, setFetcher, weatherNeedsRefresh } from './weather';
 
 const archive = {
 	time: ['2016-07-01', '2016-07-02', '2017-07-01', '2017-07-02'],
@@ -48,5 +48,31 @@ describe('day-by-day weather', () => {
 		// horizon: 16 days from 2026-06-28 → last forecast day 2026-07-13
 		expect(days.filter((d) => d.source === 'forecast').map((d) => d.date)).toEqual(['2026-07-10', '2026-07-11', '2026-07-12', '2026-07-13']);
 		expect(days.at(-1)).toMatchObject({ date: '2026-07-20', source: 'climate', tmax: 25 });
+	});
+});
+
+describe('weatherNeedsRefresh', () => {
+	const today = new Date('2026-06-10T12:00:00Z');
+	const h = 3_600_000;
+	const trip = { lat: 48.1, lon: 11.6, start_date: '2026-06-20', end_date: '2026-06-27', weather: { source: 'climate' }, weather_at: today.getTime() - 24 * h };
+
+	it('fetches again when the forecast reaches the trip and the copy is a few hours old', () => {
+		expect(weatherNeedsRefresh(trip, today)).toBe(true);
+		expect(weatherNeedsRefresh({ ...trip, weather_at: today.getTime() - 2 * h }, today)).toBe(false);
+	});
+
+	it('leaves a far-away trip with its climate average alone – unless nothing was fetched yet', () => {
+		const far = { ...trip, start_date: '2026-08-01', end_date: '2026-08-10' };
+		expect(weatherNeedsRefresh(far, today)).toBe(false);
+		expect(weatherNeedsRefresh({ ...far, weather: null, weather_at: null }, today)).toBe(true);
+	});
+
+	it('never for a trip that is over or has no place', () => {
+		expect(weatherNeedsRefresh({ ...trip, start_date: '2026-05-01', end_date: '2026-05-09' }, today)).toBe(false);
+		expect(weatherNeedsRefresh({ ...trip, lat: null, lon: null }, today)).toBe(false);
+	});
+
+	it('a trip that is running still gets the forecast', () => {
+		expect(weatherNeedsRefresh({ ...trip, start_date: '2026-06-05', end_date: '2026-06-15' }, today)).toBe(true);
 	});
 });
