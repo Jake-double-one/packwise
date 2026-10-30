@@ -463,12 +463,26 @@ hr {
 
 /* ── Print ────────────────────────────────────────────────────────────────── */
 @media print {
-	:root {
+	/* paper is always light – the theme selectors are more specific than a bare :root, so they are repeated */
+	:root,
+	:root[data-theme] {
+		color-scheme: light;
 		--bg: #fff;
 		--surface: #fff;
 		--surface-2: #fff;
+		--surface-3: #f1f1f1;
 		--text: #000;
+		--text-2: #333;
+		--text-3: #666;
 		--border: #bbb;
+		--accent-soft: #fff;
+		--success: #16a34a;
+		--success-soft: #fff;
+		--warning-soft: #fff;
+		--danger-soft: #fff;
+		--on-accent: #fff;
+		--shadow: none;
+		--shadow-lg: none;
 	}
 	.no-print {
 		display: none !important;

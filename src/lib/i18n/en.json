@@ -917,5 +917,16 @@
 	"install.ios": "iPhone/iPad: in Safari tap “Share”, then “Add to Home Screen”.",
 	"install.manual": "In the browser menu (⋮) tap “Install app” or “Add to Home screen”.",
 	"install.insecure": "Installing, offline use and push only work over HTTPS – Packwise runs here over http:// or an IP address.",
-	"install.check": "If it says “This app can’t be installed”, check in a private window that this file is reachable without logging in:"
+	"install.check": "If it says “This app can’t be installed”, check in a private window that this file is reachable without logging in:",
+	"trip.export_text": "Share as text",
+	"trip.export_text_hint": "The list as text, exactly as it stands – to send by messenger or to keep. The importer reads this format.",
+	"common.share": "Share",
+	"common.download": "Save as file",
+	"import.source_text": "Text or file",
+	"import.source_household": "Another household",
+	"import.household_intro": "Pick one of your households and tick what you want to take over. Items arrive with quantity, quantity rule and all their rules, exactly as they are in that template.",
+	"import.household_mapping": "People and bags are matched by name. Where there is no entry with the same name here, the item is for everyone or without a bag.",
+	"import.household_empty": "This template is empty.",
+	"import.unmapped_one": "{count} link to a person or bag was dropped because there is no entry with that name here.",
+	"import.unmapped_other": "{count} links to people or bags were dropped because there are no entries with those names here."
 }

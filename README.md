@@ -39,8 +39,8 @@ Packwise replaces the packing list in your notes app. You maintain **one templat
 - **Trip notes and editing**: accommodation address (with map and navigation links), a 🚗 rental car (booking number, pick-up and drop-off time and address), phone numbers, booking codes, links and 🔒 secret fields like the Wi-Fi password or key-box code – shared live and available offline. Destination and dates can be changed later; weather and hints follow.
 - **Offline mode**: installable PWA. Open lists keep working without a connection. Checks, new items and to-dos are queued and synced automatically once you're back online.
 - **Template sync**: *↑ Template* on new items. On delete, Packwise asks *only this trip* or *also from the template*. Changed items can update the template.
-- **Import with review step**: plain text, Markdown, `.txt` files, OneNote / Word pastes (nested lists are kept) and Packwise JSON. You check every line, fix levels and untick duplicates before anything is saved.
-- **Share**: link, QR code and the native share sheet. Print view in two columns.
+- **Import with review step**: plain text, Markdown, `.txt` files, OneNote / Word pastes (nested lists are kept) and Packwise JSON. You check every line, fix levels and untick duplicates before anything is saved. Or pick categories and items from the template of another of your households – they come with all their rules.
+- **Share**: link, QR code and the native share sheet. Print view in two columns that keeps categories whole, and the list as Markdown text for messengers or safekeeping.
 - **Themes**: light, dark, **AMOLED (true black)** and system.
 - **Languages**: English and German built in. Drop more into `/data/locales` (see below).
 - **AI assistants (MCP)**: optional MCP server with personal API tokens – ask Claude, ChatGPT or Grok what's still open, tick items or create trips.
@@ -222,7 +222,7 @@ The full license texts of everything Packwise ships – browser and server code,
 
 1. Den Compose-Block oben in Portainer als Stack einfügen. `DEFAULT_LANG: de` setzen; das gemeinsame Passwort fragt der Einrichtungsassistent ab (oder `APP_PASSWORD` setzen).
 2. `http://<server>:8080` öffnen. Der Einrichtungsassistent fragt Name, Haushalt, Heimatland und Starter-Template ab.
-3. Unter **Template** die eigene Liste pflegen oder unter **Import** die OneNote-Liste einfügen. Vor dem Speichern wird alles geprüft.
+3. Unter **Template** die eigene Liste pflegen oder unter **Import** die OneNote-Liste einfügen. Vor dem Speichern wird alles geprüft. Wer mehrere Haushalte hat, kann unter **Import → Anderer Haushalt** Kategorien und Artikel samt Regeln aus dem anderen Template übernehmen.
 4. **Neue Reise**: Ziel, Datum, Mitreisende, Anreise und Unterkunft wählen. Die Vorschau zeigt, was warum eingepackt wird, und bezieht Wetter, Adapter und Vignetten mit ein.
 5. Den Link oder QR-Code teilen und gemeinsam abhaken. Mit **↑ Template** landen neue Artikel fürs nächste Mal im Template.
 6. Optional die **To-dos** einschalten – vor der Abfahrt und vor der Heimreise. Für die Heimreise auf **🏠 Rückreise** umschalten; was ihr dort nicht braucht (Packliste, To-dos), lässt sich für den Haushalt einklappen. Ein **Heimatort** im Haushalt zeigt auf der Rückreise das Wetter zu Hause. Abhaken funktioniert auch **offline**.

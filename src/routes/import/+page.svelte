@@ -1,8 +1,11 @@
 <script lang="ts">
-	import { api } from '#lib/api.js';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { invalidateAll } from '$app/navigation';
+	import { api, describeError } from '#lib/api.js';
 	import { useI18n } from '#lib/i18n/index.js';
 	import { htmlToText, normalise, parseJson, parseText, toTree, type ImportLine } from '#lib/importer.js';
-	import { MAX_GROUP_DEPTH } from '#lib/tree.js';
+	import { childrenMap, MAX_GROUP_DEPTH } from '#lib/tree.js';
+	import type { TemplateNode } from '#lib/types.js';
 
 	let { data } = $props();
 	const { t } = useI18n();
@@ -10,12 +13,77 @@
 	let text = $state('');
 	let lines = $state<ImportLine[]>([]);
 	let step = $state<'input' | 'review' | 'done'>('input');
-	let result = $state<{ created: number; groups: number; skipped: number } | null>(null);
+	let result = $state<{ created: number; groups: number; skipped: number; unmapped?: number } | null>(null);
 	let busy = $state(false);
 	let errorMsg = $state('');
 
 	const existingItems = $derived(new Set(data.existing.filter((n) => n.kind === 'item').map((n) => n.name.trim().toLowerCase())));
+	const exists = (name: string) => existingItems.has(name.trim().toLowerCase());
 	const selectedCount = $derived(lines.filter((l) => l.selected && l.kind === 'item').length);
+
+	// ── from another household of mine ──────────────────────────────────────
+	type Remote = { nodes: TemplateNode[]; persons: { id: string; name: string }[]; bags: { id: string; name: string }[] };
+	let source = $state<'text' | 'household'>('text');
+	let fromId = $state<string | null>(null);
+	let remote = $state<Remote | null>(null);
+	let loading = $state(false);
+	/** ticked items of the other template (categories follow their items) */
+	const picked = new SvelteSet<string>();
+	const remoteTree = $derived(childrenMap(remote?.nodes ?? []));
+	const remoteNames = $derived({
+		persons: new Map((remote?.persons ?? []).map((p) => [p.id, p.name])),
+		bags: new Map((remote?.bags ?? []).map((b) => [b.id, b.name]))
+	});
+	const pickedCount = $derived(picked.size);
+
+	function itemsBelow(id: string | null): TemplateNode[] {
+		return (remoteTree.get(id) ?? []).flatMap((c) => (c.kind === 'item' ? [c] : itemsBelow(c.id)));
+	}
+	async function loadHousehold(id: string) {
+		fromId = id;
+		remote = null;
+		errorMsg = '';
+		loading = true;
+		try {
+			const res = await fetch(`/api/import/${id}`);
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const data = (await res.json()) as Remote;
+			remote = data;
+			// everything that is not here yet is ticked to start with
+			picked.clear();
+			for (const n of data.nodes) if (n.kind === 'item' && !exists(n.name)) picked.add(n.id);
+		} catch (err) {
+			errorMsg = describeError(err, t);
+		} finally {
+			loading = false;
+		}
+	}
+	function groupState(id: string): 'all' | 'some' | 'none' {
+		const items = itemsBelow(id);
+		const n = items.filter((i) => picked.has(i.id)).length;
+		return n === 0 ? 'none' : n === items.length ? 'all' : 'some';
+	}
+	function pickGroup(id: string, on: boolean) {
+		for (const i of itemsBelow(id)) if (on) picked.add(i.id);
+		else picked.delete(i.id);
+	}
+	function pickAll(on: boolean) {
+		for (const i of itemsBelow(null)) if (on) picked.add(i.id);
+		else picked.delete(i.id);
+	}
+	async function importPicked() {
+		busy = true;
+		errorMsg = '';
+		try {
+			result = await api('/api/import', { from: fromId, ids: [...picked] });
+			step = 'done';
+			await invalidateAll();
+		} catch (err) {
+			errorMsg = describeError(err, t);
+		} finally {
+			busy = false;
+		}
+	}
 
 	function onPaste(e: ClipboardEvent) {
 		const html = e.clipboardData?.getData('text/html');
@@ -67,6 +135,7 @@
 		try {
 			result = await api('/api/import', { nodes: toTree(lines) });
 			step = 'done';
+			await invalidateAll(); // "exists" badges of the next round know the new items
 		} catch (err) {
 			errorMsg = t((err as Error).message);
 		} finally {
@@ -83,6 +152,73 @@
 	{#if errorMsg}<div class="alert danger">{errorMsg}</div>{/if}
 
 	{#if step === 'input'}
+		{#if data.households.length}
+			<div class="seg source" role="tablist">
+				<button role="tab" aria-selected={source === 'text'} class:on={source === 'text'} onclick={() => (source = 'text')}>📄 {t('import.source_text')}</button>
+				<button role="tab" aria-selected={source === 'household'} class:on={source === 'household'} onclick={() => { source = 'household'; if (!fromId) loadHousehold(data.households[0].id); }}>🏠 {t('import.source_household')}</button>
+			</div>
+		{/if}
+		{#if source === 'household'}
+		<section class="card">
+			<p class="muted small">{t('import.household_intro')}</p>
+			{#if data.households.length > 1}
+				<div class="seg wrap" role="tablist">
+					{#each data.households as h (h.id)}
+						<button role="tab" aria-selected={fromId === h.id} class:on={fromId === h.id} onclick={() => loadHousehold(h.id)}>{h.name}</button>
+					{/each}
+				</div>
+			{/if}
+			{#if loading}
+				<p class="muted small">…</p>
+			{:else if remote}
+				{#if !remote.nodes.length}
+					<p class="muted">{t('import.household_empty')}</p>
+				{:else}
+					<div class="row between wrap">
+						<p class="tiny muted grow">{t('import.household_mapping')}</p>
+						<div class="row">
+							<button class="btn small" onclick={() => pickAll(true)}>{t('import.select_all')}</button>
+							<button class="btn small" onclick={() => pickAll(false)}>{t('import.select_none')}</button>
+						</div>
+					</div>
+					{#snippet remoteNode(n: TemplateNode, level: number)}
+						{#if n.kind === 'group'}
+							{@const st = groupState(n.id)}
+							<li class="line group" class:off={st === 'none'} style="--lvl:{level}">
+								<input type="checkbox" checked={st === 'all'} indeterminate={st === 'some'} onchange={(e) => pickGroup(n.id, e.currentTarget.checked)} aria-label={n.name} />
+								<span class="nm grow">📁 {n.name}</span>
+							</li>
+							{#each remoteTree.get(n.id) ?? [] as c (c.id)}{@render remoteNode(c, level + 1)}{/each}
+						{:else}
+							{@const person = n.person_id ? remoteNames.persons.get(n.person_id) : null}
+							{@const bag = n.bag_id ? remoteNames.bags.get(n.bag_id) : null}
+							<li class="line" class:off={!picked.has(n.id)} style="--lvl:{level}">
+								<input type="checkbox" checked={picked.has(n.id)} onchange={(e) => (e.currentTarget.checked ? picked.add(n.id) : picked.delete(n.id))} aria-label={n.name} />
+								<span class="nm grow">{n.name}</span>
+								{#if n.qty > 1 || n.qty_mode !== 'fixed'}<span class="badge">×{n.qty}{n.qty_mode === 'per_day' ? '/d' : n.qty_mode === 'per_night' ? '/n' : ''}</span>{/if}
+								{#if n.needs_power}<span class="tiny">⚡</span>{/if}
+								{#if n.consumable}<span class="tiny">🧴</span>{/if}
+								{#if person}<span class="badge">{person}</span>{/if}
+								{#if bag}<span class="badge">🧳 {bag}</span>{/if}
+								{#if exists(n.name)}<span class="badge exists" title={t('import.exists_hint')}>{t('import.exists')}</span>{/if}
+							</li>
+						{/if}
+					{/snippet}
+					<ul class="lines">
+						{#each remoteTree.get(null) ?? [] as n (n.id)}{@render remoteNode(n, 0)}{/each}
+					</ul>
+					<div class="row wrap actions">
+						<div class="grow"></div>
+						<span class="small muted">{t('import.selected', { count: pickedCount })}</span>
+						<button class="btn primary" onclick={importPicked} disabled={busy || !data.canEdit || !pickedCount}>
+							{busy ? t('common.saving') : t('import.do_import')}
+						</button>
+					</div>
+					<p class="tiny muted">{t('import.merge_hint')}</p>
+				{/if}
+			{/if}
+		</section>
+		{:else}
 		<section class="card">
 			<p class="muted small">{t('import.intro')}</p>
 			<textarea rows="14" bind:value={text} onpaste={onPaste} placeholder={t('import.placeholder')} aria-label={t('import.title')}></textarea>
@@ -96,6 +232,7 @@
 				<pre>{t('import.example')}</pre>
 			</details>
 		</section>
+		{/if}
 	{:else if step === 'review'}
 		<section class="card">
 			<div class="row between wrap">
@@ -132,9 +269,10 @@
 		<section class="card empty">
 			<div class="big">✅</div>
 			<p>{t('import.result', { created: result.created, groups: result.groups, skipped: result.skipped })}</p>
+			{#if result.unmapped}<p class="small muted">{t('import.unmapped', { count: result.unmapped })}</p>{/if}
 			<div class="row" style="justify-content:center">
 				<a class="btn primary" href="/template">📋 {t('nav.template')}</a>
-				<button class="btn" onclick={() => { text = ''; step = 'input'; }}>{t('import.again')}</button>
+				<button class="btn" onclick={() => { text = ''; step = 'input'; if (fromId) loadHousehold(fromId); }}>{t('import.again')}</button>
 			</div>
 		</section>
 	{/if}
@@ -180,6 +318,41 @@
 		background: transparent;
 		padding: 0.3rem 0.4rem;
 	}
+	.seg {
+		display: inline-flex;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		padding: 2px;
+	}
+	.seg button {
+		border: none;
+		background: none;
+		color: var(--text-2);
+		font: inherit;
+		font-size: 0.85rem;
+		font-weight: 600;
+		padding: 0.3rem 0.75rem;
+		border-radius: 999px;
+		cursor: pointer;
+	}
+	.seg button.on {
+		background: var(--surface);
+		color: var(--text);
+		box-shadow: var(--shadow);
+	}
+	.source {
+		margin-bottom: 0.75rem;
+	}
+	.seg.wrap {
+		flex-wrap: wrap;
+		margin-bottom: 0.6rem;
+	}
+	.line span.nm {
+		min-height: 2.2rem;
+		display: inline-flex;
+		align-items: center;
+	}
 	.line .nm:focus {
 		background: var(--surface-2);
 	}
@@ -188,6 +361,8 @@
 	}
 	.line.off .nm {
 		color: var(--text-3);
+	}
+	.line.off input.nm {
 		text-decoration: line-through;
 	}
 	.exists {

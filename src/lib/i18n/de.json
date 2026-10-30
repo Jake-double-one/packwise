@@ -917,5 +917,16 @@
 	"install.ios": "iPhone/iPad: In Safari auf „Teilen“ tippen, dann „Zum Home-Bildschirm“.",
 	"install.manual": "Im Browser-Menü (⋮) auf „App installieren“ bzw. „Zum Startbildschirm“ tippen.",
 	"install.insecure": "Installieren, Offline und Push gehen nur über HTTPS – Packwise läuft hier über http:// oder eine IP-Adresse.",
-	"install.check": "Steht dort „Diese App kann nicht installiert werden“, prüfe im privaten Fenster, ob diese Datei ohne Login erreichbar ist:"
+	"install.check": "Steht dort „Diese App kann nicht installiert werden“, prüfe im privaten Fenster, ob diese Datei ohne Login erreichbar ist:",
+	"trip.export_text": "Als Text teilen",
+	"trip.export_text_hint": "Die Liste als Text, so wie sie gerade steht – zum Verschicken per Messenger oder zum Aufbewahren. Der Import versteht dieses Format.",
+	"common.share": "Teilen",
+	"common.download": "Als Datei speichern",
+	"import.source_text": "Text oder Datei",
+	"import.source_household": "Anderer Haushalt",
+	"import.household_intro": "Wähle einen deiner Haushalte und hake an, was du übernehmen möchtest. Artikel kommen mit Menge, Mengenregel und allen Regeln so an, wie sie dort im Template stehen.",
+	"import.household_mapping": "Personen und Koffer werden über den Namen zugeordnet. Gibt es hier keinen gleichnamigen Eintrag, gilt der Artikel für alle bzw. ohne Koffer.",
+	"import.household_empty": "Dieses Template ist leer.",
+	"import.unmapped_one": "{count} Zuordnung zu Person oder Koffer ist entfallen, weil es hier keinen gleichnamigen Eintrag gibt.",
+	"import.unmapped_other": "{count} Zuordnungen zu Personen oder Koffern sind entfallen, weil es hier keine gleichnamigen Einträge gibt."
 }

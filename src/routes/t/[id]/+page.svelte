@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { flushSync, onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { goto, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
@@ -8,6 +8,8 @@
 	import { countryFlag } from '#lib/data/countries.js';
 	import { todoAnchor, todoDue } from '#lib/generate.js';
 	import { overallProgress } from '#lib/progress.js';
+	import { exportFileName, tripMarkdown } from '#lib/export.js';
+	import { cardHeight, columnCapacity, packOrder, ROW, TITLE_BLOCK, TODO_FRAME } from '#lib/print.js';
 	import { formatDate, formatRange, timeAgo, useI18n } from '#lib/i18n/index.js';
 	import { applyLocal, clientRowId, loadQueue, OFFLINE_OPS, saveQueue, type Op, type TripState } from '#lib/offline.js';
 	import { childrenMap, mergeNodes } from '#lib/tree.js';
@@ -78,6 +80,12 @@
 	let newTodoDays = $state(1);
 	/** to-do open in the editor sheet (name, due, who, note) */
 	let editingTodoId = $state<string | null>(null);
+	/** the print button's menu: print, or share the list as text */
+	let printMenu = $state(false);
+	let exportOpen = $state(false);
+	let exportText = $state('');
+	/** between beforeprint and afterprint the cards are reordered to fill the paper columns (see #lib/print) */
+	let printing = $state(false);
 	const editingTodo = $derived(todos.find((td) => td.id === editingTodoId) ?? null);
 
 	// drag & drop (mouse / trackpad only – on touch screens dragging fights with scrolling)
@@ -659,6 +667,90 @@
 		return data.persons.filter((p) => acc.has(p.id));
 	}
 
+	// ── paper layout ────────────────────────────────────────────────────────
+	/** the same condition that renders a group card (see groupBlock) */
+	const groupShown = (g: TripItem) => hasVisible(g.id) || (!hideDone && personFilter === null && !q);
+	const wraps = (it: TripItem) => !!it.note || (returning && it.consumable);
+	function rowsIn(id: string, acc: { rows: number; wrapped: number; subs: number }) {
+		if (compactOn) {
+			for (const e of entriesByParent.get(id) ?? []) {
+				if (e.kind === 'group') {
+					if (!groupShown(e.node)) continue;
+					acc.subs++;
+					rowsIn(e.node.id, acc);
+				} else if (e.items.some(matches)) {
+					if (e.items.some(wraps)) acc.wrapped++;
+					else acc.rows++;
+				}
+			}
+			return;
+		}
+		for (const c of tree.get(id) ?? []) {
+			if (c.kind === 'group') {
+				if (!groupShown(c)) continue;
+				acc.subs++;
+				rowsIn(c.id, acc);
+			} else if (matches(c)) {
+				if (wraps(c)) acc.wrapped++;
+				else acc.rows++;
+			}
+		}
+	}
+	/** estimated height of a card on paper – 0 when it is not rendered at all */
+	function cardSize(g: TripItem): number {
+		if (!groupShown(g)) return 0;
+		const acc = { rows: 0, wrapped: 0, subs: 0 };
+		rowsIn(g.id, acc);
+		return cardHeight(acc.rows, acc.wrapped, acc.subs);
+	}
+	/** what is printed above the list on the first page */
+	const printHeader = () => TITLE_BLOCK + (todosOpen ? TODO_FRAME + sortedTodos.length * ROW : 0);
+	const printColumn = (column: number) => columnCapacity(column, printHeader());
+	const topEntries = $derived(entriesByParent.get(null) ?? []);
+	const printTopEntries = $derived(printing ? packOrder(topEntries, (e) => (e.kind === 'group' ? cardSize(e.node) : cardHeight(1)), printColumn) : topEntries);
+	const topNodes = $derived(tree.get(null) ?? []);
+	const printTopNodes = $derived(printing ? packOrder(topNodes, (n) => (n.kind === 'group' ? cardSize(n) : cardHeight(1)), printColumn) : topNodes);
+	const printFlatGroups = $derived(printing ? packOrder(flatGroups, (g) => cardHeight(g.items.filter(matches).length), printColumn) : flatGroups);
+	function onBeforePrint() {
+		printing = true;
+		flushSync(); // the browser lays the pages out right after this event
+	}
+	function printPage() {
+		printMenu = false;
+		window.print();
+	}
+
+	// ── the list as text ────────────────────────────────────────────────────
+	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+	function openExport() {
+		printMenu = false;
+		exportText = tripMarkdown({ trip: { ...data.trip, name: tripName, phase, todos_enabled: todosEnabled }, items, todos, persons: data.persons, locale: i18n.locale, t });
+		exportOpen = true;
+	}
+	async function shareText() {
+		try {
+			await navigator.share({ title: tripName, text: exportText });
+		} catch (err) {
+			if ((err as Error).name !== 'AbortError') toast(describeError(err, t));
+		}
+	}
+	async function copyText() {
+		try {
+			await navigator.clipboard.writeText(exportText);
+			toast(t('common.copied'), 'info', 2500);
+		} catch {
+			(document.querySelector('textarea.export') as HTMLTextAreaElement | null)?.select();
+		}
+	}
+	function downloadText() {
+		const url = URL.createObjectURL(new Blob([exportText], { type: 'text/markdown;charset=utf-8' }));
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = exportFileName(tripName, 'md');
+		a.click();
+		setTimeout(() => URL.revokeObjectURL(url), 1000);
+	}
+
 	// packing mode keeps the screen on (Wake Lock API, where supported)
 	const wakeLockSupported = typeof navigator !== 'undefined' && 'wakeLock' in navigator;
 	$effect(() => {
@@ -728,7 +820,7 @@
 
 <svelte:head><title>{tripName} · Packwise</title></svelte:head>
 
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={onKey} onbeforeprint={onBeforePrint} onafterprint={() => (printing = false)} />
 
 <div class="container trip-page" class:return-mode={returning} class:packing>
 	<header class="trip-head">
@@ -905,7 +997,16 @@
 			<button class="btn ghost small" onclick={() => send({ op: 'todos', enabled: true })} aria-label={t('todo.enable')}>✅ <span class="hide-sm">{t('todo.enable')}</span></button>
 		{/if}
 		<button class="btn ghost small" onclick={() => (showActivity = true)} aria-label={t('trip.activity')}>🕘 <span class="hide-sm">{t('trip.activity')}</span></button>
-		<button class="btn ghost small" onclick={() => window.print()} aria-label={t('trip.print')}>🖨 <span class="hide-sm">{t('trip.print')}</span></button>
+		<div class="menu-wrap">
+			<button class="btn ghost small" onclick={() => (printMenu = !printMenu)} aria-label={t('trip.print')} aria-haspopup="menu" aria-expanded={printMenu}>🖨 <span class="hide-sm">{t('trip.print')}</span> ▾</button>
+			{#if printMenu}
+				<div class="menu-backdrop" onclick={() => (printMenu = false)} role="presentation"></div>
+				<div class="menu" role="menu">
+					<button role="menuitem" onclick={printPage}>🖨 {t('trip.print')}</button>
+					<button role="menuitem" onclick={openExport}>📤 {t('trip.export_text')}</button>
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	{#if errorMsg}<div class="alert danger">{errorMsg}</div>{/if}
@@ -1078,7 +1179,7 @@
 	{#if canDrag}<p class="tiny muted no-print drag-hint pk-hide">↕ {t('trip.drag_hint')}</p>{/if}
 	<div class="list" role="list" style="--stick:{stickTop}px">
 		{#if compactOn}
-			{#each entriesByParent.get(null) ?? [] as e (e.kind === 'group' ? e.node.id : e.key)}
+			{#each printTopEntries as e (e.kind === 'group' ? e.node.id : e.key)}
 				{#if e.kind === 'group'}
 					{@render groupBlock(e.node, 1)}
 				{:else if e.items.some(matches)}
@@ -1090,7 +1191,7 @@
 				{/if}
 			{/each}
 		{:else if view === 'category'}
-			{#each tree.get(null) ?? [] as top (top.id)}
+			{#each printTopNodes as top (top.id)}
 				{#if top.kind === 'group'}
 					{@render groupBlock(top, 1)}
 				{:else if matches(top)}
@@ -1098,7 +1199,7 @@
 				{/if}
 			{/each}
 		{:else}
-			{#each flatGroups as g (g.id)}
+			{#each printFlatGroups as g (g.id)}
 				<section
 					class="group depth-1"
 					style={g.color ? `--bag:${g.color}` : ''}
@@ -1207,6 +1308,20 @@
 	/>
 {/if}
 
+{#if exportOpen}
+	<Sheet title={t('trip.export_text')} onclose={() => (exportOpen = false)}>
+		<p class="small muted">{t('trip.export_text_hint')}</p>
+		<textarea class="export" readonly rows="14" value={exportText} aria-label={t('trip.export_text')}></textarea>
+		{#snippet footer()}
+			<div class="row wrap">
+				{#if canShare}<button class="btn primary" onclick={shareText}>📤 {t('common.share')}</button>{/if}
+				<button class="btn" class:primary={!canShare} onclick={copyText}>📋 {t('common.copy')}</button>
+				<button class="btn" onclick={downloadText}>⬇️ {t('common.download')}</button>
+			</div>
+		{/snippet}
+	</Sheet>
+{/if}
+
 {#if showActivity}
 	<Sheet title={t('trip.activity')} onclose={() => (showActivity = false)}>
 		{#if !activity.length}<p class="muted">{t('trip.no_activity')}</p>{/if}
@@ -1226,6 +1341,47 @@
 <style>
 	.trip-head {
 		margin-bottom: 0.9rem;
+	}
+	.menu-wrap {
+		position: relative;
+	}
+	.menu-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 30;
+	}
+	.menu {
+		position: absolute;
+		right: 0;
+		top: calc(100% + 4px);
+		z-index: 31;
+		min-width: 12rem;
+		display: grid;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		box-shadow: var(--shadow-lg);
+		padding: 0.3rem;
+	}
+	.menu button {
+		text-align: left;
+		padding: 0.55rem 0.7rem;
+		border-radius: 7px;
+		border: 0;
+		background: none;
+		color: var(--text);
+		font: inherit;
+		cursor: pointer;
+	}
+	.menu button:hover,
+	.menu button:focus-visible {
+		background: var(--surface-2);
+	}
+	textarea.export {
+		width: 100%;
+		font-family: ui-monospace, monospace;
+		font-size: 0.8rem;
+		white-space: pre;
 	}
 	.return-mode {
 		--accent: #0d9488;
@@ -1848,14 +2004,19 @@
 			width: 0.9rem;
 			height: 0.9rem;
 			border-radius: 3px;
-			border-width: 1px;
+			border: 1px solid #555;
+			background: #fff;
 		}
-		/* cards may continue in the next column / on the next page (only rows stay whole),
-		   so big categories don't leave half-empty pages behind */
+		.box.on {
+			background: var(--success);
+			border-color: var(--success);
+		}
+		/* a category stays in one piece and moves to the next column / page as a whole;
+		   only one taller than a column has to be split (then with its heading on top) */
 		.group.depth-1 {
 			box-shadow: none;
 			margin-bottom: 0.6rem;
-			break-inside: auto;
+			break-inside: avoid;
 		}
 		.ghead {
 			break-after: avoid;
@@ -1864,6 +2025,9 @@
 			display: block;
 			columns: 2;
 			column-gap: 1.5rem;
+			/* fill the left column to the bottom of the page before starting the right one,
+			   instead of balancing both (which tore categories apart on the last page) */
+			column-fill: auto;
 		}
 	}
 </style>

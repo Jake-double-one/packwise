@@ -11,6 +11,8 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 - **To-dos on a trip can be edited**: tapping one opens name, due day, who and note (both lists). The to-do field has a `+` button, so adding doesn't depend on the keyboard.
 - **One progress for list and to-dos**: the ring on the trip and on the overview counts items and the to-dos of the current phase together.
 - **Weather at home on the way back**: the household can set a **home town** (place search; it also sets the home country). The return tab then shows the weather at home for the arrival day and the two days after.
+- **Share a trip as text**: the print button opens a small menu – *Print* or *Share as text*. The text is Markdown with the list exactly as it stands (categories, quantities, ticks, who, used-up consumables) and the to-dos of the current phase; it goes to the phone's share sheet, the clipboard or a `.md` file. The importer reads the same format.
+- **Import from another household**: *Import → Another household* shows the template of one of your other households as a tree. Tick categories or single items and they are copied with quantity, quantity rule, chips, power and consumable flags and notes. People and bags are matched by name (otherwise the item is for everyone / without a bag). Only your own households are offered; for anything else there is still the JSON backup.
 
 ### Changed
 
@@ -19,6 +21,8 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 ### Fixed
 
 - Enter in a trip's *New to-do…* field adds the to-do – it did nothing, because the form had no button.
+- **Print view in dark mode**: boxes, borders and grey text printed in the dark colours (black boxes to tick). The paper is now always light, whatever theme is on.
+- **Print view page breaks**: a category is no longer torn across columns or pages. The left column is filled first, and while printing the cards are reordered so that a smaller category fills the space a bigger one left over at the bottom of a column (the screen order stays as it is). Only a category taller than a whole column is still split.
 
 - **Install as an app**: *Settings → Install as an app* offers Chrome's install prompt as a button, explains the home-screen steps on iPhone/iPad and says why installing is unavailable over `http://`. The manifest is fetched with cookies, so a login proxy in front of Packwise no longer breaks installation; a solid maskable icon for Android's icon shapes; app shortcuts *New trip* and *Trips* in the user's language.
 - **Status bar and app title bar follow the theme** (light, dark, AMOLED, system) in a browser tab – before, they were always indigo. In the installed app the Android system bars follow the phone's light/dark mode (no fixed `theme_color` in the manifest any more, no `viewport-fit=cover`), so the bottom bar is no longer stuck white; a dark theme on a dark phone keeps its colour. The splash screen follows the theme. Native form controls follow as well (`color-scheme`).
