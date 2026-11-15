@@ -16,8 +16,8 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@sveltejs/adapter-node": "^6.0.1",
-    "@sveltejs/kit": "^3.1.1",
+    "@sveltejs/adapter-node": "^6.0.2",
+    "@sveltejs/kit": "^3.2.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/node": "^26.6.6",
     "@types/nodemailer": "^8.0.2",
@@ -27,13 +27,13 @@
     "svelte": "^5.57.3",
     "svelte-check": "^4.7.8",
     "typescript": "^6.0.3",
-    "vite": "^8.3.6",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0"
   },
   "dependencies": {
-    "nodemailer": "^10.3.1",
+    "nodemailer": "^10.6.0",
     "qrcode": "^1.5.4",
-    "web-push": "^3.6.7"
+    "web-push": "^4.0.0"
   },
   "imports": {
     "#lib/*": "./src/lib/*"

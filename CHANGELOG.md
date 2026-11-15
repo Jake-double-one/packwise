@@ -30,6 +30,7 @@ All notable changes to Packwise. Docker images: `ghcr.io/jake-double-one/packwis
 
 ### Security
 
+- **Dependencies brought up to date**: SvelteKit 3.2.0 and adapter-node 6.0.2 (closing two advisories about requests that could crash the Node server), Svelte 5.57.3, Vite 8.3.8, Vitest 5.1, nodemailer 10.6 and web-push 4 (now an ES module; same wire format), plus `github/codeql-action` v4 in the audit workflow. TypeScript stays on 6 – SvelteKit does not run with TypeScript 7 yet.
 - **Dependency audit**: a weekly GitHub workflow runs `npm audit` for the shipped packages and a Trivy scan of the built image (Alpine base and node_modules), with results under *Security → Code scanning*; Dependabot opens weekly update PRs for npm packages, GitHub Actions and the Node base image.
 - **Security headers and a Content-Security-Policy** on every page (own scripts and assets only, OpenStreetMap iframe, `X-Frame-Options: DENY`, `nosniff`, referrer and permissions policy).
 - **Servers entered by users** (ntfy, Gotify, SMTP, push subscriptions) may no longer point at the container itself or at link-local / cloud-metadata addresses; names are resolved and checked on every send. LAN addresses stay allowed.

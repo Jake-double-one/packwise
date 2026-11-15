@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import webpush from 'web-push';
+import * as webpush from 'web-push';
 import { config } from './config';
 import { decrypt, encrypt } from './crypto';
 import { all, get, getMeta, newId, now, run, setMeta } from './db';
